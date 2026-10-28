@@ -75,6 +75,8 @@ func start(seed: int = 42024) -> bool:
         actor["reaction_used"] = false
         actor["disengaged"] = false
         actor["shield_bonus"] = 0
+        actor["concentration"] = {}
+        actor["blessed_by"] = ""
         actor["max_hp"] = int(actor.get("max_hp", 1))
         var casting: Variant = actor.get("spellcasting")
         actor["spell_slots_remaining"] = int(casting.get("spell_slots", {}).get("1", 0)) if casting is Dictionary else 0
@@ -98,6 +100,8 @@ func start(seed: int = 42024) -> bool:
         actor["reaction_used"] = false
         actor["disengaged"] = false
         actor["shield_bonus"] = 0
+        actor["concentration"] = {}
+        actor["blessed_by"] = ""
         actor["art"] = {"combat_sprite": "assets/characters/sprites/goblin_front_64.png"}
         actor["sap_pending"] = false
         actor["vex_target"] = ""
@@ -289,7 +293,7 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
     reactor["reaction_used"] = true
     actors[reactor_id] = reactor
     var natural: int = Dice.roll_d20(rng)
-    var result: Dictionary = RulesMath.attack_hits(natural, int(weapon.get("to_hit", 0)), int(target["armor_class"]))
+    var result: Dictionary = RulesMath.attack_hits(natural, int(weapon.get("to_hit", 0)) + _bless_bonus(reactor_id), effective_ac(target))
     if not bool(result["hit"]):
         _emit_sound("miss")
         _record("%s Opportunity Attack against %s: %d — MISS." % [
@@ -359,6 +363,7 @@ func _deal_damage(target_id: String, damage: int) -> void:
         target["combat_state"] = "unconscious" if target["team"] == "party" else "dead"
         _emit_sound("death")
     actors[target_id] = target
+    _check_concentration_after_damage(target_id, damage)
 
 
 func can_disengage() -> bool:
@@ -439,7 +444,7 @@ func attack(target_id: String, weapon_id: String = "") -> bool:
     source["vex_target"] = ""
     actors[source_id] = source
     var roll: Dictionary = RulesMath.attack_hits(
-        natural, int(weapon.get("to_hit", 0)), effective_ac(target)
+        natural, int(weapon.get("to_hit", 0)) + _bless_bonus(source_id), effective_ac(target)
     )
     var attack_name := str(weapon.get("id", "attack")).replace("_", " ")
     var disadvantage_label := " (Disadvantage)" if disadvantage else ""
@@ -486,6 +491,7 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
     if int(target["hp"]) == 0:
         target["combat_state"] = "unconscious" if target["team"] == "party" else "dead"
     actors[target_id] = target
+    _check_concentration_after_damage(target_id, damage)
     var critical_label := " CRITICAL!" if roll["critical"] else ""
     _record("%s uses %s on %s: %d vs AC %d — HIT%s %d %s damage (%d → %d HP)%s." % [
         source["name"], attack_name, target["name"], roll["total"], target["armor_class"],
@@ -641,6 +647,7 @@ func _begin_turn() -> void:
         actor["disengaged"] = false
         actor["shield_bonus"] = 0
         actors[current_id()] = actor
+        _tick_concentration(current_id())
         _record("Turn: %s." % current_actor()["name"])
         if actor.get("combat_state", "") == "unconscious":
             _roll_death_save(current_id())
@@ -794,6 +801,8 @@ func can_cast_spell(spell_id: String, target_id: String) -> bool:
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
     if spell.is_empty():
         return false
+    if spell["time"] == "reaction":
+        return false
     if spell["time"] == "action" and action_used:
         return false
     if spell["time"] == "bonus" and bonus_action_used:
@@ -833,6 +842,8 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
     _emit_sound("magic")
     var title: String = spell_id.replace("_", " ").capitalize()
     match effect:
+        "bless":
+            _start_bless(caster_id, target_id)
         "mage_armor":
             target["mage_armor_active"] = true
             var dexterity_mod: int = Dice.ability_modifier(int(target["ability_scores"]["dexterity"]))
@@ -858,7 +869,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
             _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
         "dex_save_damage":
             var roll: int = Dice.roll_d20(rng) + \
-                Dice.ability_modifier(int(target.get("ability_scores", {}).get("dexterity", 10)))
+                Dice.ability_modifier(int(target.get("ability_scores", {}).get("dexterity", 10))) + _bless_bonus(target_id)
             var dc: int = int(caster["spellcasting"]["save_dc"])
             if roll >= dc:
                 _record("%s resists %s (Dex save %d vs DC %d)." % [target["name"], title, roll, dc])
@@ -887,6 +898,7 @@ func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: Stri
     if int(target["hp"]) == 0:
         target["combat_state"] = "unconscious" if target["team"] == "party" else "dead"
     actors[target_id] = target
+    _check_concentration_after_damage(target_id, damage)
     _record("%s casts %s on %s: %d %s damage (%d HP left)." % [
         caster["name"], spell_name, target["name"], damage, damage_type, target["hp"]
     ])
@@ -899,7 +911,11 @@ func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: Stri
 func get_current_spells() -> Array[String]:
     if finished or current_id().is_empty():
         return []
-    return Level1Spells.known_spells(current_actor())
+    var result: Array[String] = []
+    for spell_id in Level1Spells.known_spells(current_actor()):
+        if Level1Spells.get_definition(spell_id).get("time", "") != "reaction":
+            result.append(spell_id)
+    return result
 
 
 func _record(line: String) -> void:
