@@ -74,3 +74,5 @@ jobs:
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_debug_skip_battle.gd
       - name: Hesk narrative kill, capture and leave fate persistence
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_hesk_narrative_fates.gd
+      - name: v0.9 cave approach watchpost and local map regression
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_cave_approach_v09.gd
