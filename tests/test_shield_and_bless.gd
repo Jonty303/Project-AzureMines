@@ -50,10 +50,10 @@ func _run() -> void:
     if b.get_current_spells().has("shield"):
         _fail("Shield should not appear in an Action spell picker")
         return
-    var goblin: Dictionary = b.actors["goblin_blade"]
-    goblin["position"] = Vector2i(4, 5)
-    b.actors["goblin_blade"] = goblin
-    b.turn_index = b.turn_order.find("goblin_blade")
+    var goblin: Dictionary = b.actors["goblin_bow"]
+    goblin["position"] = Vector2i(3, 5)
+    b.actors["goblin_bow"] = goblin
+    b.turn_index = b.turn_order.find("goblin_bow")
     var prompted := false
     for attempt in range(12):
         b._begin_turn()
