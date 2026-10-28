@@ -1,13 +1,18 @@
 extends Control
-## Static top-down battle board. The logic resides in CombatEngine.
+## Presentation only; CombatEngine owns all authoritative movement and damage.
+## The approved mock-up drives the warm stone palette and strong target highlights.
 
 signal cell_clicked(cell: Vector2i)
 
 const CombatEngine = preload("res://combat/combat_engine.gd")
-
 const CELL_SIZE := 68
-const PARTY_BLUE := Color("#244b78")
-const ENEMY_RED := Color("#9c4745")
+const SOURCE_SIZE := 64
+const PARTY_BLUE := Color("#399bd5")
+const ENEMY_RED := Color("#cb4c43")
+const GOLD := Color("#d7aa58")
+const DOWNED_ATLAS := "assets/characters/sprites/downed_party_atlas_64.png"
+const TERRAIN_ATLAS := "assets/environment/dungeon_tiles_64.png"
+const PROPS_ATLAS := "assets/environment/dungeon_props_64.png"
 
 var engine: CombatEngine
 var _sprite_cache: Dictionary = {}
@@ -23,50 +28,97 @@ func _draw() -> void:
     if engine == null:
         return
     var current: String = engine.current_id()
-    var reachable: Dictionary = {}
-    if engine.current_is_party():
-        reachable = engine.get_reachable(current)
+    var reachable: Dictionary = engine.get_reachable(current) if engine.current_is_party() else {}
+    var terrain: Texture2D = _texture_for(TERRAIN_ATLAS)
+    var props: Texture2D = _texture_for(PROPS_ATLAS)
+
     for y in range(engine.grid_size.y):
         for x in range(engine.grid_size.x):
             var cell := Vector2i(x, y)
-            var rect := Rect2(Vector2(cell * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
-            var terrain_color := Color("#26313c")
-            if cell in engine.walls:
-                terrain_color = Color("#77808a")
-            elif cell in engine.difficult_terrain:
-                terrain_color = Color("#574b37")
-            elif reachable.has(cell) and cell != engine.current_actor()["position"]:
-                terrain_color = Color("#264c57")
-            if (x + y) % 2 == 1 and not cell in engine.walls:
-                terrain_color = terrain_color.lightened(0.07)
-            draw_rect(rect, terrain_color)
-            draw_rect(rect, Color("#536270"), false, 1.0)
+            var dest := Rect2(Vector2(cell * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
+            var wall: bool = cell in engine.walls
+            if terrain != null:
+                var tile_idx: int = 3 if wall else (x * 13 + y * 7) % 3
+                var source := Rect2(Vector2(tile_idx * SOURCE_SIZE, 0), Vector2(SOURCE_SIZE, SOURCE_SIZE))
+                draw_texture_rect_region(terrain, dest, source)
+            else:
+                var stone: Color = Color("#25242a") if wall else Color("#51453d")
+                if (x + y) % 3 == 0:
+                    stone = stone.lightened(0.065)
+                draw_rect(dest, stone)
+            if cell in engine.difficult_terrain:
+                draw_rect(dest, Color("#8c6b35", 0.32))
+            if reachable.has(cell) and cell != engine.current_actor()["position"]:
+                draw_rect(dest, Color("#399bd5", 0.19))
+            draw_rect(dest, Color("#1c232b", 0.58), false, 1.0)
 
+    if props != null:
+        # Decorative props are drawn over existing blocking walls. They do not
+        # change the map's rules: encounter data remains authoritative.
+        _draw_prop(props, Vector2i(5, 3), 0)
+        _draw_prop(props, Vector2i(9, 2), 1)
+        _draw_prop(props, Vector2i(6, 5), 2)
+
+    var downed: Texture2D = _texture_for(DOWNED_ATLAS)
     for id_variant in engine.actors.keys():
         var actor: Dictionary = engine.actors[id_variant]
         var cell: Vector2i = actor["position"]
-        if int(actor["hp"]) <= 0:
-            continue
-        var rect := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
-        if str(actor["id"]) == current:
-            draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(66, 66)), Color("#e3bf58"), false, 3.0)
-        var art: Dictionary = actor.get("art", {})
-        var path := str(art.get("combat_sprite", ""))
-        if path.ends_with("_front_32.png"):
-            path = path.replace("_front_32.png", "_front_64.png")
-        var texture: Texture2D = _texture_for(path)
-        if texture != null:
-            draw_texture_rect(texture, rect, false)
-        else:
-            var is_party: bool = actor["team"] == "party"
-            draw_circle(rect.get_center(), 25.0, PARTY_BLUE if is_party else ENEMY_RED)
-            var first_letter := str(actor["name"]).substr(0, 1)
-            draw_string(get_theme_default_font(), rect.position + Vector2(22, 42), first_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
-        # HP bar, red lost HP section and green remaining HP section.
-        var bar := Rect2(Vector2(cell * CELL_SIZE) + Vector2(6, 62), Vector2(56, 4))
-        draw_rect(bar, Color("#8d2f31"))
-        var ratio := float(actor["hp"]) / float(maxi(1, int(actor["max_hp"])))
-        draw_rect(Rect2(bar.position, Vector2(bar.size.x * ratio, 4)), Color("#7bc36a"))
+        var dest := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
+        var active: bool = int(actor["hp"]) > 0
+        var actor_id: String = str(actor["id"])
+        if actor_id == current:
+            draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(66, 66)), GOLD, false, 3.0)
+        elif active:
+            var team_color: Color = PARTY_BLUE if actor["team"] == "party" else ENEMY_RED
+            draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(66, 66)), team_color, false, 1.3)
+
+        var drawn := false
+        if not active and downed != null:
+            var index: int = _downed_index(actor_id)
+            var source := Rect2(Vector2(index * SOURCE_SIZE, 0), Vector2(SOURCE_SIZE, SOURCE_SIZE))
+            draw_texture_rect_region(downed, dest, source)
+            drawn = true
+        if not drawn and active:
+            var art: Dictionary = actor.get("art", {})
+            var path: String = str(art.get("combat_sprite", ""))
+            if path.ends_with("_front_32.png"):
+                path = path.replace("_front_32.png", "_front_64.png")
+            var sprite: Texture2D = _texture_for(path)
+            if sprite != null:
+                draw_texture_rect(sprite, dest, false)
+                drawn = true
+        if not drawn:
+            draw_circle(dest.get_center(), 24.0, PARTY_BLUE if actor["team"] == "party" else ENEMY_RED)
+            draw_string(get_theme_default_font(), dest.position + Vector2(23, 43),
+                str(actor["name"]).substr(0, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
+
+        if not active:
+            var glyph: String = "Z" if actor.get("combat_state", "") == "unconscious" else "X"
+            var status_color: Color = PARTY_BLUE if glyph == "Z" else ENEMY_RED
+            draw_string(get_theme_default_font(), dest.position + Vector2(50, 16),
+                glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, status_color)
+        var hp_bar := Rect2(Vector2(cell * CELL_SIZE) + Vector2(6, 62), Vector2(56, 4))
+        draw_rect(hp_bar, Color("#652d32"))
+        var fraction: float = float(actor["hp"]) / float(maxi(1, int(actor["max_hp"])))
+        draw_rect(Rect2(hp_bar.position, Vector2(hp_bar.size.x * fraction, 4)), Color("#65bd7c"))
+
+
+func _downed_index(actor_id: String) -> int:
+    if actor_id == "alden":
+        return 0
+    if actor_id == "elyra":
+        return 1
+    if actor_id == "brunna":
+        return 2
+    if actor_id == "pip":
+        return 3
+    return 4
+
+
+func _draw_prop(atlas: Texture2D, cell: Vector2i, index: int) -> void:
+    var dest := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
+    var source := Rect2(Vector2(index * SOURCE_SIZE, 0), Vector2(SOURCE_SIZE, SOURCE_SIZE))
+    draw_texture_rect_region(atlas, dest, source)
 
 
 func _texture_for(path: String) -> Texture2D:
