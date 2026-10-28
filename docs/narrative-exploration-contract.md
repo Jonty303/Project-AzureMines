@@ -64,7 +64,7 @@ Scene descriptions and choices should be sized for readability rather than cramp
 {
   "schema_version": 1,
   "id": "road_wagon_clearing",
-  "region": "old_timber_road",
+  "region": "old_trade_road",
   "map_node": "clearing",
   "descriptions": [
     {
@@ -93,7 +93,7 @@ Scene descriptions and choices should be sized for readability rather than cramp
     {
       "id": "return_to_road",
       "label": "Return to the old road",
-      "on_select": [{"type": "move_location", "id": "old_timber_road"}]
+      "on_select": [{"type": "move_location", "id": "old_trade_road"}]
     }
   ]
 }
@@ -129,7 +129,7 @@ The map should resemble a carefully drawn **graph-paper dungeon map**, inked on 
 
 Use the existing wagon ambush as a bridge into *narrative exploration*, without building a full dungeon or town prematurely:
 
-1. **Old Timber Road**: opening narrative, observe wagon/tracks, choose approach; authored transition to deployment and combat.
+1. **Old Trade Road**: opening narrative, observe wagon/tracks, choose approach; authored transition to deployment and combat.
 2. **Wagon Clearing (after the battle)**: inspect the wagon; search chests or ashes; optional Investigation or Perception check; grant a minor clue or a carefully limited consumable, with no equipment trash.
 3. **Overgrown Track**: a discoverable, persistent side route, plus a return link to the wagon clearing with updated prose.
 4. **Town Approach**: one original NPC encounter with branching dialogue and a simple quest hook; postpone a full merchant/shop system.
@@ -162,3 +162,7 @@ See [Goblin Trail, Survivor and Hideout](goblin-trail-and-survivor-quest.md). Th
 ## Narrative scene illustration contract — current playable prototype
 
 Each narrative screen may name an art asset in the `art` field; a static scene image fills the main centre-left view while prose and choices remain legible alongside it. The combat grid reappears only when setup or combat starts. The initial playable art depicts the four adventurers around a campfire beneath dark pines. Animation should later replace or augment the same slot without changing authored story IDs. See [Dales settlement gazetteer](dales-settlement-gazetteer.md) for the opening commission and Seabrook/Harrowford setting anchors. The wider map and town conversation runtime remain planned.
+
+## Geography and resource-economy rules for authored exploration
+
+The western Seabrook port and northern Harrowford market connect via the **Old Trade Road**, primarily moving dwarven ore, precious metals and gems. Dales locations range from fertile valleys and lowland woods to moors, mountains, limestone caves, underground streams and waterfalls. A few centuries of frontier settlement produced uneasy practical truces: mine expansion, timbercraft and farmland clearance can challenge the rights and concerns of woodland elves, dwarves and other local communities. Choices must reflect negotiated interests rather than assume one uniform ancestry opinion. The caravan mystery begins with the abnormal disappearance of **whole guarded convoys** rather than routine bandit losses. The discovery map must preserve a west-coast orientation for Seabrook and a northern position for Harrowford. Further world histories remain unestablished.
