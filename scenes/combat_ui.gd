@@ -6,6 +6,7 @@ const CombatEngine = preload("res://combat/combat_engine.gd")
 const CombatBoard = preload("res://combat/combat_board.gd")
 const Level1Spells = preload("res://combat/level1_spells.gd")
 const CombatActionButton = preload("res://scenes/combat_action_button.gd")
+const OpeningSession = preload("res://adventure/opening_session.gd")
 const SOUND_NAMES := ["footstep", "melee_hit", "ranged", "magic", "heal", "miss", "damage", "death"]
 const BG := Color("#0e141b")
 const PANEL := Color("#121b23")
@@ -15,7 +16,15 @@ const GOLD := Color("#d7aa58")
 const BLUE := Color("#399bd5")
 
 var engine: CombatEngine
+var adventure: OpeningSession
 var board: CombatBoard
+var story_panel: VBoxContainer
+var story_eyebrow: Label
+var story_title: Label
+var story_paragraphs: RichTextLabel
+var story_rewards: Label
+var story_continue_button: Button
+var log_heading: Label
 var status_label: Label
 var party_label: Label
 var active_label: Label
@@ -176,7 +185,24 @@ func _build_ui() -> void:
     var right_content := VBoxContainer.new()
     right_content.add_theme_constant_override("separation", 8)
     right.add_child(right_content)
-    _make_label("COMBAT LOG", right_content, 19)
+    story_panel = VBoxContainer.new()
+    story_panel.add_theme_constant_override("separation", 14)
+    story_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    right_content.add_child(story_panel)
+    story_eyebrow = _make_label("", story_panel, 13)
+    story_title = _make_label("", story_panel, 22)
+    story_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    story_paragraphs = RichTextLabel.new()
+    story_paragraphs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    story_paragraphs.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    story_paragraphs.add_theme_color_override("default_color", CREAM)
+    story_panel.add_child(story_paragraphs)
+    story_rewards = _make_label("", story_panel, 16)
+    story_rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    story_continue_button = _make_button("Continue", _on_story_continue, story_panel, 235)
+    story_continue_button.add_theme_stylebox_override("normal", _button_style(true))
+
+    log_heading = _make_label("COMBAT LOG", right_content, 19)
     combat_log = RichTextLabel.new()
     combat_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
     combat_log.scroll_following = true
@@ -265,6 +291,11 @@ func _build_ui() -> void:
 
 
 func _restart() -> void:
+    if adventure == null:
+        adventure = OpeningSession.new()
+    if not adventure.start_journey():
+        status_label.text = "ERROR: could not load the opening adventure."
+        return
     engine = CombatEngine.new()
     if not engine.start(42024, true):
         status_label.text = "ERROR: combat fixtures could not load."
@@ -278,6 +309,18 @@ func _restart() -> void:
     _refresh()
 
 
+func _on_story_continue() -> void:
+    match adventure.stage:
+        "approach":
+            adventure.begin_deployment()
+        "victory":
+            adventure.continue_after_victory()
+        "defeat", "aftermath":
+            _restart()
+            return
+    _refresh()
+
+
 func _on_formation(formation_id: String) -> void:
     if engine.deployment_active and engine.set_formation(formation_id):
         deployment_selected_id = ""
@@ -285,8 +328,9 @@ func _on_formation(formation_id: String) -> void:
 
 
 func _on_begin_battle() -> void:
-    if not engine.begin_battle():
+    if adventure.stage != "deployment" or not engine.begin_battle():
         return
+    adventure.begin_combat()
     deployment_selected_id = ""
     action_mode = ""
     current_picker_actor = ""
@@ -328,6 +372,8 @@ func _selected_spell() -> String:
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
+    if adventure.stage not in ["deployment", "battle"]:
+        return
     if engine.deployment_active:
         var clicked_id: String = engine.actor_at(cell)
         if not clicked_id.is_empty() and engine.actors[clicked_id]["team"] == "party":
@@ -440,9 +486,59 @@ func _set_crossed(button: Button, exhausted: bool) -> void:
         button.crossed_out = exhausted and engine.current_is_party()
 
 
+func _refresh_story() -> void:
+    var info: Dictionary = adventure.screen()
+    story_panel.visible = true
+    log_heading.visible = false
+    combat_log.visible = false
+    setup_panel.visible = false
+    combat_action_row.visible = false
+    combat_selector_row.visible = false
+    reaction_row.visible = false
+    board.action_mode = ""
+    board.selected_deployment_actor = ""
+    board.queue_redraw()
+
+    story_eyebrow.text = str(info.get("eyebrow", "THE OLD TIMBER ROAD"))
+    story_title.text = str(info.get("title", "The Road"))
+    var passages: PackedStringArray = []
+    for para in info.get("paragraphs", []):
+        passages.append(str(para))
+    story_paragraphs.text = "\n\n".join(passages)
+    story_continue_button.text = str(info.get("button", "Continue"))
+    status_label.text = "THE OLD TIMBER ROAD" if adventure.stage == "approach" else story_eyebrow.text
+
+    story_rewards.visible = adventure.stage == "victory"
+    if adventure.stage == "victory":
+        var reward: Dictionary = adventure.last_reward
+        if bool(reward.get("already_claimed", false)):
+            story_rewards.text = "Previously recovered — no additional XP or gold awarded."
+        elif bool(reward.get("error", false)):
+            story_rewards.text = "Reward data error — no rewards awarded."
+        else:
+            story_rewards.text = "XP: %d total (%d per adventurer)\nGold recovered: %d gp" % [
+                int(reward.get("xp_total", 0)), int(reward.get("xp_each", 0)),
+                int(reward.get("gold_gp", 0))
+            ]
+    var lines: PackedStringArray = []
+    for id in ["alden", "elyra", "brunna", "pip"]:
+        lines.append("%s  •  %d XP" % [engine.actors[id]["name"], int(adventure.xp_by_character[id])])
+    party_label.text = "\n".join(lines)
+    active_label.text = "Pooled party gold: %d gp" % adventure.gold_gp
+    _heard_event_count = engine.events.size()
+
+
 func _refresh() -> void:
     if engine == null:
         return
+    if engine.finished and adventure.stage == "battle":
+        adventure.conclude_battle(engine.victor)
+    if adventure.stage in ["approach", "victory", "defeat", "aftermath"]:
+        _refresh_story()
+        return
+    story_panel.visible = false
+    log_heading.visible = true
+    combat_log.visible = true
     setup_panel.visible = engine.deployment_active
     combat_action_row.visible = not engine.deployment_active
     combat_selector_row.visible = not engine.deployment_active
