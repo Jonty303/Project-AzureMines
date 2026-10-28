@@ -18,6 +18,7 @@ var engine: CombatEngine
 var action_mode := ""
 var selected_weapon := ""
 var selected_spell := ""
+var selected_deployment_actor := ""
 var _sprite_cache: Dictionary = {}
 
 
@@ -61,6 +62,10 @@ func _draw() -> void:
             if spell_cells.has(cell):
                 draw_rect(dest, Color("#d7aa58", 0.24))
                 draw_rect(dest.grow(-2), GOLD, false, 2.0)
+            if engine.deployment_active and not selected_deployment_actor.is_empty() \
+                    and engine.can_place_character(selected_deployment_actor, cell):
+                draw_rect(dest.grow(-3), Color("#399bd5", 0.18))
+                draw_rect(dest.grow(-3), Color("#65b3df", 0.65), false, 1.5)
             draw_rect(dest, Color("#1c232b", 0.58), false, 1.0)
 
     # Layered scene art: forest backdrop first, then persistent physical props.
@@ -102,7 +107,7 @@ func _draw() -> void:
         var dest := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
         var active: bool = int(actor["hp"]) > 0
         var actor_id: String = str(actor["id"])
-        if actor_id == current:
+        if actor_id == current or (engine.deployment_active and actor_id == selected_deployment_actor):
             draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(66, 66)), GOLD, false, 3.0)
         elif active:
             var team_color: Color = PARTY_BLUE if actor["team"] == "party" else ENEMY_RED
