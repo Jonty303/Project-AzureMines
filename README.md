@@ -1,5 +1,12 @@
 # Project Azure Mines
 
+## First playable opening — The Old Timber Road
+
+The wagon ambush is now connected to a short original narrative: **A Wagon in the Trees → Party Deployment → Four-Goblin Battle → Victory / Defeat → Road Aftermath**. A victory displays **200 XP total (50 per adventurer)** and **12 gp** recovered for the shared party purse; there are **no mundane equipment drops**. Rewards can be claimed only once per encounter in a running game session. Persistent save/load is not yet implemented.
+
+See [Opening adventure v0.7](docs/opening-adventure-v07.md) and [the loot/economy contract](docs/loot-and-economy.md). Press **F5** to start with the introductory story screen, then select **Arrange the Party**.
+
+
 ## Combat v0.6 — Pre-battle party setup
 
 The playable wagon ambush now begins with a **deployment phase** before initiative. Choose **Line**, **Square** or **Diamond**, or click an adventurer and move them to a valid free square within the western deployment zone. **Begin Battle** locks the starting positions and starts the actual encounter. Blue placement indicators appear only when a hero is selected for repositioning; combat targeting highlights still appear only for their specific chosen action.
