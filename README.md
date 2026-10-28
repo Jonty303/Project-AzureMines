@@ -1,5 +1,10 @@
 # Project Azure Mines
 
+## Exploration design direction — narrative adventure, not first-person movement
+
+Exploration will use authored **choice-driven narrative locations** with revisitable scenes, skill/ability checks, branching dialogue, quest decisions, persistent effects and a discovered **hand-annotated graph-paper dungeon map**. The same scene engine will drive towns and NPC interactions. Tactical combat remains its own mode. See [Narrative Exploration and Cartography Contract v0.1](docs/narrative-exploration-contract.md). The design is committed; gameplay implementation is the next major milestone.
+
+
 ## First playable opening — The Old Timber Road
 
 The wagon ambush is now connected to a short original narrative: **A Wagon in the Trees → Party Deployment → Four-Goblin Battle → Victory / Defeat → Road Aftermath**. A victory displays **200 XP total (50 per adventurer)** and **12 gp** recovered for the shared party purse; there are **no mundane equipment drops**. Rewards can be claimed only once per encounter in a running game session. Persistent save/load is not yet implemented.
