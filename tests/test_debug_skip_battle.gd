@@ -66,8 +66,8 @@ func _run() -> void:
     if not bool(npc["alive"]) or npc["state"] != "knocked_out" or npc["hp"] != 1:
         _fail("Global NPC record forgot that Hesk survived")
         return
-    if not ui.get("survivor_panel").visible or not ui.get("survivor_first_aid_button").visible:
-        _fail("Victory screen must offer Hesk's normal survivor interaction")
+    if ui.get("survivor_panel") != null:
+        _fail("Hesk's care and fate must not be on the victory summary")
         return
 
     # Calling the debug shortcut a second time must not grant extra rewards.
@@ -97,6 +97,15 @@ func _run() -> void:
     ui.call("_on_story_continue")
     if adventure.stage != "exploration" or adventure.campaign.current_location != "wagon_clearing":
         _fail("One Continue after debug skip must reach exploration with no interim replay page")
+        return
+    var ids: Array[String] = []
+    for choice in adventure.exploration_choices():
+        ids.append(str(choice["id"]))
+    if not ids.has("hesk_first_aid") or not ids.has("hesk_heal") or not ids.has("hesk_kill"):
+        _fail("Narrative Hesk interaction choices not offered after debug skip")
+        return
+    if ids.has("hesk_talk") or ids.has("hesk_release"):
+        _fail("Unconscious Hesk should not be able to talk or walk away")
         return
     if not adventure.campaign.npc_registry["hesk_roadwatch"]["alive"]:
         _fail("Entering exploration killed the spared goblin")
