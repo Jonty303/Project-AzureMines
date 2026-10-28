@@ -348,7 +348,7 @@ func target_at(cell: Vector2i) -> String:
         var actor: Dictionary = actors[key]
         if actor["position"] != cell:
             continue
-        if int(actor["hp"]) > 0 or actor.get("combat_state", "") == "unconscious":
+        if int(actor["hp"]) > 0 or actor.get("combat_state", "") in ["unconscious", "stable"]:
             return str(key)
     return ""
 
