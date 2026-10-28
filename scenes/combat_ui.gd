@@ -18,6 +18,7 @@ const BLUE := Color("#399bd5")
 var engine: CombatEngine
 var adventure: OpeningSession
 var board: CombatBoard
+var story_image: TextureRect
 var story_panel: VBoxContainer
 var story_eyebrow: Label
 var story_title: Label
@@ -182,6 +183,14 @@ func _build_ui() -> void:
     board = CombatBoard.new()
     board.cell_clicked.connect(_on_cell_clicked)
     map_frame.add_child(board)
+    story_image = TextureRect.new()
+    story_image.name = "StoryIllustration"
+    story_image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    story_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    story_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+    story_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    story_image.visible = false
+    board.add_child(story_image)
 
     var right := PanelContainer.new()
     right.custom_minimum_size = Vector2(360, 0)
@@ -545,6 +554,10 @@ func _set_crossed(button: Button, exhausted: bool) -> void:
 func _refresh_story() -> void:
     var info: Dictionary = adventure.screen()
     story_panel.visible = true
+    story_image.visible = true
+    var image_path: String = str(info.get("art", "res://assets/story/old_timber_road_campfire.svg"))
+    if ResourceLoader.exists(image_path):
+        story_image.texture = load(image_path) as Texture2D
     log_heading.visible = false
     combat_log.visible = false
     setup_panel.visible = false
@@ -613,6 +626,7 @@ func _refresh() -> void:
         _refresh_story()
         return
     story_panel.visible = false
+    story_image.visible = false
     log_heading.visible = true
     combat_log.visible = true
     setup_panel.visible = engine.deployment_active
