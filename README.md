@@ -1,5 +1,10 @@
 # Project Azure Mines
 
+## The deeper campaign mystery — story direction
+
+The first adventure now hints that **dwarven ore deliveries are sporadic**, even as the miners' representatives insist there is no trouble. **Missing escorted caravans** remain the party's immediate commission. These are separate investigative threads whose eventual connection is not yet known to the adventurers. The setting author has established deeper, deliberately concealed dangers and covert interference; see the **author-only, spoiler-heavy** [campaign story bible](docs/campaign-story-bible-spoilers.md) when developing later chapters. These deeper events and the narrative exploration engine are **not yet implemented**.
+
+
 ## The Dales — Old Trade Road and vanishing caravans
 
 Seabrook sits **west** of the Dales and is the coastal outlet for dwarven ore, precious metals and gemstones. The **Old Trade Road** connects the mines and inland markets with the western port; Harrowford is a northern market town. Wild moor, mountains, wooded valleys, limestone caves and waterfalls frame a resource-rich frontier where farmers, miners, timberworkers and woodland elves maintain an uneasy truce. Caravan raids are common, but **whole escorted convoys disappearing without survivors** are not. This mystery motivates the opening commission. See [the Dales gazetteer](docs/dales-settlement-gazetteer.md).
