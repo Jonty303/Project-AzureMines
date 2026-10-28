@@ -36,7 +36,6 @@ func _draw() -> void:
     var attack_cells: Dictionary = highlights["attack"]
     var spell_cells: Dictionary = highlights["spell"]
     var terrain: Texture2D = _texture_for(TERRAIN_ATLAS)
-    var props: Texture2D = _texture_for(PROPS_ATLAS)
 
     for y in range(engine.grid_size.y):
         for x in range(engine.grid_size.x):
@@ -64,12 +63,37 @@ func _draw() -> void:
                 draw_rect(dest.grow(-2), GOLD, false, 2.0)
             draw_rect(dest, Color("#1c232b", 0.58), false, 1.0)
 
-    if props != null:
-        # Decorative props are drawn over existing blocking walls. They do not
-        # change the map's rules: encounter data remains authoritative.
-        _draw_prop(props, Vector2i(5, 3), 0)
-        _draw_prop(props, Vector2i(9, 2), 1)
-        _draw_prop(props, Vector2i(6, 5), 2)
+    # Layered scene art: forest backdrop first, then persistent physical props.
+    var forest_path: String = str(engine.backdrop.get("art", "")).trim_prefix("res://")
+    var forest: Texture2D = _texture_for(forest_path)
+    if forest != null:
+        var forest_height: int = int(engine.backdrop.get("rows", 2)) * CELL_SIZE
+        draw_texture_rect(forest, Rect2(Vector2.ZERO, Vector2(engine.grid_size.x * CELL_SIZE, forest_height)), false)
+
+    for obstacle in engine.obstacles:
+        var art_path: String = str(obstacle.get("art", "")).trim_prefix("res://")
+        var sprite: Texture2D = _texture_for(art_path)
+        var pos: Vector2i = obstacle["position"]
+        var extent: Vector2i = obstacle["size"]
+        var dest := Rect2(Vector2(pos * CELL_SIZE) + Vector2(2, 2),
+            Vector2(extent * CELL_SIZE) - Vector2(4, 4))
+        if sprite != null:
+            draw_texture_rect(sprite, dest, false)
+        else:
+            draw_rect(dest, Color("#65503a"))
+        if obstacle.get("cover", "") == "half":
+            draw_rect(dest.grow(-2), Color("#bca66b", 0.5), false, 1.5)
+
+    for hazard in engine.hazards:
+        var image_path: String = str(hazard.get("art", "")).trim_prefix("res://")
+        var image: Texture2D = _texture_for(image_path)
+        var cell: Vector2i = hazard["position"]
+        var dest := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(SOURCE_SIZE, SOURCE_SIZE))
+        if image != null:
+            draw_texture_rect(image, dest, false)
+        else:
+            draw_circle(dest.get_center(), 18.0, Color("#f49b3d"))
+        draw_rect(dest.grow(-2), Color("#e97931", 0.85), false, 2.0)
 
     var downed: Texture2D = _texture_for(DOWNED_ATLAS)
     for id_variant in engine.actors.keys():
