@@ -423,6 +423,7 @@ func _on_load_game() -> void:
     engine.victor = "party"
     engine.deployment_active = false
     adventure.campaign.restore_party(engine.actors)
+    adventure.campaign.restore_named_npcs(engine.actors)
     board.engine = engine
     story_feedback = "Campaign restored from slot 1."
     show_map = false
