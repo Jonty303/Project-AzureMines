@@ -287,7 +287,7 @@
         310,
         440
       ],
-      "description": "A narrow track disappears between wet limestone walls. Bent branches and goblin prints confirm that this is no ordinary animal path. Farther uphill lies the likely approach to a hidden lair, but its interior is not yet part of this adventure.",
+      "description": "A narrow track disappears between wet limestone walls. Bent branches and goblin prints confirm that this is no ordinary animal path. Up the valley, woodland gathers around a pale rock face. The goblins' cave lies somewhere ahead.",
       "choices": [
         {
           "id": "record_hideout_rumour",
@@ -307,7 +307,7 @@
               "text": "The party scouted the overgrown ravine but did not enter a cave."
             }
           ],
-          "result": "You sketch the narrow limestone pass in the margin of your map. The cave system beyond must wait for a later expedition."
+          "result": "You sketch the narrow limestone pass and the wooded valley beyond. The way towards the cave mouth is now clear."
         },
         {
           "id": "back_wagon",
@@ -320,6 +320,317 @@
           "label": "Travel onward towards Harrowford",
           "type": "travel",
           "target": "town_road"
+        },
+        {
+          "id": "approach_goblin_cave",
+          "label": "Follow the ravine to the wooded cave approach",
+          "type": "travel",
+          "target": "cave_approach"
+        }
+      ]
+    },
+    {
+      "id": "cave_approach",
+      "title": "Wooded Valley — Cave Approach",
+      "subtitle": "GOBLIN HIDEOUT • OUTSIDE",
+      "map_pos": [
+        416,
+        527
+      ],
+      "description": "A limestone wall rises above the narrow valley, its pale face streaked with rain. Dark undergrowth hides a cave mouth beneath dangling roots. Branches move overhead although there is little wind. The trees would make an excellent lookout.",
+      "revisit_text": "The limestone wall and cave mouth are familiar. The woodland above still offers excellent cover for anyone on watch.",
+      "choices": [
+        {
+          "id": "watchpost_scout",
+          "label": "Carefully scan the trees for sentries (Perception DC 12)",
+          "type": "check",
+          "ability": "wisdom",
+          "skill": "perception",
+          "dc": 12,
+          "once": true,
+          "success": {
+            "text": "Two small figures crouch in a crude platform among the branches. One keeps a bow close; the other watches the trail. You have spotted the ambushers before they spring their trap.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_spotted",
+                "value": true
+              },
+              {
+                "type": "reveal_route",
+                "id": "watchpost_tree"
+              },
+              {
+                "type": "clue",
+                "id": "watchpost_two_sentries",
+                "text": "Two goblin sentries occupy a hidden tree watchpost overlooking the cave approach."
+              },
+              {
+                "type": "event",
+                "id": "watchpost_detected",
+                "text": "The party spotted two hidden goblin lookouts before entering the cave."
+              }
+            ]
+          },
+          "failure": {
+            "text": "Shadows shift between the branches, but you cannot confirm whether anyone is watching. Moving closer may expose the party.",
+            "effects": [
+              {
+                "type": "event",
+                "id": "watchpost_scan_unsure",
+                "text": "The party searched for lookouts at the cave but could not confirm their position."
+              }
+            ]
+          }
+        },
+        {
+          "id": "watchpost_outflank",
+          "label": "Circle behind the discovered watchpost (Stealth DC 12)",
+          "type": "check",
+          "ability": "dexterity",
+          "skill": "stealth",
+          "dc": 12,
+          "once": true,
+          "requires_flag": "watchpost_spotted",
+          "unless_flag": "watchpost_crossed",
+          "success": {
+            "text": "You slip into a concealed position behind the two sentries. The goblins have not noticed you. If you choose to pass their watchpost, this position improves your chances. A direct watchpost battle will be added in the next combat milestone.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_outflanked",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_outflanked",
+                "text": "The party reached concealed positions behind the goblin tree watchpost."
+              }
+            ]
+          },
+          "failure": {
+            "text": "A twig snaps. Both sentries turn and shout towards the cave. The watchpost has raised the alarm, though the party can still retreat or approach the entrance.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_alarm_raised",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_alarmed",
+                "text": "The goblin watchpost detected the party and raised the alarm."
+              }
+            ]
+          }
+        },
+        {
+          "id": "watchpost_sneak",
+          "label": "Slip past the watchpost to the cave mouth (Stealth DC 13)",
+          "type": "check",
+          "ability": "dexterity",
+          "skill": "stealth",
+          "dc": 13,
+          "once": true,
+          "unless_flag": "watchpost_crossed",
+          "advantage_if_flag": "watchpost_outflanked",
+          "success": {
+            "text": "The party slips between the trunks and reaches the cave mouth without drawing the sentries' notice. The guards remain at their post; they have not been defeated.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_crossed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_bypassed",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_silently_bypassed",
+                "text": "The party bypassed the two goblin lookouts without fighting."
+              }
+            ]
+          },
+          "failure": {
+            "text": "One of the goblins catches a glimpse of movement and cries out. You reach cover by the cave mouth, but a warning echoes inside; the sentries are still at their post.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_crossed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_alarm_raised",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_sneak_failed",
+                "text": "The party reached the cave entrance but the tree lookouts sounded an alarm."
+              }
+            ]
+          }
+        },
+        {
+          "id": "watchpost_open",
+          "label": "Approach the cave mouth openly despite the lookout risk",
+          "type": "effects",
+          "unless_flag": "watchpost_crossed",
+          "once": true,
+          "effects": [
+            {
+              "type": "flag",
+              "key": "watchpost_crossed",
+              "value": true
+            },
+            {
+              "type": "flag",
+              "key": "watchpost_alarm_raised",
+              "value": true
+            },
+            {
+              "type": "event",
+              "id": "watchpost_open_approach",
+              "text": "The party approached the cave openly and the tree sentries warned the occupants."
+            }
+          ],
+          "result": "Two goblins call a warning from the branches as you hurry into cover at the rock face. Their alarm carries into the passage. You have not fought or captured the sentries."
+        },
+        {
+          "id": "watchpost_observe",
+          "label": "Mark the discovered tree watchpost on your local map",
+          "type": "effects",
+          "requires_flag": "watchpost_spotted",
+          "once": true,
+          "effects": [
+            {
+              "type": "event",
+              "id": "watchpost_sketch",
+              "text": "The party recorded the hidden goblin watchpost on a local cave sketch."
+            }
+          ],
+          "result": "You draw the lookout platform high in the trees and mark the two goblin sentries. They remain at their post."
+        },
+        {
+          "id": "enter_cave_mouth",
+          "label": "Go to the cave mouth",
+          "type": "travel",
+          "requires_flag": "watchpost_crossed",
+          "target": "cave_entrance"
+        },
+        {
+          "id": "back_to_ravine",
+          "label": "Withdraw to the ravine",
+          "type": "travel",
+          "target": "overgrown_track"
+        }
+      ]
+    },
+    {
+      "id": "watchpost_tree",
+      "title": "Tree Watchpost",
+      "subtitle": "GOBLIN HIDEOUT • HIDDEN FEATURE",
+      "map_pos": [
+        400,
+        460
+      ],
+      "description": "A rough timber platform hides two goblin sentries among dense branches.",
+      "choices": []
+    },
+    {
+      "id": "cave_entrance",
+      "title": "Cave Entrance",
+      "subtitle": "GOBLIN HIDEOUT • LIMESTONE WALL",
+      "map_pos": [
+        535,
+        524
+      ],
+      "description": "The cave mouth opens beneath hanging roots. Cool, damp air carries the smell of woodsmoke and stone. A long passage disappears into the dark. The woodland behind you offers a way back.",
+      "revisit_text": "The damp cave entrance is familiar. The passage ahead vanishes into the pale limestone.",
+      "choices": [
+        {
+          "id": "cave_listen",
+          "label": "Listen for sounds deeper inside (Perception DC 11)",
+          "type": "check",
+          "ability": "wisdom",
+          "skill": "perception",
+          "dc": 11,
+          "once": true,
+          "success": {
+            "text": "Past distant voices and the drip of water you hear a steady rumble, as though water is falling somewhere underground.",
+            "effects": [
+              {
+                "type": "clue",
+                "id": "cave_water_sound",
+                "text": "A large volume of water can be heard deep in the goblin cave, beyond the entrance."
+              }
+            ]
+          },
+          "failure": {
+            "text": "The cave swallows each sound and returns indistinct echoes.",
+            "effects": [
+              {
+                "type": "event",
+                "id": "cave_listen_uncertain",
+                "text": "The party listened at the cave entrance but could not identify distant noises."
+              }
+            ]
+          }
+        },
+        {
+          "id": "enter_first_passage",
+          "label": "Enter the limestone corridor",
+          "type": "travel",
+          "target": "cave_threshold"
+        },
+        {
+          "id": "return_to_trees",
+          "label": "Step back outside the cave",
+          "type": "travel",
+          "target": "cave_approach"
+        }
+      ]
+    },
+    {
+      "id": "cave_threshold",
+      "title": "First Passage",
+      "subtitle": "GOBLIN HIDEOUT • UNDERGROUND",
+      "map_pos": [
+        641,
+        521
+      ],
+      "description": "The first stretch of corridor runs deep into the limestone. Light from outside dwindles behind you. A faint breeze carries damp air and old woodsmoke. Farther in, passages divide; those deeper rooms are not explorable in this build.",
+      "revisit_text": "The first underground passage still runs towards deeper chambers. There are no encounters in the completed entrance section.",
+      "choices": [
+        {
+          "id": "mark_deeper_passages",
+          "label": "Record the direction of the deeper passage",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "unexplored_hideout",
+              "text": "The goblin cave continues deeper into limestone passages beyond the explored entrance.",
+              "certainty": "confirmed"
+            },
+            {
+              "type": "event",
+              "id": "threshold_mapped",
+              "text": "The party mapped the first stretch of the goblin cave corridor."
+            }
+          ],
+          "result": "You mark the corridor's direction on your local dungeon chart. The deeper guardrooms and waterfall are for a later expedition."
+        },
+        {
+          "id": "exit_to_entrance",
+          "label": "Return to the cave mouth",
+          "type": "travel",
+          "target": "cave_entrance"
         }
       ]
     }
