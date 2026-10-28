@@ -137,6 +137,9 @@ func _run() -> void:
     if story.stage != "aftermath" or not ui.get("story_panel").visible:
         _fail("Continue failed to show post-ambush story")
         return
+    if ui.get("story_continue_button").text != "Continue":
+        _fail("Aftermath button must say Continue, not Replay the Encounter")
+        return
 
     ui.call("_on_story_continue")
     if ui.get("adventure").stage != "exploration":
