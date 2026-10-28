@@ -2,7 +2,7 @@
 
 ## The deeper campaign mystery — story direction
 
-The first adventure now hints that **dwarven ore deliveries are sporadic**, even as the miners' representatives insist there is no trouble. **Missing escorted caravans** remain the party's immediate commission. These are separate investigative threads whose eventual connection is not yet known to the adventurers. The setting author has established deeper, deliberately concealed dangers and covert interference; see the **author-only, spoiler-heavy** [campaign story bible](docs/campaign-story-bible-spoilers.md) when developing later chapters. These deeper events and the narrative exploration engine are **not yet implemented**.
+The first adventure now hints that **dwarven ore deliveries are sporadic**, even as the miners' representatives insist there is no trouble. **Missing escorted caravans** remain the party's immediate commission. These are separate investigative threads whose eventual connection is not yet known to the adventurers. The setting author has established deeper dangers and covert interference in separate **author-only design files**; these revelations are intentionally absent from player-facing story content. These deeper events and the narrative exploration engine are **not yet implemented**.
 
 
 ## The Dales — Old Trade Road and vanishing caravans
