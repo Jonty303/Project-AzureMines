@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "training_battle",
-  "name": "The Training Ground — First Combat",
+  "name": "The Goblin Wagon Camp",
   "grid_size": [
     12,
     10
@@ -24,46 +24,29 @@
       7
     ]
   },
-  "walls": [
-    [
-      5,
-      3
-    ],
-    [
-      5,
-      4
-    ],
-    [
-      5,
-      5
-    ],
-    [
-      6,
-      5
-    ],
-    [
-      9,
-      2
-    ]
-  ],
+  "walls": [],
   "difficult_terrain": [
     [
-      4,
-      7
+      3,
+      8
     ],
     [
-      5,
-      7
+      4,
+      8
     ],
     [
       6,
-      7
+      8
+    ],
+    [
+      8,
+      8
     ]
   ],
   "enemies": [
     {
       "id": "goblin_blade",
-      "name": "Goblin Blade",
+      "name": "Goblin Knifehand",
       "max_hp": 7,
       "armor_class": 15,
       "speed_feet": 30,
@@ -71,7 +54,7 @@
         "dexterity": 14
       },
       "position": [
-        9,
+        10,
         3
       ],
       "attacks": [
@@ -82,17 +65,34 @@
           "damage": "1d4+2",
           "damage_type": "piercing",
           "reach_feet": 5
-        },
-        {
-          "id": "shortbow",
-          "kind": "ranged_weapon",
-          "to_hit": 4,
-          "damage": "1d6+2",
-          "damage_type": "piercing",
-          "normal_range_feet": 80,
-          "long_range_feet": 320
         }
-      ]
+      ],
+      "role": "melee"
+    },
+    {
+      "id": "goblin_blade_two",
+      "name": "Goblin Cutpurse",
+      "max_hp": 7,
+      "armor_class": 15,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        9,
+        5
+      ],
+      "attacks": [
+        {
+          "id": "knife",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "role": "melee"
     },
     {
       "id": "goblin_bow",
@@ -104,18 +104,10 @@
         "dexterity": 14
       },
       "position": [
-        9,
+        10,
         7
       ],
       "attacks": [
-        {
-          "id": "dagger",
-          "kind": "melee_weapon",
-          "to_hit": 4,
-          "damage": "1d4+2",
-          "damage_type": "piercing",
-          "reach_feet": 5
-        },
         {
           "id": "shortbow",
           "kind": "ranged_weapon",
@@ -124,9 +116,129 @@
           "damage_type": "piercing",
           "normal_range_feet": 80,
           "long_range_feet": 320
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
         }
-      ]
+      ],
+      "role": "ranged"
+    },
+    {
+      "id": "goblin_bow_two",
+      "name": "Goblin Bowshot",
+      "max_hp": 7,
+      "armor_class": 15,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        9,
+        8
+      ],
+      "attacks": [
+        {
+          "id": "shortbow",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "role": "ranged"
     }
   ],
-  "note": "Original tutorial goblins; combat supports HP-based knockouts, not PC death saves yet."
+  "note": "Four level-1 goblins, two knife melee and two shortbow ranged. Campfire burns on entry and turn start; wagon blocks shots/movement, chests obstruct movement and provide half cover.",
+  "obstacles": [
+    {
+      "id": "covered_wagon",
+      "kind": "wagon",
+      "position": [
+        5,
+        3
+      ],
+      "size": [
+        3,
+        2
+      ],
+      "blocks_movement": true,
+      "blocks_sight": true,
+      "cover": "total",
+      "art": "res://assets/environment/covered_wagon_192x128.svg"
+    },
+    {
+      "id": "supply_chest_west",
+      "kind": "chest",
+      "position": [
+        4,
+        5
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "blocks_movement": true,
+      "blocks_sight": false,
+      "cover": "half",
+      "art": "res://assets/environment/supply_chest_64.svg"
+    },
+    {
+      "id": "supply_chest_east",
+      "kind": "chest",
+      "position": [
+        8,
+        6
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "blocks_movement": true,
+      "blocks_sight": false,
+      "cover": "half",
+      "art": "res://assets/environment/supply_chest_64.svg"
+    }
+  ],
+  "hazards": [
+    {
+      "id": "campfire",
+      "kind": "fire",
+      "position": [
+        7,
+        7
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "damage": "1d4",
+      "damage_type": "fire",
+      "trigger": [
+        "enter",
+        "start_turn"
+      ],
+      "art": "res://assets/environment/campfire_64.svg"
+    }
+  ],
+  "backdrop": {
+    "kind": "forest",
+    "edge": "north",
+    "art": "res://assets/environment/forest_treeline_768x128.svg",
+    "rows": 2
+  }
 }
