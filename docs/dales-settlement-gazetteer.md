@@ -2,9 +2,37 @@
 
 **Working names and NPCs** for the original Project Azure Mines setting. The region's broader history, geography, deities and politics remain open to the setting author's future additions. The details explicitly supplied by the author—an under-defended multicultural coastal city, an increasingly disreputable ruined keep, a northern Dales market town and its trades—are the governing constraints.
 
+## The Dales — landscape, wealth and contested frontier
+
+**Geographical orientation:** The sea and Seabrook lie **west** of the Dales. The **Old Trade Road** connects coastal shipping and merchants with inland mining communities and the northern market at Harrowford. Harrowford sits on the **northern edge** of the Dales. Precise mapping, named mountain ranges, rivers and the extent of ancestral territories remain for the setting author to establish.
+
+The Dales are still predominantly wild: **high moors, hills and mountains** loom over **fertile valleys** and extensive **lowland woodlands**. Much of the region is limestone country. Water finds its way through the rock, carving caverns, sinkholes, underground courses, narrow gorges and waterfalls. These are natural adventure spaces as much as terrain: cave entrances may be hidden in woodland, under river cliffs or among old mine workings.
+
+### Wealth beneath the ground
+
+Substantial dwarven mines draw **ore, precious metals and gemstones** from the hills and mountains. Dwarven industry extends underground, beyond the daylight workings visible to caravans. The mines and mineral trade have long been the economic engine of the road: ore travels west towards Seabrook's harbour while provisions, tools, food and manufactured goods travel inland. The **Stoneweight Trading Post** at Harrowford is a natural market and weighing point for these flows.
+
+### Wood, farmland and a fragile truce
+
+Timbercraft in the Dales is real and useful—especially for building, mine supports and settlements—but local elven communities are protective of woodland they consider precious. Cutting selectively and negotiating rights may maintain relationships; excessive felling or clearing woodland for farmland risks provoking opposition. No entire people should behave as a monolith, and even communities that agree on protecting a forest might disagree about how.
+
+Valley agriculture and the need for more farmland put additional pressure on the wooded lowlands. Dwarven mining, human and other recent settlement, farm expansion, timber contracts and forest conservation can intersect in individual quests. A miner needs timber supports; a carpenter wants seasoned wood; a farmer wants a new field; an elven guardian wants the forest preserved. **Material interests should drive believable consequences** rather than automatic good/evil faction labels.
+
+Settlements of the present frontier era have developed over only **a few hundred years**. Different peoples maintain an uneasy balance of trust and negotiated truce. Their older separate histories have not yet been established; this does not imply the hills, forests or subterranean places had no inhabitants before the current towns arose.
+
+### The Old Trade Road and the missing caravans
+
+Road travel is hazardous even in ordinary times. Bandits, goblins and other creatures trouble caravans. A typical merchant may manage a hired swordsman and a **minor mage**; the better-off can afford more guards and perhaps a **priest**. Violence is common enough that carriers budget for escorts, but ordinarily **somebody escapes or stumbles back to civilisation** after a raid.
+
+**The new mystery is that entire caravans now disappear without returning witnesses.** Valuable ore, silver, gems, teamsters and even armed escorts vanish together. That is not business as usual. It justifies Tavian Marr commissioning a dedicated adventuring party and is more ominous than an ordinary goblin ambush. It does **not** yet identify the force behind the disappearances—goblins may be part of the story without explaining everything.
+
+### Exploration implications (planned)
+
+Authored narrative location nodes can feature caves, chasms, waterfalls, abandoned shafts, upland roads, hidden camps, ruined keeps, lowland woodland paths and valley farms. Checks might find safe crossings, read tracks, inspect the quality of ore, assess unsafe stone, bargain for logging rights or navigate underground passages. The annotated overland map should reflect the real west/east orientation and record discoveries without revealing untouched caves. The town and overworld exploration engine is still in design.
+
 ## Seabrook — the small coastal city
 
-Seabrook is called a city because of its charter and the commerce in its harbour, not because of its size or military strength. Fishing boats, ore barges, foreign traders, sea captains, itinerant craftspeople, adventurers and people of many ancestries crowd its unplanned quays. It is a place where languages and customs mix freely, and so do legal commerce, smuggling, graft, theft and racketeering.
+Seabrook, on the **western coast** beyond the Dales, is called a city because of its charter and the commerce in its harbour, not because of its size or military strength. Fishing boats, ore barges, foreign traders, sea captains, itinerant craftspeople, adventurers and people of many ancestries crowd its unplanned quays. It is a place where languages and customs mix freely, and so do legal commerce, smuggling, graft, theft and racketeering.
 
 **Seabrook was never properly defended.** There is no effective continuous city wall. A handful of weather-beaten stone watchtowers and small posts watch the harbour approaches, some undermanned or poorly maintained. The old keep, tentatively called **Old Rookhold**, stands on a headland but is **in serious disrepair**. Much of the roof has collapsed, parts of the outer walls have fallen, and lower chambers flood with salt water. It cannot reliably house a garrison or defend the city.
 
@@ -12,13 +40,13 @@ Locals report lights in sealed windows, strange calls in the vaults and sailors 
 
 ### Commissioning merchant
 
-**Tavian Marr** (working name), a Seabrook merchant whose caravan interests extend into the Dales, hires Alden, Elyra, Brunna and Pip to investigate missing and plundered shipments. They are to reach **Harrowford**, report to the local Adventurers' Guild under the terms of their contract, and determine what has been happening to the caravans. The party should be able to investigate the raiders while remaining free to pursue related leads.
+**Tavian Marr** (working name), a Seabrook merchant whose business depends on dwarven ore and gemstones transported along the Old Trade Road, hires Alden, Elyra, Brunna and Pip to investigate the unprecedented disappearance of whole escorted caravans, with no surviving witnesses. They are to reach **Harrowford**, report to the local Adventurers' Guild under the terms of their contract, and determine what has been happening to the caravans. The party should be able to investigate the raiders while remaining free to pursue related leads.
 
-The party travels along the old timber road and camps under the trees before encountering the abandoned covered wagon and goblin ambush.
+The party travels east along the Old Trade Road and camps under the trees before encountering the abandoned covered wagon and goblin ambush.
 
 ## Harrowford — northern Dales market town
 
-Harrowford sits at the northern edge of the Dales where the roads from the mines, surrounding farms and coast converge. The settlement is modest, practical and slightly isolated. A twice-weekly market gathers around the **Stoneweight Trading Post** and ore weighhouse. Trade is largely in local ore, tools, leather, foodstuffs and practical services, rather than mountains of magical equipment.
+Harrowford sits at the northern edge of the Dales where the ore roads, surrounding farms and trade from western Seabrook converge. The settlement is modest, practical and slightly isolated. A twice-weekly market gathers around the **Stoneweight Trading Post** and ore weighhouse. Trade is rooted in dwarven ore, precious metals and gemstones, alongside tools, leather, timbercraft, foodstuffs and practical services—not mountains of magical equipment.
 
 | Location | Working name | Role and adventure potential |
 | --- | --- | --- |
