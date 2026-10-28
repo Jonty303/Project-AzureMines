@@ -46,7 +46,7 @@ The current feature branch now advances from the opening goblin battle into five
 
 All of these use one persistent `CampaignState` with versioned JSON Save/Load: XP, gold, party resources, resolved checks, NPC survival/attitude/promises, visited places, known routes and quest progress. Save/load is intentionally limited to victory, aftermath and exploration, **not mid-combat**. See [v0.8 campaign-state notes](campaign-state-v08.md).
 
-**Next:** Manual 4.5.2 desktop review of UI sizing/map readability; then deepen narrative systems with chosen character for checks, Advantage/Disadvantage, typed quest objects and the actual goblin hideout. The five-location slice is playable; the hideout, full Harrowford services, tower, mage rescue and Lord Vale arc are still design-only.
+**Next:** Manual 4.5.2 desktop review of UI sizing/map readability; the first **Hesk narrative survivor conversation and fate decisions are now playable** after battle, not on the victory summary. Further work should add chosen character for checks, Advantage/Disadvantage, typed quest objects, world-time consequences and the actual goblin hideout. The five-location slice is playable; the hideout, full Harrowford services, tower, mage rescue and Lord Vale arc are still design-only.
 
 ## Author-defined goblin hideout — layout for future dungeon milestone
 
