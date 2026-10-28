@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
-  "id": "old_timber_road_opening",
-  "title": "The Old Timber Road",
+  "id": "old_trade_road_opening",
+  "title": "The Old Trade Road",
   "encounter_id": "training_battle",
   "screens": {
     "approach": {
-      "eyebrow": "CHAPTER I • THE OLD TIMBER ROAD",
+      "eyebrow": "CHAPTER I • THE OLD TRADE ROAD",
       "title": "The Watchfire",
       "paragraphs": [
-        "Two days ago, in the harbourside city of Seabrook, the merchant Tavian Marr commissioned Alden, Elyra, Brunna and Pip to travel into the Dales. His caravans have vanished or returned half-plundered. He wants to know who is responsible—and what has happened to those who did not return.",
-        "The contract requires the company to report first to the Adventurers' Guild in Harrowford, a small market town on the northern edge of the Dales, before following the raiders' trail.",
-        "Tonight the four companions sit around a low campfire under black pines, their faces lost in shadow. Far off, a branch cracks. The watch changes hands; the road awaits at dawn.",
-        "By morning they reach an abandoned covered wagon astride the old timber road. Two chests lie beside it, and a second campfire is still warm. Goblin tracks disturb the mud. Somewhere beyond the trees, a bowstring creaks."
+        "West of the Dales, the harbour city of Seabrook grows rich on dwarven ore, precious metals and gemstones. Tavian Marr, a merchant with caravans on the Old Trade Road, has commissioned Alden, Elyra, Brunna and Pip to discover why his shipments have stopped reaching the coast.",
+        "The roads have always been dangerous. A cheap swordsman and a hedge-mage are usual protection; prosperous merchants may hire a priest besides. Bandits and goblins take their chances, yet a driver or guard ordinarily escapes to tell the tale. Lately entire caravans have disappeared, with no wagons, no cargo and no survivors.",
+        "The contract requires a report to the Adventurers' Guild at Harrowford, a small market town on the northern edge of the Dales. Beyond the settled valleys lie wild woods, high moors and limestone hills riddled with old passages.",
+        "Tonight the four companions rest in shadow around a small fire beneath dark pines. At dawn they find a covered wagon abandoned on the road. A second campfire is still warm, goblin tracks mark the mud, and somewhere through the trees a bowstring creaks."
       ],
       "button": "Continue — Prepare for Ambush",
       "art": "res://assets/story/old_timber_road_campfire.svg"
@@ -20,9 +20,9 @@
       "eyebrow": "AFTER THE AMBUSH",
       "title": "The Road Falls Silent",
       "paragraphs": [
-        "The fighting ceases. The goblins are down or scattered, and the clearing grows quiet except for the crackle of the abandoned fire.",
-        "Beneath an overturned chest the party recovers a little coin. There are no mundane weapons or armour worth taking.",
-        "The raiders may have a hideout nearby, but the contract still requires a report to the Adventurers' Guild in Harrowford. The clearing will remain a place to investigate when exploration is available."
+        "The fighting ceases. The goblins lie dead or incapacitated, and the clearing grows quiet except for the crackle of the abandoned fire.",
+        "Beneath an overturned chest the party recovers a little coin. There is no worthwhile equipment to carry away.",
+        "Whoever attacked this wagon left tracks towards the woods. The trail may lead towards the missing caravans, but the contract also requires a report to the Adventurers' Guild at Harrowford. The clearing can be revisited once overland exploration is implemented."
       ],
       "button": "Continue Along the Road",
       "art": "res://assets/story/old_timber_road_campfire.svg"
@@ -39,10 +39,10 @@
     },
     "aftermath": {
       "eyebrow": "CHAPTER I • CONTINUED",
-      "title": "Beyond the Wagon",
+      "title": "The Road Beyond",
       "paragraphs": [
-        "The party gathers its bearings beside the deserted wagon. The way ahead leads towards Harrowford and the northern reaches of the Dales.",
-        "Later, the overland map will allow the party to return here, search for the goblin trail, and choose whether to seek the raiders' lair. Those narrative travel and quest choices are not yet implemented."
+        "The Old Trade Road winds on towards Harrowford and the mines beyond. For all the wealth carried over its worn stones, the settlements still feel small amid the hills and woodland.",
+        "Later, the overland map will allow you to return here, search for the raiders' trail, or continue towards the town. The narrative travel choices are planned and not yet playable."
       ],
       "button": "Replay the Encounter",
       "art": "res://assets/story/old_timber_road_campfire.svg"
@@ -61,6 +61,13 @@
     "origin_id": "seabrook",
     "destination_id": "harrowford",
     "required_report": "harrowford_adventurers_guild",
-    "purpose": "Investigate losses to merchant caravans entering the Dales"
+    "purpose": "Investigate unusually complete disappearances of escorted caravans carrying dwarven ore, precious metals and gems between the Dales and western Seabrook",
+    "route_id": "old_trade_road",
+    "primary_trade": [
+      "ore",
+      "precious_metals",
+      "gems"
+    ],
+    "contract_objective": "Report to the Adventurers' Guild in Harrowford and investigate losses along the Old Trade Road"
   }
 }
