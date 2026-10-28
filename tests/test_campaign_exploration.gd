@@ -178,6 +178,27 @@ func _run() -> void:
     if not ui.get("story_paragraphs").text.contains("DISCOVERED CLUES"):
         _fail("Clue and event journal did not open")
         return
+    if ui.get("adventure").campaign.npc_registry["hesk_roadwatch"]["alive"]:
+        _fail("Defeated named goblin's death was not recorded globally")
+        return
+    ui.call("_on_save_game")
+    var default_slot := "user://azure_mines_slot1.json"
+    if not FileAccess.file_exists(default_slot):
+        _fail("The in-game Save button did not write a campaign slot")
+        return
+    ui.call("_on_journal_toggle")
+    ui.call("_on_exploration_choice", "to_town_road")
+    if ui.get("adventure").campaign.current_location != "town_road":
+        _fail("UI travel failed before reload")
+        return
+    ui.call("_on_load_game")
+    if ui.get("adventure").campaign.current_location != "wagon_clearing":
+        _fail("The in-game Load button did not restore the saved location")
+        return
+    if ui.get("adventure").campaign.npc_registry["hesk_roadwatch"]["alive"]:
+        _fail("The in-game Load button lost the named goblin's death")
+        return
+    DirAccess.remove_absolute(ProjectSettings.globalize_path(default_slot))
     var global_path := ProjectSettings.globalize_path(SAVE_PATH)
     if FileAccess.file_exists(SAVE_PATH):
         DirAccess.remove_absolute(global_path)
