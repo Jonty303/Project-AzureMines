@@ -4,9 +4,9 @@
 
 ## Playable sequence
 
-1. **Approach:** The scene starts on a framed narrative panel, `A Wagon in the Trees`. The original text describes the old timber road, the abandoned covered wagon, a small campfire and signs of an imminent goblin ambush. The tactical battlefield is already visible behind the story interface.
+1. **Approach:** The scene starts on a framed narrative panel, `A Wagon in the Trees`. The original text describes the old timber road, the abandoned covered wagon, a small campfire and signs of an imminent goblin ambush. A static night-camp illustration now fills the main area while the authored narrative appears beside it; the tactical grid replaces the illustration in setup and battle.
 2. **Party setup:** Choose **Arrange the Party** to enter the existing safe Line / Square / Diamond / manual deployment phase. Initiative has not yet been rolled.
-3. **Battle:** **Begin Battle** locks the party's positions, rolls initiative and plays the existing two knife / two shortbow goblin encounter, including campfire fire damage and physical wagon/chest obstacles.
+3. **Battle:** **Begin Battle** locks the party's positions, rolls initiative and plays the existing two melee (including Hesk's shortsword and shield) / two shortbow goblin encounter, including campfire fire damage and physical wagon/chest obstacles.
 4. **Victory:** Defeat all four goblins to display an authored **After the Ambush** story panel and a concise reward summary.
 5. **Aftermath:** Choose **Continue Along the Road** to get a brief original story continuation. The next travel/exploration area is not yet built. A replay button returns to the opening sequence.
 6. **Defeat:** No rewards. The player may choose **Try Again** and take a different formation.
@@ -58,3 +58,7 @@ This iteration does **not** grant level-2 abilities, implement shops or inflate 
 ## Proposed follow-on: optional goblin hideout
 
 See [Goblin Trail, Survivor and Hideout](goblin-trail-and-survivor-quest.md). This is planned content: the party can choose town or investigate the lair, revisit the wagon, follow tracks or ask a town witness for directions. The v0.7.1 combat expansion gives the named raider Hesk Death Saving Throws, nonlethal knockouts, First Aid and Cure Wounds if he survives; none of these revive a truly dead goblin. Bargaining, taking him prisoner, releasing him and tracking later consequences are **not yet playable**. If eventually released, he may warn and fortify the hideout, open a diplomatic audience, or both.
+
+## v0.7.2 — Commission and illustrated story presentation
+
+The opening now begins with **Tavian Marr's commission in Seabrook**: investigate caravan losses entering the Dales, and report to the Adventurers' Guild in **Harrowford** on the northern edge of the region. The party rests around a fire under pines before finding the sabotaged wagon at dawn. A static authored illustration fills the central screen during narrative reading and hides during party setup and tactical battle; the original art can later be replaced with animation. Art and prose are selected by each story screen's `art` and `paragraphs` fields. The illustrated concept image is a visual reference; the current in-game asset is a separate original SVG scene. Seabrook's old keep is **derelict and possibly inhabited by monsters**, not a functioning defence. See [the Dales settlement gazetteer](dales-settlement-gazetteer.md).
