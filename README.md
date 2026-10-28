@@ -1,5 +1,12 @@
 # Project Azure Mines
 
+## Goblin Hideout v0.9.0 — playable cave approach
+
+The first cave milestone is now playable after the wagon encounter. Follow the discovered ravine into a **wooded limestone valley**, scout for **two concealed goblin lookouts in a tree watchpost**, outflank them for **Advantage** when sneaking past, or approach openly and risk raising their alarm. Visit the **cave entrance** and **first underground corridor**, record a clue, backtrack and save/reload. A new **local cave map** only reveals locations, lookouts and annotations after discovery. Hesk's existing warning remains separate from the sentries' alarm and from the goblins' opinion of you.
+
+**Scope:** This v0.9.0 slice implements narrative scouting, passage, alarms and maps; it does **not yet simulate the watchpost fight**. The guardroom, rubbish tip/Midden Grub, underground waterfall, displaced chief, bugbear confrontation and mage rescue remain upcoming v0.9.1–v0.9.4 work. See [v0.9.0 implementation and test notes](docs/goblin-hideout-v090-implementation.md) and [author-only full cave design](docs/goblin-hideout-limestone-valley.md).
+
+
 ## Debug shortcut — skip the opening goblin battle
 
 In the **Godot editor/debug build only**, a **DEBUG: Skip Goblins (Spare Hesk)** button appears at the top of the opening story, deployment and battle screens. It immediately resolves the wagon encounter as a party victory. **Hesk, Roadwatch**, the named sword-and-shield raider, survives at **1 HP, unconscious (nonlethal knockout)**; the other three goblins are defeated. The usual once-only 200 XP/12 gp rewards and return to exploration still work. **Hesk's care, conversation and fate choices appear after Continue to Wagon Clearing, not on the victory summary.** Hesk's alive state persists when you save/reload. The shortcut is removed from release builds and disappears after victory. It is a testing shortcut, not a player story decision. **Hesk is not the separate goblin lord in the future hideout.**
