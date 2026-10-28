@@ -85,6 +85,27 @@ The **mage without his book** should have a lasting personal arc. If rescued but
 
 The **dwarf trader** may later become a witness, trade contact, quest giver or source of mining records, with realistic fears and loyalties. He may not trust adventurers immediately after captivity.
 
+## Optional long-term outcome — the mage claims the high-moor tower
+
+**New possibility proposed by the setting author:** after the mage is rescued and reunited with his spellbook, he might choose to **take over the old high-moor tower** rather than settle permanently in Harrowford. This is a *branch*, not a foregone conclusion or a reward that triggers automatically.
+
+The tower first needs to be made safe. A rescued mage who has suffered captivity and malnutrition should have time to recover, decide whether he wants the responsibility, and judge whether the party has made the place secure. Clearing the tower does not necessarily transfer legal ownership: **Lord Osric Vale's involvement** could create a dispute over land rights, leases or the tower's use. Evidence against Vale or a negotiated settlement might help the mage establish a legitimate claim.
+
+That creates several plausible outcomes:
+
+- **Harrowford resident:** The mage stays in town and offers a modest selection of magical services from a rented room or workshop.
+- **Tower keeper:** With his book restored and the site secured, he occupies the tower as a private study, observatory, magical workshop or safe refuge. He remains a service contact the party can revisit, and might periodically visit the Harrowford market.
+- **Shared project:** The party helps restore the building and perhaps contributes funds, tools or rare materials. Hollis's Yard could provide carpentry and repairs, creating a purposeful gold sink. The mage operates the tower independently; any party use of its facilities is negotiated rather than assumed.
+- **Declines or leaves:** He may be unwilling, unwell, distrustful of the party or fearful of returning to the place where his spellbook was held. His future should remain possible without requiring the tower branch.
+
+The tower can acquire **new authored scene variants and map annotations** as it changes: first occupied by captors; then cleared but neglected; then partially repaired with signs of magical study; later perhaps inhabited, protected and visited by townsfolk or adventurers. A friendly mage living there could offer identification, research, scrollwork within our rules, or clues about the mines—subject to resources and knowledge, not an unlimited free spell shop. The tower must remain **separate from Old Rookhold**, Seabrook's ruined coastal keep.
+
+Owning a secluded magical site could be politically uncomfortable. Vale might demand rent or restitution, rivals might want the property, the society could attempt to recover abandoned evidence, and Harrowford might benefit from a resident expert while fearing what he studies. The mage's actions should change local reactions without automatically converting him into a quest dispenser or party retainer.
+
+**Possible future flags:** `mage_rescued`, `spellbook_returned`, `mage_recovered`, `tower_cleared`, `tower_claim_resolved`, `mage_home: town | tower | elsewhere`, `tower_repairs_stage`, `tower_services_available`, `tower_party_access`. These are design labels only, not implemented state.
+
+**Acceptance criterion:** returning the spellbook permits—rather than guarantees—the mage's decision to occupy the tower; the location changes on the map and on revisits, with consequences, service availability and any property disputes persisting after reload.
+
 ## Proposed future persistent state (not an executable schema)
 
 | ID | Meaning |
