@@ -66,7 +66,7 @@ These scene states must be determined by world flags and prior decisions, not ra
 
 ## The goblin lord's employer and the two lost prisoners — author spoilers
 
-The goblin lord is **taking payments from the secret society to disrupt Old Trade Road traffic**. Not all raiders know why, and Hesk's family and the lair's noncombatants retain independent motivations. Parley, capture or combat can expose part of the payment arrangement. The goblin lord's name and individual history remain unassigned.
+The apparent goblin lord is actually **a bugbear installed and financed by the secret society** to disrupt Old Trade Road traffic. He rules the goblins harshly, has **no interest in bargaining with the adventurers**, and will not trade away or willingly release the captive mage. The **displaced former goblin chief** lives among the six goblins of the communal kitchen/sleeping area, and may help the party overthrow the bugbear if approached carefully. Not all raiders know the employer or share the same loyalties, and Hesk's family retains independent motivations. The bugbear's name, the former chief's name and their individual histories remain unassigned.
 
 A previous convoy's **malnourished mage is chained alive in the goblin hideout**. Another captive, a **dwarf trader**, has already been transferred to an old **high-moor tower** by agents of the society, who are torturing him for information about the mines. The mage's missing **spellbook went with the dwarf to the tower** and is not in the goblin hideout. These characters and the unique book each need their own state and ownership history. Two captives survived the raid, but **no survivors returned to civilisation**, consistent with the merchant's alarm.
 
@@ -75,6 +75,16 @@ Rescue and treatment of the mage should be a narrative interaction, not an insta
 A distinct clue at the tower must implicate **Lord Osric Vale**, unlocking political choices to expose, constrain or unseat him. The tower is a **high-moor location**, not Seabrook's ruined coastal keep. These further adventures should be discoverable from multiple leads, with the route back to Harrowford and the wagon still available.
 
 See the full **author-only** design: [Paid Raiders, Moor Tower and Manor](campaign-arc-goblins-tower-manor-spoilers.md). This section, and all its objectives, are **not yet implemented** in the choice-driven exploration engine.
+
+## Canonical cave layout, refuse scavenger and shaft — author-only
+
+The hideout is cut into a limestone rock wall overlooking a **wooded valley**. Two goblins conceal themselves in a **tree watchpost** outside, intending either to ambush intruders or alert the lair. The cave's **long main corridor** ends at an **underground waterfall**, guarded by **three goblins** near the bugbear's private connecting tunnel. Side branches reach the **rubbish tip**, **guardroom (one goblin and one large wolf)**, **common kitchen/eating/sleeping area (six goblins including the former chief)**, and **bugbear lord's chamber (bugbear, two goblin guards, second wolf, and mage chained in a corner)**.
+
+In the **rubbish tip**, a small original **Midden Grub** scavenges among waste. It is a deliberately modest and avoidable threat for the level-one party. Goblins throw **most of their rubbish through a hole in the floor**, which descends into an **unexplored, undefined lower space**. The party can discover, mark and investigate the shaft, but its destination and future use must remain unwritten until we decide. It is **not** a confirmed second exit or a shortcut to the lord.
+
+The watchpost alarm and Hesk's earlier treatment independently affect readiness and willingness to talk. The bugbear himself does not bargain; the possible diplomacy is **with the former chief and other goblins**. The population figures represent separate scenes and should not be thrown at four level-one characters in one unavoidable fight.
+
+Full diagram, scene register, provisional Midden Grub balance and state keys: [Goblin Hideout — Wooded Valley and Limestone Cave](goblin-hideout-limestone-valley.md). This is **planned adventure content, not currently playable**.
 
 ## Quest: Road Raiders
 
