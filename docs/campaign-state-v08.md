@@ -75,3 +75,9 @@ The **Journal** button shows separate **Discovered Clues**, **Events**, **Quests
 `tests/test_campaign_exploration.gd` checks story state, once-only checks, the town fallback lead, NPC attitude and promises, quest acceptance, returning travel, discovery map UI, chronology and clues, save/load, and non-repeatable encounter rewards. Existing combat and narrative regression tests remain in CI.
 
 This implementation intentionally makes a small, **saveable** narrative adventure play loop first. The next iteration should polish the interface and expand the world graph, not replace the state system with isolated local flags.
+
+## Developer-only skip-goblins shortcut
+
+When running the Godot editor/debug build, the heading contains **DEBUG: Skip Goblins (Spare Hesk)** during the opening narrative, formation setup or an ongoing battle. It bypasses the fight and triggers **the existing normal encounter-victory transition**. Three routine raiders become dead; named **Hesk, Roadwatch** is left alive, knocked out nonlethally at **1 HP**, so he can be awakened through the existing postbattle First Aid or Cure Wounds controls. The usual 200 XP and 12 gp reward is still claimed once and his NPC state is written to the global campaign registry. The world event and `debug_wagon_battle_skipped` flag explicitly mark the simulated result.
+
+The button is gated on `OS.has_feature("debug")`, never appears after victory, and its handler enforces the same guard. It is intentionally unavailable in release builds. It **does not** imply the distant goblin lord has been encountered; Hesk is the named sword-and-shield raider from this opening fight. Tests in `tests/test_debug_skip_battle.gd` cover the real button signal from story/setup/combat, victory once-only rewards, saved Hesk survival, and progression into exploration.
