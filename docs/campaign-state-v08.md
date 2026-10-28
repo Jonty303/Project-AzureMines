@@ -40,7 +40,7 @@ Player-facing story descriptions and interactions do **not** disclose the goblin
 | `npc_registry` | Stable named NPC identity with alive/dead state, condition, whereabouts, attitude, trust, grievances and promises |
 | `rng_state` | Persisted exploration RNG state to avoid reshuffling the future dice sequence on load |
 
-**NPC example:** `hesk_roadwatch` stores whether he survived the ambush, his postcombat condition, HP and first-aid history; future narrative interactions can update his whereabouts, trust, grievances or promises. `mara_venn` changes to a helpful attitude after sharing her lead. Merely knowing an NPC exists does not mean every secret about them is visible to the player.
+**NPC example:** `hesk_roadwatch` stores his combat condition separately from narrative fate and records HP, first-aid history, whereabouts, attitude, trust and promises. At the wagon clearing the party can now treat, question, spare, restrain, abandon or kill Hesk; these change his state and can produce a ravine lead and an independent goblin-lair alert.  `mara_venn` changes to a helpful attitude after sharing her lead. Merely knowing an NPC exists does not mean every secret about them is visible to the player.
 
 **Event example:** *The party reported the ambush to Harrowford's Adventurers' Guild.*
 **Clue example:** *Mara Venn knows a route to the goblin ravine.*
@@ -64,7 +64,7 @@ The **Journal** button shows separate **Discovered Clues**, **Events**, **Quests
 
 - The map is mechanically discovery-aware but still uses simple vector geometry, not final parchment art or true handwritten typography. More local dungeon maps, personal scribbles and overland scale are later work.
 - The skill-check runtime currently picks the best able character. v0.9 should permit deliberately selecting a party member and include Advantage/Disadvantage, tool proficiency, group checks and specific retry costs.
-- Narrative interfaces for **questioning/releasing/capturing Hesk**, nuanced faction attitudes, NPC world-time schedules and the actual goblin hideout are **not** yet playable. Combat outcomes and NPC registry exist as their foundation.
+- **Hesk's wagon-clearing interaction is now playable**, including real Medicine and Cure Wounds resources, limited dialogue, trust/family promise, and mutually exclusive fate choices. **Broader faction responses**, NPC world-time schedules, custody transport and the actual goblin hideout are **not** yet playable.
 - The mage, dwarf, moor tower, spellbook and Lord Vale resolutions are established **author-only story design**, not implemented content.
 - Item inventory, character levels, full class resource persistence and economic services will need typed models and dedicated save migration tests.
 - Important **rule boundary:** current 0HP condition, stabilization and healing are combat-derived. No offscreen death save or exhaustion-time simulation occurs while exploring; do not imply a dying character is indefinitely safe until those systems exist.
@@ -78,6 +78,6 @@ This implementation intentionally makes a small, **saveable** narrative adventur
 
 ## Developer-only skip-goblins shortcut
 
-When running the Godot editor/debug build, the heading contains **DEBUG: Skip Goblins (Spare Hesk)** during the opening narrative, formation setup or an ongoing battle. It bypasses the fight and triggers **the existing normal encounter-victory transition**. Three routine raiders become dead; named **Hesk, Roadwatch** is left alive, knocked out nonlethally at **1 HP**, so he can be awakened through the existing postbattle First Aid or Cure Wounds controls. The usual 200 XP and 12 gp reward is still claimed once and his NPC state is written to the global campaign registry. The world event and `debug_wagon_battle_skipped` flag explicitly mark the simulated result.
+When running the Godot editor/debug build, the heading contains **DEBUG: Skip Goblins (Spare Hesk)** during the opening narrative, formation setup or an ongoing battle. It bypasses the fight and triggers **the existing normal encounter-victory transition**. Three routine raiders become dead; named **Hesk, Roadwatch** is left alive, knocked out nonlethally at **1 HP**, so he can be treated using **Medicine or Cure Wounds from narrative choices after continuing to the wagon clearing**. No treatment buttons remain on the victory summary. The usual 200 XP and 12 gp reward is still claimed once and his NPC state is written to the global campaign registry. The world event and `debug_wagon_battle_skipped` flag explicitly mark the simulated result.
 
 The button is gated on `OS.has_feature("debug")`, never appears after victory, and its handler enforces the same guard. It is intentionally unavailable in release builds. It **does not** imply the distant goblin lord has been encountered; Hesk is the named sword-and-shield raider from this opening fight. Tests in `tests/test_debug_skip_battle.gd` cover the real button signal from story/setup/combat, victory once-only rewards, saved Hesk survival, and progression into exploration.
