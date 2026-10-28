@@ -1,6 +1,6 @@
 # Goblin Trail, Survivor and Hideout — Narrative Quest Design
 
-**Status: design only; not yet playable.** This expands the choice-driven exploration contract. The v0.7.1 combat build now gives **Hesk, Roadwatch** Death Saving Throws, permits melee Subdue and supports first aid and Cure Wounds after the battle. Full story choices to interrogate, bargain, release, take prisoner or respond to the lair are still not implemented.
+**Status: partially playable.** Hesk's **postbattle narrative interaction at the wagon clearing** now supports healing or Medicine, conversation, a promise to protect his family, and mutually exclusive choices to release, restrain, leave or kill him; the resulting state survives save/load. The **goblin hideout**, deeper diplomacy, captive transport and longer-term repercussions remain design-only. The original combat rules still support Hesk's Death Saving Throws and nonlethal Subdue.
 
 ## Meaningful choice after the wagon ambush
 
@@ -19,7 +19,7 @@ An undiscovered hideout is not marked as a freely accessible map destination. A 
 
 A provisional goblin survivor, **Hesk**, knows the route but fears for his mate and younger sibling at the lair. Not everyone in the caves is a raider. He has a believable reason to withhold information from adventurers who might harm his family.
 
-A goblin at zero HP cannot be healed if the combat engine has already marked him **dead**. Hesk now has a special survival/dying state, with playable First Aid and Cure Wounds after battle. Full prisoner dialogue, release and quest outcomes are still to be built. Stabilisation alone does not make a 0-HP creature conscious. Stabilising a dying creature does not automatically make it conscious; actual healing must use the requisite item or spell resources.
+A goblin at zero HP cannot be healed if the combat engine has already marked him **dead**. Hesk now has a special survival/dying state, with playable First Aid and Cure Wounds after battle. A limited prisoner conversation and Hesk's immediate fate are playable in exploration; deeper branching negotiations and eventual quest outcomes are still to be built. Stabilisation alone does not make a 0-HP creature conscious. Stabilising a dying creature does not automatically make it conscious; actual healing must use the requisite item or spell resources.
 
 Possible actions when Hesk is genuinely alive include stabilise, heal, provide water, question him, promise protection, bargain, threaten, take prisoner, release, leave, or kill. He may provide a clue if capable of speaking, but healing does not purchase automatic loyalty.
 
@@ -131,7 +131,7 @@ All important transitions must be persistent and applied exactly once. A choice 
 
 ## Implementation order
 
-First build the narrative node/choice graph, visited overland map, return travel and town witness lead. Add checks and persistent save/load. The Hesk survivor engine rules now exist; introduce the actual survivor conversation/release branch next. Build separate mage captivity, transferred dwarf, unique spellbook and tower evidence quests, followed by lord-related political resolutions.
+The initial narrative graph, overland map, return travel, town witness lead, once-only checks, save/load and Hesk survivor dialogue/fate branches are now implemented. Build deeper diplomacy, custody transfer, the cave watchpost and goblin ex-chief in the next dungeon iterations. Build separate mage captivity, transferred dwarf, unique spellbook and tower evidence quests, followed by lord-related political resolutions.
 
 Do **not** present this as working gameplay in v0.7.
 ## Trade-road context
