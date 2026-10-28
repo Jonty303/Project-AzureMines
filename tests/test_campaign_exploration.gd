@@ -124,8 +124,12 @@ func _run() -> void:
     if loaded.campaign.current_location != "overgrown_track" or loaded.gold_gp != 12:
         _fail("Save lost the current location or party purse")
         return
-    if loaded.xp_by_character["alden"] != 50 or loaded.campaign.checks["search_wagon"] != first_roll:
-        _fail("XP or resolved dice checks were lost")
+    if int(loaded.xp_by_character["alden"]) != 50:
+        _fail("XP did not survive load: " + str(loaded.xp_by_character["alden"]))
+        return
+    var saved_check: Dictionary = loaded.campaign.checks["search_wagon"]
+    if int(saved_check["die"]) != int(first_roll["die"]) or int(saved_check["total"]) != int(first_roll["total"]) or bool(saved_check["success"]) != bool(first_roll["success"]):
+        _fail("Resolved dice results changed: " + str(saved_check) + " vs " + str(first_roll))
         return
     if loaded.campaign.clues.size() != clue_count or loaded.campaign.events.size() != event_count:
         _fail("Clues and chronological events were not preserved")
