@@ -39,3 +39,11 @@ The first integration slice connects the existing wagon ambush to several revisi
 ## Regional story anchor — Old Trade Road
 
 Seabrook is the western coastal outlet for the Dales' dwarven mining economy. Harrowford lies on the northern edge. Much of the country remains wild limestone moor, mountain, wood and fertile valley, with new settlement, mine expansion, farmland and timbercraft held in an uneasy truce with local woodland communities. Ordinary guarded caravan raids are known; **the disappearance of entire escorted convoys without survivors is not**. All future overland maps, narrative checks, trade and quest content should uphold those constraints. See [Dales settlement gazetteer](dales-settlement-gazetteer.md).
+
+## v0.8 implemented — global state and first narrative exploration slice
+
+The current feature branch now advances from the opening goblin battle into five authored narrative locations: Wagon Clearing, Northern Road, Harrowford Guild, Stoneweight Market and Overgrown Ravine. Players can conduct once-only skill checks, discover clues, revisit locations, report the merchant commission, accept a raider investigation and obtain Mara Venn's reliable hideout lead. The main story UI has dynamic choices, a state-aware parchment discovery map and separate clue/event/quest/people journal.
+
+All of these use one persistent `CampaignState` with versioned JSON Save/Load: XP, gold, party resources, resolved checks, NPC survival/attitude/promises, visited places, known routes and quest progress. Save/load is intentionally limited to victory, aftermath and exploration, **not mid-combat**. See [v0.8 campaign-state notes](campaign-state-v08.md).
+
+**Next:** Manual 4.5.2 desktop review of UI sizing/map readability; then deepen narrative systems with chosen character for checks, Advantage/Disadvantage, typed quest objects and the actual goblin hideout. The five-location slice is playable; the hideout, full Harrowford services, tower, mage rescue and Lord Vale arc are still design-only.
