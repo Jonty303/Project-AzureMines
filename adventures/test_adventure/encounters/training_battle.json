@@ -76,11 +76,11 @@
       ],
       "attacks": [
         {
-          "id": "scimitar",
+          "id": "knife",
           "kind": "melee_weapon",
           "to_hit": 4,
-          "damage": "1d6+2",
-          "damage_type": "slashing",
+          "damage": "1d4+2",
+          "damage_type": "piercing",
           "reach_feet": 5
         },
         {

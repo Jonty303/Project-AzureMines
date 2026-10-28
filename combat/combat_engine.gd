@@ -4,6 +4,7 @@ extends RefCounted
 
 const Dice = preload("res://core/dice_roller.gd")
 const RulesMath = preload("res://combat/rules_math.gd")
+const Level1Spells = preload("res://combat/level1_spells.gd")
 const PARTY_FIXTURE := "res://tests/fixtures/party/level_01_v1.json"
 const ENCOUNTER_FIXTURE := "res://adventures/test_adventure/encounters/training_battle.json"
 
@@ -16,6 +17,9 @@ var events: Array[Dictionary] = []
 var round_number := 1
 var turn_index := 0
 var action_used := false
+var bonus_action_used := false
+var slotted_cast_this_turn := false
+var sneak_attack_used := false
 var movement_used := 0
 var finished := false
 var victor := ""
@@ -58,6 +62,12 @@ func start(seed: int = 42024) -> bool:
         actor["position"] = Vector2i(int(cell[0]), int(cell[1]))
         actor["hp"] = int(actor.get("starting_hp", actor.get("max_hp", 1)))
         actor["max_hp"] = int(actor.get("max_hp", 1))
+        var casting: Variant = actor.get("spellcasting")
+        actor["spell_slots_remaining"] = int(casting.get("spell_slots", {}).get("1", 0)) if casting is Dictionary else 0
+        actor["second_wind_remaining"] = int(actor.get("resource_limits", {}).get("second_wind", 0))
+        actor["mage_armor_active"] = false
+        actor["vex_target"] = ""
+        actor["sap_pending"] = false
         actors[id] = actor
 
     for template in encounter["enemies"]:
@@ -67,6 +77,9 @@ func start(seed: int = 42024) -> bool:
         actor["position"] = Vector2i(int(cell[0]), int(cell[1]))
         actor["team"] = "enemy"
         actor["hp"] = int(actor.get("max_hp", 1))
+        actor["art"] = {"combat_sprite": "assets/characters/sprites/goblin_front_64.png"}
+        actor["sap_pending"] = false
+        actor["vex_target"] = ""
         actors[id] = actor
 
     var rolls: Array[Dictionary] = []
@@ -194,7 +207,7 @@ func available_attack(target_id: String) -> Dictionary:
         var attack: Dictionary = entry
         if attack.get("kind", "") == "melee_weapon" and distance <= 1:
             return attack
-        if attack.get("kind", "") in ["ranged_weapon", "spell_attack"]:
+        if attack.get("kind", "") == "ranged_weapon":
             if distance <= int(attack.get("long_range_feet", attack.get("normal_range_feet", 0))) / 5:
                 if ranged.is_empty():
                     ranged = attack
@@ -219,10 +232,20 @@ func attack(target_id: String) -> bool:
                 if _distance(source["position"], nearby["position"]) <= 1:
                     disadvantage = true
                     break
-    var first := Dice.roll_d20(rng)
-    var natural := first
-    if disadvantage:
-        natural = mini(first, Dice.roll_d20(rng))
+    var advantage: bool = source.get("vex_target", "") == target_id
+    if bool(source.get("sap_pending", false)):
+        disadvantage = true
+    var first: int = Dice.roll_d20(rng)
+    var natural: int = first
+    if advantage != disadvantage:
+        var second: int = Dice.roll_d20(rng)
+        natural = maxi(first, second) if advantage else mini(first, second)
+    if source.get("race_id", "") == "halfling" and natural == 1:
+        natural = Dice.roll_d20(rng)
+        _record("%s uses Halfling Luck to reroll a natural 1." % source["name"])
+    source["sap_pending"] = false
+    source["vex_target"] = ""
+    actors[source_id] = source
     var roll: Dictionary = RulesMath.attack_hits(
         natural, int(weapon.get("to_hit", 0)), int(target.get("armor_class", 10))
     )
@@ -233,7 +256,17 @@ func attack(target_id: String) -> bool:
             source["name"], attack_name, target["name"], roll["total"], target["armor_class"], disadvantage_label
         ])
         return true
-    var damage := RulesMath.roll_damage(str(weapon.get("damage", "1d4")), rng, bool(roll["critical"]))
+    var damage: int = RulesMath.roll_damage(str(weapon.get("damage", "1d4")), rng, bool(roll["critical"]))
+    if _sneak_attack_eligible(source_id, target_id, weapon, disadvantage):
+        var sneak_damage: int = RulesMath.roll_damage("1d6", rng, bool(roll["critical"]))
+        damage += sneak_damage
+        sneak_attack_used = true
+        _record("%s uses Sneak Attack for %d extra damage." % [source["name"], sneak_damage])
+    if weapon.get("mastery", "") == "sap":
+        target["sap_pending"] = true
+    if weapon.get("mastery", "") == "vex":
+        source["vex_target"] = target_id
+        actors[source_id] = source
     var old_hp := int(target["hp"])
     target["hp"] = maxi(0, old_hp - damage)
     actors[target_id] = target
@@ -309,6 +342,9 @@ func _nearest_opponent(source_id: String) -> String:
 
 func _begin_turn() -> void:
     action_used = false
+    bonus_action_used = false
+    slotted_cast_this_turn = false
+    sneak_attack_used = false
     movement_used = 0
     if not current_id().is_empty():
         _record("Turn: %s." % current_actor()["name"])
@@ -368,6 +404,160 @@ func _line_clear(from_cell: Vector2i, to_cell: Vector2i) -> bool:
         if cell in walls:
             return false
     return true
+
+
+
+# Level-1 action/bonus-action features. The immutable fixture never mutates:
+# these resources live on the combatant's runtime state.
+func can_use_second_wind() -> bool:
+    if finished or bonus_action_used or current_id().is_empty():
+        return false
+    var actor: Dictionary = current_actor()
+    return actor.get("class_id", "") == "champion" \
+        and int(actor.get("second_wind_remaining", 0)) > 0 \
+        and int(actor["hp"]) > 0 and int(actor["hp"]) < int(actor["max_hp"])
+
+
+func use_second_wind() -> bool:
+    if not can_use_second_wind():
+        return false
+    var actor_id: String = current_id()
+    var actor: Dictionary = actors[actor_id]
+    var amount: int = Dice.roll(10, rng) + int(actor["level"])
+    var restored: int = mini(amount, int(actor["max_hp"]) - int(actor["hp"]))
+    actor["hp"] = int(actor["hp"]) + restored
+    actor["second_wind_remaining"] = int(actor["second_wind_remaining"]) - 1
+    actors[actor_id] = actor
+    bonus_action_used = true
+    _record("%s uses Second Wind, healing %d HP (%d/%d); %d use(s) left." % [
+        actor["name"], restored, actor["hp"], actor["max_hp"], actor["second_wind_remaining"]
+    ])
+    return true
+
+
+func _sneak_attack_eligible(source_id: String, target_id: String, weapon: Dictionary, disadvantage: bool) -> bool:
+    if sneak_attack_used or disadvantage:
+        return false
+    var source: Dictionary = actors[source_id]
+    if source.get("class_id", "") != "thief":
+        return false
+    if weapon.get("kind", "") == "ranged_weapon":
+        pass
+    elif not weapon.get("id", "") in ["dagger", "shortsword"]:
+        return false
+    var target: Dictionary = actors[target_id]
+    for ally_id in actors.keys():
+        var ally: Dictionary = actors[ally_id]
+        if ally["team"] == source["team"] and str(ally_id) != source_id \
+                and int(ally["hp"]) > 0 and _distance(ally["position"], target["position"]) <= 1:
+            return true
+    return false
+
+
+func can_cast_spell(spell_id: String, target_id: String) -> bool:
+    if finished or current_id().is_empty() or not actors.has(target_id):
+        return false
+    var caster: Dictionary = current_actor()
+    if not Level1Spells.known_spells(caster).has(spell_id):
+        return false
+    var spell: Dictionary = Level1Spells.get_definition(spell_id)
+    if spell.is_empty():
+        return false
+    if spell["time"] == "action" and action_used:
+        return false
+    if spell["time"] == "bonus" and bonus_action_used:
+        return false
+    if int(spell["level"]) > 0 and (slotted_cast_this_turn or int(caster.get("spell_slots_remaining", 0)) <= 0):
+        return false
+    var target: Dictionary = actors[target_id]
+    if spell["target"] == "enemy" and (caster["team"] == target["team"] or int(target["hp"]) <= 0):
+        return false
+    if spell["target"] == "ally" and caster["team"] != target["team"]:
+        return false
+    if spell["target"] == "self" and target_id != current_id():
+        return false
+    if spell["effect"] == "mage_armor" and (bool(caster.get("mage_armor_active", false)) or caster.get("armor") != null):
+        return false
+    if _distance(caster["position"], target["position"]) * 5 > int(spell["range_feet"]):
+        return false
+    return _line_clear(caster["position"], target["position"])
+
+
+func cast_spell(spell_id: String, target_id: String) -> bool:
+    if not can_cast_spell(spell_id, target_id):
+        return false
+    var caster_id: String = current_id()
+    var caster: Dictionary = actors[caster_id]
+    var spell: Dictionary = Level1Spells.get_definition(spell_id)
+    if spell["time"] == "action":
+        action_used = true
+    else:
+        bonus_action_used = true
+    if int(spell["level"]) > 0:
+        caster["spell_slots_remaining"] = int(caster["spell_slots_remaining"]) - 1
+        slotted_cast_this_turn = true
+        actors[caster_id] = caster
+    var target: Dictionary = actors[target_id]
+    var effect: String = str(spell["effect"])
+    var title: String = spell_id.replace("_", " ").capitalize()
+    match effect:
+        "mage_armor":
+            target["mage_armor_active"] = true
+            var dexterity_mod: int = Dice.ability_modifier(int(target["ability_scores"]["dexterity"]))
+            target["armor_class"] = 13 + dexterity_mod
+            actors[target_id] = target
+            _record("%s casts Mage Armor; AC is now %d." % [caster["name"], target["armor_class"]])
+        "heal":
+            var healing: int = RulesMath.roll_damage(str(spell["healing"]), rng) + \
+                Dice.ability_modifier(int(caster["ability_scores"][str(caster["spellcasting"]["ability"])]))
+            var gained: int = mini(maxi(0, healing), int(target["max_hp"]) - int(target["hp"]))
+            target["hp"] = int(target["hp"]) + gained
+            actors[target_id] = target
+            _record("%s casts %s on %s for %d HP (%d/%d)." % [
+                caster["name"], title, target["name"], gained, target["hp"], target["max_hp"]
+            ])
+        "automatic_damage":
+            var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
+            _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
+        "dex_save_damage":
+            var roll: int = Dice.roll_d20(rng) + \
+                Dice.ability_modifier(int(target.get("ability_scores", {}).get("dexterity", 10)))
+            var dc: int = int(caster["spellcasting"]["save_dc"])
+            if roll >= dc:
+                _record("%s resists %s (Dex save %d vs DC %d)." % [target["name"], title, roll, dc])
+            else:
+                var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
+                _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
+        "attack_damage":
+            var d20: int = Dice.roll_d20(rng)
+            var attack_bonus: int = int(caster["spellcasting"]["spell_attack_bonus"])
+            var hit: Dictionary = RulesMath.attack_hits(d20, attack_bonus, int(target["armor_class"]))
+            if hit["hit"]:
+                var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng, bool(hit["critical"]))
+                _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
+            else:
+                _record("%s casts %s at %s: %d vs AC %d — MISS." % [
+                    caster["name"], title, target["name"], hit["total"], target["armor_class"]
+                ])
+    return true
+
+
+func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: String, damage: int, damage_type: String) -> void:
+    var target: Dictionary = actors[target_id]
+    target["hp"] = maxi(0, int(target["hp"]) - damage)
+    actors[target_id] = target
+    _record("%s casts %s on %s: %d %s damage (%d HP left)." % [
+        caster["name"], spell_name, target["name"], damage, damage_type, target["hp"]
+    ])
+    if int(target["hp"]) == 0:
+        _record("%s is down." % target["name"])
+    _check_victory()
+
+
+func get_current_spells() -> Array[String]:
+    if finished or current_id().is_empty():
+        return []
+    return Level1Spells.known_spells(current_actor())
 
 
 func _record(line: String) -> void:

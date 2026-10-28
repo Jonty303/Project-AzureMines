@@ -1,45 +1,44 @@
 # Project Azure Mines
 
-A modular, Gold Box-inspired tactical fantasy RPG using **Godot 4.5.2** and a streamlined house-ruled version of **SRD 5.2.1**.
+A modular, Gold Box-inspired tactical RPG built with **Godot 4.5.2**, using a custom **Classic 5E** rules package based on SRD 5.2.1.
 
-> **Development status:** First playable combat prototype on a feature branch. The game is a work in progress and not yet a complete implementation of Classic 5E.
+## Play the level-1 combat prototype
 
-## Run the prototype
+1. Clone this repository and import `project.godot` into Godot 4.5.2.
+2. Press **F5** to load the tutorial arena.
+3. Play the four fixed test characters: **Alden, Elyra, Brunna and Pip**, against two goblins.
+4. Click a highlighted tile to move. Select **Weapon Attack** or a spell and click its target. Use **Cast on Self** for Elyra's Mage Armor, **Second Wind** for Alden, and **End Turn** to advance initiative.
+5. Use **Restart** to reset the deterministic encounter.
 
-1. Clone this repository and open `project.godot` in **Godot 4.5.2**.
-2. Press **F5** to open the 12 × 10 tutorial battlefield.
-3. Play as the four predefined characters: **Alden (Champion), Elyra (Evoker), Brunna (Priest), Pip (Thief)**.
-4. On a player turn, click a highlighted free tile to move or click an enemy to attack. Use **End Turn** to advance the initiative queue and let the two goblins respond.
-5. Use **Restart Battle** to repeat the seeded reference encounter.
+The 12×10 grid includes five-foot squares, difficult terrain and walls. The static **64×64 front-facing sprites** include all four heroes and a knife-wielding goblin.
 
-The separate original module-loader preview remains at `scenes/main.tscn`.
+## What is implemented
 
-### Headless tests
+- Individual initiative and turn order; simple goblin AI.
+- Movement, melee/ranged attack resolution, damage, critical hits, HP and victory/defeat.
+- Alden: Second Wind and Sap mastery.
+- Pip: conditional Sneak Attack, Halfling Luck and Vex mastery.
+- Elyra: Fire Bolt, Ray of Frost (damage only), Magic Missile and Mage Armor.
+- Brunna: Sacred Flame, Cure Wounds and Healing Word.
+- Action/Bonus Action and first-level spell-slot tracking.
 
-```sh
-godot --headless --path . --script res://tests/test_module_loader.gd
-godot --headless --path . --script res://tests/test_canonical_party.gd
-godot --headless --path . --script res://tests/test_combat_engine.gd
-```
+These mechanics are **only a subset** of what level-1 SRD characters can do. Reaction spells, many prepared spells, concentration, death saves, numerous racial abilities and advanced tactical rules are deliberately deferred.
 
-These tests are supplied for Godot **4.5.2**; local runtime verification is needed before calling the first playable build fully validated.
+See [Combat v0.2 specification](docs/level1-combat-v02.md) for explicit coverage, limitations and test commands.
 
-## Intended combat scope
+## Project structure and decisions
 
-Included: individual initiative, 5-foot square grid, eight-direction movement, rough terrain, blocked corners, turn action economy, melee/ranged attacks, simplistic cantrip attack, attack bonuses, AC, HP, basic line-of-sight, critical dice, goblin AI, combat log, win/loss and restart.
+- Five fixed classes: Champion, Priest, Thief, Evoker, Hunter. Hunter will join later test encounters.
+- Four races: Human, Dwarf, Elf (High Elf initially), Halfling.
+- Level 1–5 planned, but this vertical slice is **level 1 only**.
+- No backgrounds, multiclassing or selectable subclasses.
+- Rules engine, adventure content and Godot UI are distinct layers.
+- Character statistics live in the immutable fixture `tests/fixtures/party/level_01_v1.json`.
 
-**Not yet implemented:** spell slots and general spellcasting, Second Wind, Sneak Attack, Weapon Mastery effects, reactions, Opportunity Attacks, full cover and death saves. Consult [First playable combat](docs/first-playable-combat.md) for explicit limitations.
+See [architecture](docs/architecture.md), [combat rules](docs/combat-rules.md), [test party](docs/canonical-test-party.md), [data contracts](docs/data-contracts.md), [roadmap](docs/roadmap.md) and [licensing](docs/licensing.md).
 
-## Characters and architecture
+## Automated validation
 
-- Four races: Human, Dwarf, Elf (High Elf for v0.1), Halfling.
-- Five fixed classes: Champion, Priest, Thief, Evoker and Hunter; Hunter is not in the initial four-member test party.
-- Fixed level-1 test party in `tests/fixtures/party/level_01_v1.json`. Never silently change that snapshot; make new versions for level-up milestones.
-- Code is separated into engine systems, `rulesets/classic_5e/` and `adventures/test_adventure/`.
-- The first post-core class on the roadmap is Bard (College of Lore).
+GitHub Actions imports the Godot 4.5.2 project, launches the combat scene, verifies PNG imports and executes headless tests. Run the complete set via the commands in `.github/workflows/godot-smoke.yml`.
 
-See [architecture](docs/architecture.md), [character rules](docs/ruleset-design.md), [combat rules](docs/combat-rules.md), [test party](docs/canonical-test-party.md), [data contracts](docs/data-contracts.md) and [roadmap](docs/roadmap.md).
-
-## Licensing
-
-Original code has no general public licence selected. SRD 5.2.1 rules content is CC BY 4.0 with attribution obligations; separate adventures/settings/artwork have independent rights. The example adventure is original placeholder content. See [licensing](docs/licensing.md).
+This is a **prototype**, not a finished or fully rules-accurate RPG. The repository uses Git attributes that disable line-ending conversion.
