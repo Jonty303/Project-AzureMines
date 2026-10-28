@@ -25,9 +25,10 @@ static func get_definition(spell_id: String) -> Dictionary:
 
 static func known_spells(actor: Dictionary) -> Array[String]:
     var result: Array[String] = []
-    var casting: Dictionary = actor.get("spellcasting", {})
-    if casting.is_empty():
+    var info: Variant = actor.get("spellcasting")
+    if not info is Dictionary:
         return result
+    var casting: Dictionary = info
     for key in ["wizard_cantrips", "cantrips", "prepared_spells"]:
         for spell_id_variant in casting.get(key, []):
             var spell_id: String = str(spell_id_variant)
