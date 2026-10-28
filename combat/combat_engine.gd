@@ -585,15 +585,18 @@ func stabilize_creature(actor_id: String, medic_id: String) -> Dictionary:
         return {"allowed": false}
     var target: Dictionary = actors[actor_id]
     var medic: Dictionary = actors[medic_id]
-    if target.get("combat_state", "") not in ["unconscious", "knocked_out"] or not is_combat_capable(medic_id) or medic["team"] != "party":
+    if target.get("combat_state", "") not in ["unconscious", "knocked_out"] or bool(target.get("first_aid_attempted", false)) or not is_combat_capable(medic_id) or medic["team"] != "party":
         return {"allowed": false}
     var wisdom: int = Dice.ability_modifier(int(medic.get("ability_scores", {}).get("wisdom", 10)))
     var proficiency: int = int(medic.get("proficiency_bonus", 2)) if medic.get("skill_proficiencies", []).has("medicine") else 0
+    target["first_aid_attempted"] = true
+    actors[actor_id] = target
     var die: int = Dice.roll_d20(rng)
     var total: int = die + wisdom + proficiency
     var ok: bool = total >= 10
     if ok:
         target["combat_state"] = "active" if int(target["hp"]) > 0 else "stable"
+        target["short_rest_started"] = false
         target["death_successes"] = 0
         target["death_failures"] = 0
         actors[actor_id] = target
@@ -623,8 +626,9 @@ func heal_survivor(caster_id: String, target_id: String) -> bool:
     var gained: int = mini(maxi(0, healing), int(target["max_hp"]) - int(target["hp"]))
     caster["spell_slots_remaining"] = int(caster["spell_slots_remaining"]) - 1
     target["hp"] = int(target["hp"]) + gained
-    if int(target["hp"]) > 0:
+    if gained > 0 and int(target["hp"]) > 0:
         target["combat_state"] = "active"
+        target["short_rest_started"] = false
         target["death_successes"] = 0
         target["death_failures"] = 0
     actors[caster_id] = caster
