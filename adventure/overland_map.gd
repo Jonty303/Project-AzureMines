@@ -8,7 +8,8 @@ var routes := [
     ["town_road", "harrowford_market"],
     ["harrowford_guild", "harrowford_market"],
     ["wagon_clearing", "overgrown_track"],
-    ["overgrown_track", "town_road"]
+    ["overgrown_track", "town_road"],
+    ["overgrown_track", "cave_approach"]
 ]
 const PAPER := Color("#c7ae83")
 const INK := Color("#4c3d32")
