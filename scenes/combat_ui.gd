@@ -8,6 +8,7 @@ const Level1Spells = preload("res://combat/level1_spells.gd")
 const CombatActionButton = preload("res://scenes/combat_action_button.gd")
 const OpeningSession = preload("res://adventure/opening_session.gd")
 const OverlandMap = preload("res://adventure/overland_map.gd")
+const LocalCaveMap = preload("res://adventure/local_cave_map.gd")
 const SOUND_NAMES := ["footstep", "melee_hit", "ranged", "magic", "heal", "miss", "damage", "death"]
 const BG := Color("#0e141b")
 const PANEL := Color("#121b23")
@@ -21,6 +22,7 @@ var adventure: OpeningSession
 var board: CombatBoard
 var story_image: TextureRect
 var overland_map: Control
+var local_cave_map: Control
 var story_choices_scroll: ScrollContainer
 var story_choices_box: VBoxContainer
 var story_feedback := ""
@@ -212,6 +214,11 @@ func _build_ui() -> void:
     overland_map.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     overland_map.visible = false
     board.add_child(overland_map)
+    local_cave_map = LocalCaveMap.new()
+    local_cave_map.name = "LocalCaveMap"
+    local_cave_map.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    local_cave_map.visible = false
+    board.add_child(local_cave_map)
 
     var right := PanelContainer.new()
     right.custom_minimum_size = Vector2(360, 0)
@@ -414,6 +421,7 @@ func _on_exploration_choice(choice_id: String) -> void:
         adventure.campaign.capture_party(engine.actors)
     story_feedback = str(result.get("text", ""))
     overland_map.queue_redraw()
+    local_cave_map.queue_redraw()
     _refresh()
 
 
@@ -474,13 +482,20 @@ func _refresh_exploration() -> void:
             button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     overland_map.campaign = adventure.campaign
     overland_map.nodes = adventure.exploration.locations
+    local_cave_map.campaign = adventure.campaign
+    local_cave_map.nodes = adventure.exploration.locations
+    var in_cave: bool = str(adventure.campaign.current_location) in [
+        "cave_approach", "cave_entrance", "cave_threshold"
+    ]
     var art_path: String = str(info.get("art", ""))
     var picture_available: bool = not art_path.is_empty() and ResourceLoader.exists(art_path)
     story_image.visible = picture_available and not show_map
     if story_image.visible:
         story_image.texture = load(art_path) as Texture2D
-    overland_map.visible = show_map or not picture_available
+    overland_map.visible = not in_cave and (show_map or not picture_available)
+    local_cave_map.visible = in_cave and (show_map or not picture_available)
     overland_map.queue_redraw()
+    local_cave_map.queue_redraw()
     map_toggle_button.disabled = not picture_available
     setup_panel.visible = false
     combat_action_row.visible = false
@@ -761,6 +776,7 @@ func _refresh_story() -> void:
     save_game_button.visible = adventure.stage in ["victory", "aftermath"]
     load_game_button.visible = true
     overland_map.visible = false
+    local_cave_map.visible = false
     story_image.visible = true
     var image_path: String = str(info.get("art", "res://assets/story/old_timber_road_campfire.svg"))
     if ResourceLoader.exists(image_path):
