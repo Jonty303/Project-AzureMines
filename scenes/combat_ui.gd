@@ -443,7 +443,9 @@ func _on_load_game() -> void:
 func _on_exploration_choice(choice_id: String) -> void:
     if adventure.stage != "exploration":
         return
-    var result: Dictionary = adventure.choose_exploration(choice_id, engine.actors)
+    var result: Dictionary = adventure.choose_exploration(choice_id, engine.actors, engine)
+    if bool(result.get("ok", false)) and choice_id.begins_with("hesk_"):
+        adventure.campaign.capture_party(engine.actors)
     story_feedback = str(result.get("text", ""))
     overland_map.queue_redraw()
     _refresh()
