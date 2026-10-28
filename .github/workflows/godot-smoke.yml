@@ -1,0 +1,26 @@
+name: Godot 4.5.2 smoke tests
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+
+jobs:
+  godot-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Godot 4.5.2
+        run: |
+          curl --fail --location --retry 3 --output godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.5.2-stable/Godot_v4.5.2-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.5.2-stable_linux.x86_64
+      - name: Import Godot project
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --editor --quit
+      - name: Module loader test
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_module_loader.gd
+      - name: Canonical party test
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_canonical_party.gd
+      - name: Combat engine test
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_combat_engine.gd

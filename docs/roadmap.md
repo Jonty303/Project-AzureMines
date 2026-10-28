@@ -1,27 +1,27 @@
-# Roadmap — v0.1
+# Roadmap — v0.2
 
-Milestones are deliverable-driven, **not dates or promises**.
+Milestones are deliverable-driven, not scheduled deadlines.
 
-| Stage | Target | Acceptance criterion |
+| Stage | Target | Status |
 | --- | --- | --- |
-| 0 | Godot/bootstrap | Project opens; example adventure and ruleset load; simple smoke test |
-| 1 | Combat foundations | Seedable dice, actor state, turn schedule, command/event contracts and headless tests |
-| 2 | Tactical battle | Four party members vs four goblin-like test enemies, movement, attacks, HP and victory |
-| 3 | Distinct classes | Champion, Priest, Thief, Evoker and Hunter meaningful through level 3 |
-| 4 | Levels 4–5 / magic | Full first-pass class abilities, spell catalogue, effects and AI |
-| 5 | RPG/adventure | First-person grid exploration, quests, dialogue, shops, equipment, rest and persistence |
-| 6 | Small complete adventure | Original standalone adventure package validates engine/data separation |
-| 7 | Bard expansion | Bard + College of Lore after RPG features exist; additional races/backgrounds later |
+| 0 | Godot/bootstrap and example module loader | Implemented; local validation needed |
+| 0.5 | Canonical immutable level-1 party and reference artwork | Character fixtures drafted, sprite tokens supplied |
+| 1 | First playable tutorial battle | **Current prototype branch:** grid, four vs two, attacks, log, AI |
+| 2 | Combat correctness | Opportunity attacks, cover, reactions, weapon mastery, death saves |
+| 3 | Four starting classes' spells and signature abilities | Core spell engine, Sneak Attack, Second Wind and Channel Divinity |
+| 4 | Level 1–5 progression for all five classes | Hunter added, class levels, new enemies and extensive tests |
+| 5 | Gold Box exploration and RPG | First-person grid, quests, dialogue, shops, equipment and saves |
+| 6 | Original small complete adventure | One content pack validates adventure / ruleset separation |
+| 7 | Bard expansion | Bard + College of Lore once RPG interactions exist |
 
-## First issues to tackle
+## Next validation
 
-- [ ] Confirm Godot 4.5.2 imports/runs the bootstrap on a local machine.
-- [ ] Set up a repeatable headless test environment.
-- [ ] Define `CombatantState`, `CombatState`, `ActionCommand`, `RuleEvent`.
-- [ ] Build a movement validation model independent of TileMap presentation.
-- [ ] Add encounter definitions to the adventure schema.
-- [ ] Add combat rules tests before implementing the tactical UI.
+- [ ] Run headless module, party and combat tests using Godot 4.5.2.
+- [ ] Verify mouse positions, path highlights, and scaled sprites on a desktop.
+- [ ] Play a full battle from victory to restart, checking all player and goblin turns.
+- [ ] Test blocked corners and turn action/movement limits.
+- [ ] Review first iteration against SRD combat rules before broadening scope.
 
-## Scope controls
+## Scope guardrails
 
-Do not build a universal RPG editor or full level 1–20 SRD content library before a playable battle exists. Keep all content original or appropriately licensed. Leave compatibility hooks but implement only one ruleset initially.
+No permanent character creation, levels beyond one, dungeon mode, full spell catalogue or generic adventure editor in this first playable. Implement only features demonstrated by the fixed party and encounter.

@@ -1,22 +1,16 @@
-# Character reference artwork
+# Azure Mines — canonical reference art v1
 
-Master reference: **Alden (blue), Elyra (red), Brunna (white/gold), Pip (green)**.
+The primary visual reference is the **red-robed Elyra party lineup** previously approved for Alden, Elyra, Brunna and Pip. Full-resolution reference illustrations and extracted portraits remain in the separately provided project art ZIP.
 
-For the initial tactical prototype, keep **one front-facing static 32 x 32 PNG combat sprite** per character and a separate portrait PNG. Do not implement directional sprites yet. Use nearest-neighbour texture filtering for small sprites.
+## Shipped placeholder sprites
 
-The baseline fixture references:
+Four front-facing 32 × 32 indexed-colour PNGs are stored at:
 
-```text
-assets/characters/
-  reference_party.png
-  portraits/alden.png
-  portraits/elyra.png
-  portraits/brunna.png
-  portraits/pip.png
-  sprites/alden_front_32.png
-  sprites/elyra_front_32.png
-  sprites/brunna_front_32.png
-  sprites/pip_front_32.png
-```
+- `assets/characters/sprites/alden_front_32.png`: blue/silver human Champion
+- `assets/characters/sprites/elyra_front_32.png`: red/gold High Elf Evoker
+- `assets/characters/sprites/brunna_front_32.png`: white/gold Dwarf Priest
+- `assets/characters/sprites/pip_front_32.png`: green Halfling Thief
 
-**Asset status:** The raster artwork is distributed as an export bundle separately from this GitHub commit until the binary assets are imported. This file specifies paths and identities only; it does not claim the PNG files are present in the repository. Source sheet / derivative sprites should be visually reviewed before final production use.
+Godot renders these using nearest-neighbour filtering. The full-resolution portrait paintings and master sheet are **not** included in this initial code PR because those are large source assets; import them separately before portrait polish. Do not infer from the fixture's `portrait` paths that those PNGs are present in this branch.
+
+There is only **one front-facing combat sprite per character**. No directional frames or mirroring are used in the prototype. Future equipment-dependent sprites must be separately authored.
