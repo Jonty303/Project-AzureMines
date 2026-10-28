@@ -42,9 +42,9 @@
       "title": "The Road Beyond",
       "paragraphs": [
         "The Old Trade Road winds on towards Harrowford and the mines beyond. For all the wealth carried over its worn stones, the settlements still feel small amid the hills and woodland.",
-        "Later, the overland map will allow you to return here, search for the raiders' trail, or continue towards the town. The narrative travel choices are planned and not yet playable."
+        "You can return to the wagon clearing, investigate the raiders' trail, or continue towards Harrowford. The choice is yours."
       ],
-      "button": "Replay the Encounter",
+      "button": "Continue",
       "art": "res://assets/story/old_timber_road_campfire.svg"
     }
   },
