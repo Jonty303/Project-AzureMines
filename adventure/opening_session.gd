@@ -97,10 +97,10 @@ func exploration_choices() -> Array[Dictionary]:
     return exploration.available_choices()
 
 
-func choose_exploration(choice_id: String, party: Dictionary) -> Dictionary:
+func choose_exploration(choice_id: String, party: Dictionary, combat: RefCounted = null) -> Dictionary:
     if stage != "exploration" or exploration == null:
         return {"ok": false, "text": "Exploration has not begun."}
-    return exploration.choose(choice_id, party)
+    return exploration.choose(choice_id, party, combat)
 
 
 func save_game(actors: Dictionary, path: String = CampaignState.DEFAULT_SAVE) -> bool:
