@@ -918,6 +918,107 @@ func get_current_spells() -> Array[String]:
     return result
 
 
+
+func _bless_bonus(actor_id: String) -> int:
+    if not actors.has(actor_id):
+        return 0
+    var blessed_by: String = str(actors[actor_id].get("blessed_by", ""))
+    if blessed_by.is_empty() or not actors.has(blessed_by):
+        return 0
+    var caster: Dictionary = actors[blessed_by]
+    var concentration: Dictionary = caster.get("concentration", {})
+    if concentration.get("spell", "") != "bless":
+        return 0
+    var bonus: int = rng.randi_range(1, 4)
+    _record("%s gains +%d from Bless." % [actors[actor_id]["name"], bonus])
+    return bonus
+
+
+func _stop_concentration(caster_id: String) -> void:
+    var caster: Dictionary = actors[caster_id]
+    var concentration: Dictionary = caster.get("concentration", {})
+    if concentration.is_empty():
+        return
+    for target_id_variant in concentration.get("targets", []):
+        var target_id: String = str(target_id_variant)
+        if actors.has(target_id):
+            var target: Dictionary = actors[target_id]
+            if target.get("blessed_by", "") == caster_id:
+                target["blessed_by"] = ""
+                actors[target_id] = target
+    caster["concentration"] = {}
+    actors[caster_id] = caster
+    _record("%s's concentration ends." % caster["name"])
+
+
+func _start_bless(caster_id: String, first_target: String) -> void:
+    _stop_concentration(caster_id)
+    var caster: Dictionary = actors[caster_id]
+    var targets: Array[String] = [first_target]
+    # The clicked target receives priority; fill the remaining spots with
+    # nearby allies in deterministic order. Explicit multi-target UI comes later.
+    var others: Array[Dictionary] = []
+    for key in actors.keys():
+        var id: String = str(key)
+        var ally: Dictionary = actors[id]
+        if id == first_target or ally["team"] != caster["team"] or int(ally["hp"]) <= 0:
+            continue
+        var squares: int = _distance(caster["position"], ally["position"])
+        if squares <= 6:
+            others.append({"id": id, "distance": squares})
+    others.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+        if a["distance"] == b["distance"]:
+            return a["id"] < b["id"]
+        return a["distance"] < b["distance"]
+    )
+    for entry in others:
+        if targets.size() >= 3:
+            break
+        targets.append(str(entry["id"]))
+    for id in targets:
+        var ally: Dictionary = actors[id]
+        ally["blessed_by"] = caster_id
+        actors[id] = ally
+    caster = actors[caster_id]
+    caster["concentration"] = {"spell": "bless", "targets": targets, "turns_left": 10}
+    actors[caster_id] = caster
+    var names: PackedStringArray = []
+    for id in targets:
+        names.append(str(actors[id]["name"]))
+    _record("%s casts Bless on %s (+1d4 to attacks and saving throws)." % [
+        caster["name"], ", ".join(names)
+    ])
+
+
+func _tick_concentration(caster_id: String) -> void:
+    var caster: Dictionary = actors[caster_id]
+    var concentration: Dictionary = caster.get("concentration", {})
+    if concentration.is_empty():
+        return
+    concentration["turns_left"] = int(concentration.get("turns_left", 1)) - 1
+    caster["concentration"] = concentration
+    actors[caster_id] = caster
+    if int(concentration["turns_left"]) <= 0:
+        _stop_concentration(caster_id)
+
+
+func _check_concentration_after_damage(actor_id: String, damage: int) -> void:
+    var actor: Dictionary = actors[actor_id]
+    var concentration: Dictionary = actor.get("concentration", {})
+    if concentration.is_empty() or damage <= 0:
+        return
+    if int(actor["hp"]) <= 0:
+        _stop_concentration(actor_id)
+        return
+    var dc: int = maxi(10, ceili(float(damage) / 2.0))
+    var natural: int = Dice.roll_d20(rng)
+    var con_mod: int = Dice.ability_modifier(int(actor.get("ability_scores", {}).get("constitution", 10)))
+    var total: int = natural + con_mod + _bless_bonus(actor_id)
+    _record("%s Concentration Save: %d vs DC %d." % [actor["name"], total, dc])
+    if total < dc:
+        _stop_concentration(actor_id)
+
+
 func _record(line: String) -> void:
     events.append({"round": round_number, "text": line, "sound": ""})
 
