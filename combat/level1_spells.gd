@@ -16,7 +16,11 @@ const DEFINITIONS := {
     "healing_word": {"level": 1, "time": "bonus", "target": "ally", "range_feet": 60,
         "effect": "heal", "healing": "2d4"},
     "mage_armor": {"level": 1, "time": "action", "target": "self", "range_feet": 0,
-        "effect": "mage_armor"}
+        "effect": "mage_armor"},
+    "shield": {"level": 1, "time": "reaction", "target": "self", "range_feet": 0,
+        "effect": "shield"},
+    "bless": {"level": 1, "time": "action", "target": "ally", "range_feet": 30,
+        "effect": "bless", "concentration": true, "duration_rounds": 10}
 }
 
 static func get_definition(spell_id: String) -> Dictionary:
