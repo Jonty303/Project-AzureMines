@@ -1,5 +1,10 @@
 # Project Azure Mines
 
+## Debug shortcut — skip the opening goblin battle
+
+In the **Godot editor/debug build only**, a **DEBUG: Skip Goblins (Spare Hesk)** button appears at the top of the opening story, deployment and battle screens. It immediately resolves the wagon encounter as a party victory. **Hesk, Roadwatch**, the named sword-and-shield raider, survives at **1 HP, unconscious (nonlethal knockout)**; the other three goblins are defeated. The usual once-only 200 XP/12 gp rewards, survivor-care choices, adventure journal, and return to exploration all work. Hesk's alive state persists when you save/reload. The shortcut is removed from release builds and disappears after victory. It is a testing shortcut, not a player story decision. **Hesk is not the separate goblin lord in the future hideout.**
+
+
 ## Narrative exploration v0.8 — playable choice-driven adventure
 
 **New:** After the illustrated Old Trade Road ambush, continue into an authored **Wagon Clearing → Northern Road → Harrowford Guild / Stoneweight Market** adventure. Search for clues (Investigation), track the goblins (Survival), travel back to the clearing, and consult **Mara Venn** for a guaranteed alternative lead to the overgrown ravine. Reporting at the guild and accepting the raider investigation update real quest state.
