@@ -6,6 +6,7 @@ const CombatEngine = preload("res://combat/combat_engine.gd")
 const CombatBoard = preload("res://combat/combat_board.gd")
 const Level1Spells = preload("res://combat/level1_spells.gd")
 const CombatActionButton = preload("res://scenes/combat_action_button.gd")
+const SOUND_NAMES := ["footstep", "melee_hit", "ranged", "magic", "heal", "miss", "damage", "death"]
 const BG := Color("#0e141b")
 const PANEL := Color("#121b23")
 const BORDER := Color("#4a5662")
@@ -33,11 +34,43 @@ var action_ids: Array[String] = []
 var weapon_ids: Array[String] = []
 var current_picker_actor := ""
 var action_mode := ""
+var sfx_players: Dictionary = {}
+var _heard_event_count := 0
 
 
 func _ready() -> void:
+    _build_audio()
     _build_ui()
     _restart()
+
+
+func _build_audio() -> void:
+    for sound_id in SOUND_NAMES:
+        var player := AudioStreamPlayer.new()
+        var path := "res://assets/sfx/%s.wav" % sound_id
+        if ResourceLoader.exists(path):
+            player.stream = load(path) as AudioStream
+        player.volume_db = -12.0
+        player.bus = "Master"
+        add_child(player)
+        sfx_players[sound_id] = player
+
+
+func _play_new_events() -> void:
+    if engine == null:
+        return
+    var played: Array[String] = []
+    for i in range(_heard_event_count, engine.events.size()):
+        var evt: Dictionary = engine.events[i]
+        var sound_id: String = str(evt.get("sound", ""))
+        if sound_id.is_empty() or played.has(sound_id) or played.size() >= 3:
+            continue
+        if sfx_players.has(sound_id):
+            var player: AudioStreamPlayer = sfx_players[sound_id]
+            if player.stream != null:
+                player.play()
+                played.append(sound_id)
+    _heard_event_count = engine.events.size()
 
 
 func _panel_style() -> StyleBoxFlat:
@@ -199,6 +232,7 @@ func _restart() -> void:
     current_picker_actor = ""
     action_mode = ""
     _run_enemy_turns()
+    _heard_event_count = engine.events.size()
     _refresh()
 
 
@@ -387,5 +421,8 @@ func _refresh() -> void:
         button.add_theme_stylebox_override("normal", _button_style(entry[1] == action_mode))
     var log_lines: PackedStringArray = []
     for entry in engine.events:
-        log_lines.append(str(entry["text"]))
+        var line: String = str(entry.get("text", ""))
+        if not line.is_empty():
+            log_lines.append(line)
     combat_log.text = "\n".join(log_lines)
+    _play_new_events()
