@@ -162,7 +162,7 @@ func start(seed: int = 42024, with_deployment: bool = false) -> bool:
         deployment_active = true
         if not set_formation("square"):
             return false
-        _record("A snapped twig. Goblins lurk around the covered wagon. Arrange your party before battle.")
+        _record(str(encounter.get("intro", "The party senses an ambush ahead. Arrange your formation.")))
         return true
     _roll_initiative_and_start()
     return true
