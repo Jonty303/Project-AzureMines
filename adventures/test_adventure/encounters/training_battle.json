@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "training_battle",
-  "name": "The Goblin Wagon Camp",
+  "name": "Wagon Camp — The First Ambush",
   "grid_size": [
     12,
     10
@@ -240,5 +240,17 @@
     "edge": "north",
     "art": "res://assets/environment/forest_treeline_768x128.svg",
     "rows": 2
-  }
+  },
+  "deployment_zone": {
+    "min": [
+      0,
+      3
+    ],
+    "max": [
+      3,
+      8
+    ]
+  },
+  "intro": "A broken wagon blocks the trail. A sound in the brush, then movement among the trees: goblins are preparing to strike. Arrange the party before the first exchange.",
+  "default_formation": "square"
 }
