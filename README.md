@@ -1,5 +1,12 @@
 # Project Azure Mines
 
+## Combat v0.6 — Pre-battle party setup
+
+The playable wagon ambush now begins with a **deployment phase** before initiative. Choose **Line**, **Square** or **Diamond**, or click an adventurer and move them to a valid free square within the western deployment zone. **Begin Battle** locks the starting positions and starts the actual encounter. Blue placement indicators appear only when a hero is selected for repositioning; combat targeting highlights still appear only for their specific chosen action.
+
+See [Party Deployment v0.6](docs/party-deployment-v06.md) and [the Wagon Camp encounter](docs/wagon-camp-v05.md). This is an original early-adventure encounter candidate; exploration and story transitions are not yet implemented.
+
+
 ## Current encounter — Goblin Wagon Camp
 
 The level-1 battle now features **two knife goblins and two shortbow goblins**, a six-square **covered wagon** blocking movement and line of sight, **two blocking chests** that grant half cover (+2 AC) across firing lanes, a **campfire** dealing 1d4 Fire damage on entry and at turn start, and a northern **forest backdrop**. Assets are separate original SVGs. See [the v0.5 campsite specification](docs/wagon-camp-v05.md).
