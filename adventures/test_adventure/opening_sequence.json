@@ -6,23 +6,26 @@
   "screens": {
     "approach": {
       "eyebrow": "CHAPTER I • THE OLD TIMBER ROAD",
-      "title": "A Wagon in the Trees",
+      "title": "The Watchfire",
       "paragraphs": [
-        "The road turns north beneath a canopy of pines. Somewhere beyond the bend, a horse whinnies once and falls silent.",
-        "A canvas-covered wagon stands crooked across the track. Its wheel is caught in a rut; two travelling chests lie abandoned nearby. A small fire burns where no traveller can be seen.",
-        "Pip spots a hurried footprint beside the road. Alden hears a bowstring creak from the trees. There may still be time to choose where everyone stands."
+        "Two days ago, in the harbourside city of Seabrook, the merchant Tavian Marr commissioned Alden, Elyra, Brunna and Pip to travel into the Dales. His caravans have vanished or returned half-plundered. He wants to know who is responsible—and what has happened to those who did not return.",
+        "The contract requires the company to report first to the Adventurers' Guild in Harrowford, a small market town on the northern edge of the Dales, before following the raiders' trail.",
+        "Tonight the four companions sit around a low campfire under black pines, their faces lost in shadow. Far off, a branch cracks. The watch changes hands; the road awaits at dawn.",
+        "By morning they reach an abandoned covered wagon astride the old timber road. Two chests lie beside it, and a second campfire is still warm. Goblin tracks disturb the mud. Somewhere beyond the trees, a bowstring creaks."
       ],
-      "button": "Arrange the Party"
+      "button": "Continue — Prepare for Ambush",
+      "art": "res://assets/story/old_timber_road_campfire.svg"
     },
     "victory": {
       "eyebrow": "AFTER THE AMBUSH",
       "title": "The Road Falls Silent",
       "paragraphs": [
-        "The last goblin falls, and the forest grows quiet again. Smoke curls over the fire beside the wagon.",
-        "Beneath the overturned travel chest, the party finds a little coin. No useful weapons or armour are worth salvaging.",
-        "Beyond the trees, the old road continues towards the Azure Mines."
+        "The fighting ceases. The goblins are down or scattered, and the clearing grows quiet except for the crackle of the abandoned fire.",
+        "Beneath an overturned chest the party recovers a little coin. There are no mundane weapons or armour worth taking.",
+        "The raiders may have a hideout nearby, but the contract still requires a report to the Adventurers' Guild in Harrowford. The clearing will remain a place to investigate when exploration is available."
       ],
-      "button": "Continue Along the Road"
+      "button": "Continue Along the Road",
+      "art": "res://assets/story/old_timber_road_campfire.svg"
     },
     "defeat": {
       "eyebrow": "THE AMBUSH",
@@ -31,16 +34,18 @@
         "The goblins reclaim the clearing. The journey towards the Azure Mines ends at this broken wagon.",
         "The party may try the approach again with a different deployment."
       ],
-      "button": "Try Again"
+      "button": "Try Again",
+      "art": "res://assets/story/old_timber_road_campfire.svg"
     },
     "aftermath": {
       "eyebrow": "CHAPTER I • CONTINUED",
       "title": "Beyond the Wagon",
       "paragraphs": [
-        "The adventurers gather their bearings and follow the wagon tracks east.",
-        "The next stretch of road—and the first town—will be built as we connect combat to exploration."
+        "The party gathers its bearings beside the deserted wagon. The way ahead leads towards Harrowford and the northern reaches of the Dales.",
+        "Later, the overland map will allow the party to return here, search for the goblin trail, and choose whether to seek the raiders' lair. Those narrative travel and quest choices are not yet implemented."
       ],
-      "button": "Replay the Encounter"
+      "button": "Replay the Encounter",
+      "art": "res://assets/story/old_timber_road_campfire.svg"
     }
   },
   "rewards": {
@@ -48,5 +53,14 @@
     "gold_gp": 12,
     "consumables": [],
     "named_items": []
+  },
+  "commission": {
+    "id": "marr_missing_caravans",
+    "patron_id": "tavian_marr",
+    "patron_name": "Tavian Marr",
+    "origin_id": "seabrook",
+    "destination_id": "harrowford",
+    "required_report": "harrowford_adventurers_guild",
+    "purpose": "Investigate losses to merchant caravans entering the Dales"
   }
 }
