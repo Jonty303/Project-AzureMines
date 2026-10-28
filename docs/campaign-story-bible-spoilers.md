@@ -9,7 +9,7 @@ This document records the setting author's central campaign premise and how it s
 1. **The ore supply is faltering.** Deliveries of ore, precious metals and gems from the Dales' substantial dwarven mines have become sporadic. This is more than ordinary caravan losses: the pattern begins at, or is tied to, the mines themselves.
 2. **The dwarves deny a problem.** The mining communities insist that all is well, even though the irregular shipments and conflicting accounts suggest otherwise. Their motives may include protecting their people, avoiding panic or preserving a difficult containment effort; the specific policies and individuals involved remain to be authored.
 3. **Something was uncovered underground.** Deep excavation breached or discovered *something in the darkness*. Those who encountered it have attempted to contain it. Their containment is failing or endangered, and its escape could threaten the wider Dales. **What it is remains deliberately undefined.** Do not silently turn it into a known demon, undead god, magical disease, ancient machine, portal or conventional monster.
-4. **A separate secret society is operating in the background.** Its agents intentionally undermine the region's fragile trust and truce, pursuing an undisclosed agenda which eventually draws the story into the mines. Its identity, symbolism, leadership, methods, true objective and relationship to the thing underground remain open for later authorship.
+4. **A separate secret society is operating in the background.** Its agents intentionally undermine the region's fragile trust and truce, pursuing an undisclosed agenda which eventually draws the story into the mines. Its identity, symbolism, leadership, methods, true objective and relationship to the thing underground remain open for later authorship. **Established operations:** the society pays the goblin lord to disrupt the Old Trade Road and is interrogating a captured dwarven trader at a high-moor tower; evidence there also implicates Lord Osric Vale.
 5. **These are distinct mysteries.** Banditry and goblin raids are real; guarded caravans disappearing altogether is abnormal; output from the mines is increasingly irregular; underground containment is endangered; and agents are fomenting social conflict. They may overlap, but the story must not presume one explanation accounts for all five.
 
 ## Who knows what
@@ -20,14 +20,26 @@ This document records the setting author's central campaign premise and how it s
 | Harrowford guild and traders | Trade deliveries have grown unreliable; jobs and prices are changing | They may blame bandits, goblins, striking miners or political rivalries prematurely |
 | Dwarven mine representatives | Publicly maintain that nothing is wrong and the work continues | Some dwarves know parts of the discovery and the attempted containment; do not make all dwarves complicit or omniscient |
 | Woodland elves and local farmers | See forest and land-use disputes, pressure for timber and disrupted trade | Someone may exploit genuine grievances without creating them from nothing |
-| Lord Osric Vale and local power brokers | Want influence over security, ore rights, tolls and public opinion | Whether any particular official knowingly helps the secret society is not decided |
-| Goblin raiders and Hesk | Know their immediate lair, raids and personal loyalties | They need not understand the deeper mine mystery or society |
-| Secret-society agents | Have an agenda to destabilise the Dales, with actions tending toward the mines | Their origin, final objective and knowledge of the underground threat are deliberately undefined |
+| Lord Osric Vale and local power brokers | Want influence over security, ore rights, tolls and public opinion | Lord Osric Vale is involved, as the high-moor tower evidence will show; his exact duties, knowledge and culpability remain unsettled |
+| Goblin raiders and Hesk | Know their immediate lair, raids and personal loyalties | The goblin lord accepts society money for road raids, but most raiders, including Hesk, need not understand the society or the mines' deeper secret |
+| Secret-society agents | Pay the goblin lord to interrupt trade; have taken a captured dwarven trader to a high-moor tower for interrogation | Their origin, final objective and knowledge of the underground threat remain undefined |
+| Captive mage | Chained, malnourished and alive in the goblin hideout, with his spellbook missing | May know who removed the dwarf and book, but not the full conspiracy |
+| Captured dwarven trader | Alive and being tortured at the tower on the high moor | His actual mining knowledge and loyalties remain to be authored |
 | Player party | Initially knows Marr's commission and the exceptional caravan disappearances | Should discover each deeper connection through play, never from an omniscient narrator |
+
+## The newly established conspiracy trail — author spoilers
+
+The goblin lord **is paid by the secret society** to raid commerce on the Old Trade Road. Two captives from an earlier caravan did not return: a malnourished mage chained in the goblin hideout and a dwarf trader taken to an **old tower on the high moor**, where he is being tortured for information about the mines. The mage's unique spellbook was taken with the dwarf and remains at the tower until recovered. Evidence at that tower **implicates Lord Osric Vale**, giving players options to expose, control or unseat him.
+
+Rescuing the mage and retrieving his spellbook are separate objectives. Reuniting him with it may persuade him to settle in Harrowford as a **magical-services provider**, but his safety, recovery, consent and service prices must remain meaningful. His book is a unique quest object, never random loot. The high-moor tower is separate from Seabrook's ruined coastal keep.
+
+See [Paid Raiders, Moor Tower and Manor](campaign-arc-goblins-tower-manor-spoilers.md) for the branching location graph, evidence, prisoner fates and proposed state flags.
+
+**Previously open facts now settled:** the goblin lord's external funding and Vale's involvement are established by the setting author. Still undefined are the degree of Vale's knowledge, the society's identity and true objective, the significance of the mage's book to the agents, and the nature of what the miners uncovered.
 
 ## Reveal ladder — avoid premature exposition
 
-**I. A routine danger that isn't routine:** The four-goblin wagon ambush initially looks like common road crime. Observant players notice incomplete cargo records, unusual absence of teamsters, or signs that some disappearances are more systematic than normal raids. Hesk may be a consequential survivor, not an all-knowing exposition device.
+**I. A routine danger that isn't routine:** The four-goblin wagon ambush initially looks like common road crime. The goblin lord's raids are funded by society agents, but adventurers cannot know that yet. Observant players notice incomplete cargo records, unusual absence of teamsters, or signs that some disappearances are more systematic than normal raids. Hesk may be a consequential survivor, not an all-knowing exposition device.
 
 **II. Economic symptoms:** At Harrowford's twice-weekly ore market, wagoners complain of missing consignments and miners' brokers speak evasively of delayed shifts. The Stoneweight Trading Post's recorded weights may disagree with what merchants received. An honest trader might insist the mines are producing plenty while someone else's ledger shows otherwise. The players should be free to investigate ore supply as a separate thread from goblin tracks.
 
@@ -35,7 +47,7 @@ This document records the setting author's central campaign premise and how it s
 
 **IV. The fragile peace frays:** Land disputes intensify, woods are felled or sabotaged, miners accuse traders of theft, farmers blame woodland guardians, and credible evidence suggests some incidents were staged or deliberately exacerbated. Let players solve smaller local problems before learning that unseen agents were involved. The actual grievances must remain real.
 
-**V. Following the trail:** Recovered records, testimony, unusual ore, absent miners, damaged cave entrances, or an agent's misstep point towards deeper workings. The campaign can approach the mines by different alliances, permissions, smuggling routes or discoveries, not exclusively by a boss fight.
+**V. Following the trail:** The party can rescue the captive mage, follow the dwarf and missing spellbook to a high-moor tower, and find evidence implicating Vale. Recovered records, testimony, unusual ore, absent miners, damaged cave entrances or an agent's misstep can point further into the mines. The campaign can approach the mines by different alliances, permissions, smuggling routes or discoveries, not exclusively by a boss fight.
 
 **VI. The truth in the darkness:** The later campaign reveals what was uncovered, why containment has become unstable, and what the society seeks. Preserve the author's freedom to define the entity, ancient history, faction and ending. Earlier scenes should not accidentally contradict that reveal.
 
@@ -56,7 +68,7 @@ These are possible lines. Do not treat the exact wording or characters as final 
 - **Do not spoil the mystery** in the starting illustration, map, journal, hidden-choice controls, hover states, loading tips, item names or a leaked adventure flag.
 - **Multiple leads; no mandatory single check.** Track goblin trail, caravan paperwork, ore deliveries and local politics as separate investigation routes. A failed roll may change cost/time/relationships without ending the campaign.
 - **Player agency and faction nuance.** Helping elves limit destructive logging may cost timber supply; aiding miners may gain access but risk social suspicion; questioning the mine's official narrative need not mean treating every dwarf as an enemy.
-- **Do not imply all bandits are society agents, all goblins responsible for the disappearances, or all dwarves knowingly lying.** The degree of connection is a late-campaign choice for the author.
+- **The goblin lord is society-funded; do not imply all bandits are society agents, every goblin knows the employer, every disappearance is explained by goblins, or all dwarves knowingly lie.** The degree of connection is a late-campaign choice for the author.
 - **Separate knowledge and truth.** A witnessed rumour is recorded as rumour; a confirmed fact is marked as confirmed. An overland map shows known access, not secret lower tunnels because their coordinates exist in content files.
 - **Consequences can recur.** Hesk may help or hinder; a merchant or rival farm might appear later; rescued dwarves may provide access to lower levels. Record stable NPC identities, dialogue choices and reputations.
 - **Use same rules runtime.** Appropriate Survival/Investigation/Insight/Persuasion and tool checks can reveal leads; failure need not be binary. Combat damage, healing and conditions persist across narrative scenes.
@@ -79,8 +91,8 @@ These are labels for future planning. Do not use author-truth values as player-v
 - Who knows the truth among the dwarves, and what has happened to those who tried to speak?
 - Is the society attempting to exploit, open, control or prevent the underground threat—or pursuing a different goal?
 - Which disruptions to the fragile peace are manipulated, and which are genuine?
-- How do the caravan disappearances relate to the slowdown of ore deliveries?
-- What are the society's name, signs, methods and senior agents?
+- How are the caravan disappearances, paid raids and irregular mining output related beyond the links already established?
+- What are the society's name, signs, senior agents and remaining methods beyond paid raids and the tower interrogation?
 - What moral compromises and alternative endings will be possible once the truth is known?
 
-**Implementation boundary:** This is a story bible, not executable adventure content. The existing v0.7 encounter remains a goblin wagon ambush with a merchant commission. The mines' true secret and secret society are not currently simulated, and a complete open-world quest or map has not yet been built.
+**Implementation boundary:** This is a story bible, not executable adventure content. The existing v0.7 encounter remains a goblin wagon ambush with a merchant commission. The mines' true secret, paid raider conspiracy, tower and Vale investigation are not currently simulated, and a complete open-world quest or map has not yet been built.
