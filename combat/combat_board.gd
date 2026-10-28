@@ -5,7 +5,7 @@ signal cell_clicked(cell: Vector2i)
 
 const CombatEngine = preload("res://combat/combat_engine.gd")
 
-const CELL_SIZE := 44
+const CELL_SIZE := 68
 const PARTY_BLUE := Color("#244b78")
 const ENEMY_RED := Color("#9c4745")
 
@@ -47,24 +47,26 @@ func _draw() -> void:
         var cell: Vector2i = actor["position"]
         if int(actor["hp"]) <= 0:
             continue
-        var rect := Rect2(Vector2(cell * CELL_SIZE) + Vector2(4, 4), Vector2(36, 36))
+        var rect := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
         if str(actor["id"]) == current:
-            draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(42, 42)), Color("#e3bf58"), false, 3.0)
+            draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(66, 66)), Color("#e3bf58"), false, 3.0)
         var art: Dictionary = actor.get("art", {})
         var path := str(art.get("combat_sprite", ""))
+        if path.ends_with("_front_32.png"):
+            path = path.replace("_front_32.png", "_front_64.png")
         var texture: Texture2D = _texture_for(path)
         if texture != null:
             draw_texture_rect(texture, rect, false)
         else:
             var is_party: bool = actor["team"] == "party"
-            draw_circle(rect.get_center(), 17.0, PARTY_BLUE if is_party else ENEMY_RED)
+            draw_circle(rect.get_center(), 25.0, PARTY_BLUE if is_party else ENEMY_RED)
             var first_letter := str(actor["name"]).substr(0, 1)
-            draw_string(get_theme_default_font(), rect.position + Vector2(6, 26), first_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
+            draw_string(get_theme_default_font(), rect.position + Vector2(22, 42), first_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
         # HP bar, red lost HP section and green remaining HP section.
-        var bar := Rect2(Vector2(cell * CELL_SIZE) + Vector2(5, 39), Vector2(34, 3))
+        var bar := Rect2(Vector2(cell * CELL_SIZE) + Vector2(6, 62), Vector2(56, 4))
         draw_rect(bar, Color("#8d2f31"))
         var ratio := float(actor["hp"]) / float(maxi(1, int(actor["max_hp"])))
-        draw_rect(Rect2(bar.position, Vector2(bar.size.x * ratio, 3)), Color("#7bc36a"))
+        draw_rect(Rect2(bar.position, Vector2(bar.size.x * ratio, 4)), Color("#7bc36a"))
 
 
 func _texture_for(path: String) -> Texture2D:
