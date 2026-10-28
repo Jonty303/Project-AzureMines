@@ -1,0 +1,13 @@
+# Godot-generated data
+.godot/
+.import/
+# Editor / operating system
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+# Local exports and temporary outputs
+build/
+dist/
+*.tmp

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "classic_5e",
+  "name": "Classic 5E",
+  "status": "design_only",
+  "level_min": 1,
+  "level_max": 5,
+  "source": "D&D SRD 5.2.1 (CC BY 4.0), adapted",
+  "class_ids": [
+    "champion",
+    "priest",
+    "thief",
+    "evoker",
+    "hunter"
+  ],
+  "race_ids": [
+    "human",
+    "dwarf",
+    "elf",
+    "halfling"
+  ],
+  "notes": "Definitions are design targets; no complete rules implementation is shipped in the bootstrap."
+}

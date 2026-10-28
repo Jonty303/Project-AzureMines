@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "training_ground",
+  "name": "The Training Ground",
+  "description": "A quiet training ground outside a frontier settlement. The party is ready, but tactical battles and exploration have not yet been implemented.",
+  "exits": [],
+  "encounters": [],
+  "events": []
+}

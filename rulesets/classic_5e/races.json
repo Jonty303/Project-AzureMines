@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "races": [
+    {
+      "id": "human",
+      "origin_feat": "skilled"
+    },
+    {
+      "id": "dwarf"
+    },
+    {
+      "id": "elf",
+      "lineage": "high_elf"
+    },
+    {
+      "id": "halfling"
+    }
+  ],
+  "ability_bonus_rule": "+2 to one score and +1 to a different score, independent of background",
+  "backgrounds_enabled": false,
+  "implementation_status": "design_only"
+}

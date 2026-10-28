@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "classes": [
+    {
+      "id": "champion",
+      "source_base": "fighter",
+      "source_subclass": "champion",
+      "fixed_choices": [
+        "defense_fighting_style"
+      ]
+    },
+    {
+      "id": "priest",
+      "source_base": "cleric",
+      "source_subclass": "life_domain",
+      "fixed_choices": [
+        "protector_divine_order"
+      ]
+    },
+    {
+      "id": "thief",
+      "source_base": "rogue",
+      "source_subclass": "thief",
+      "fixed_choices": [
+        "sleight_of_hand_and_stealth_expertise"
+      ]
+    },
+    {
+      "id": "evoker",
+      "source_base": "wizard",
+      "source_subclass": "evoker",
+      "fixed_choices": [
+        "arcana_scholar_expertise"
+      ]
+    },
+    {
+      "id": "hunter",
+      "source_base": "ranger",
+      "source_subclass": "hunter",
+      "fixed_choices": [
+        "archery_fighting_style",
+        "horde_breaker"
+      ]
+    }
+  ],
+  "implementation_status": "design_only"
+}

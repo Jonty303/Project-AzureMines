@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "test_adventure",
+  "title": "The Training Ground",
+  "ruleset_id": "classic_5e",
+  "starting_location": "training_ground",
+  "status": "placeholder",
+  "description": "An original, minimal content package for loader tests."
+}
