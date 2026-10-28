@@ -1,5 +1,12 @@
 # Project Azure Mines
 
+## Illustrated opening and Dales settlements — v0.7.2
+
+The opening now displays a **static illustration of the four adventurers around a nighttime campfire** in the main display area while the narrative is read; the combat grid appears again for party deployment and battle. **Tavian Marr**, a merchant in the small coastal city of **Seabrook**, sends the party to investigate caravan losses in the Dales and report to the Adventurers' Guild in **Harrowford**, a northern market town.
+
+Seabrook's old keep **Old Rookhold is in severe disrepair**, no longer an effective fortification, and its possible monster inhabitants remain an unverified rumour. Harrowford's lord lives instead at Vale Manor. The town plan includes an inn, store, rival farms, blacksmith, carpenter, life shrine and an ore-trading market held twice a week. See [Dales settlement gazetteer](docs/dales-settlement-gazetteer.md). The settlement locations are setting design data, **not yet playable town screens**.
+
+
 ## Named survivor combat rules — v0.7.1
 
 Hesk, Roadwatch is now a shield-bearing swordsman with a distinct sprite and the special-NPC death saving throw rule. The player can choose nonlethal melee attacks using **Subdue** and can offer **First Aid** or **Cure Wounds** after a victory if Hesk survives. Regular goblins die at 0 HP unless deliberately subdued. Battles end when one side is incapacitated. Longer-term decisions and relationships are part of the upcoming narrative exploration system, not yet playable. See [Named Survivor v0.7.1](docs/named-survivor-v071.md).
