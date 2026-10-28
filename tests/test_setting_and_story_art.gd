@@ -98,6 +98,24 @@ func _run() -> void:
     if not str(story["paragraphs"][0]).contains("Tavian Marr"):
         _fail("Opening did not describe the commissioning merchant")
         return
+    var public_trends: Array = economy.get("public_trends", [])
+    if public_trends.size() != 3:
+        _fail("Public ore shortfall, dwarven denial and uncertain cause must stay distinct")
+        return
+    var trend_ids: Array[String] = []
+    for trend in public_trends:
+        trend_ids.append(str(trend.get("id", "")))
+    if not trend_ids.has("ore_deliveries_irregular") or not trend_ids.has("dwarven_reassurances"):
+        _fail("Mine shipment irregularity and public reassurances missing")
+        return
+    var story_text: String = " ".join(story["paragraphs"]).to_lower()
+    if not story_text.contains("irregular loads") or not story_text.contains("workings are sound"):
+        _fail("The opening needs a subtle public mine-supply clue")
+        return
+    for forbidden in ["containment", "secret society", "uncovered something", "threatens to break free"]:
+        if story_text.contains(forbidden):
+            _fail("Author-only campaign secret leaked into opening: " + forbidden)
+            return
     var artwork: String = str(story.get("art", ""))
     if not ResourceLoader.exists(artwork) or load(artwork) == null:
         _fail("Static campfire illustration failed to import")
