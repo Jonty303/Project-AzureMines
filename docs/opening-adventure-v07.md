@@ -46,7 +46,7 @@ The rules engine remains responsible for determining **victory or defeat**. It d
 
 ## Remaining steps towards a real adventure
 
-- First-person or top-down travel/exploration leading into the forest road.
+- Authored narrative travel and a hand-annotated overland map, including a returnable wagon clearing and optional goblin hideout discovery.
 - Persistent save/load for party XP, money, inventory, story flags and completed encounters.
 - A town with useful services and occasional named magical items.
 - Exploration interactions with the wagon and chests, plus quests/dialogue.
@@ -54,3 +54,7 @@ The rules engine remains responsible for determining **victory or defeat**. It d
 - A richer victory panel when significant treasure is legitimately awarded.
 
 This iteration does **not** grant level-2 abilities, implement shops or inflate goblin loot. See [the sparse treasure and town economy contract](loot-and-economy.md).
+
+## Proposed follow-on: optional goblin hideout
+
+See [Goblin Trail, Survivor and Hideout](goblin-trail-and-survivor-quest.md). This is planned content: the party can choose town or investigate the lair, revisit the wagon, follow tracks or ask a town witness for directions. A genuine surviving goblin may later be healed, bargained with, released or killed. If released, he may warn and fortify the hideout, open a diplomatic audience, or both. The current v0.7 combat encounter **does not** yet support reviving dead goblins or these exploration choices.
