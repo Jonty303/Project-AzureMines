@@ -86,8 +86,12 @@ func _run() -> void:
     if story.stage != "approach" or not ui.get("story_panel").visible:
         _fail("Opening screen must appear before combat")
         return
-    if not ui.get("story_title").text.contains("Wagon"):
-        _fail("Original wagon introduction missing")
+    if ui.get("story_title").text != "The Watchfire":
+        _fail("Original campfire introduction missing")
+        return
+    var illustration: TextureRect = ui.get("story_image")
+    if illustration == null or not illustration.visible or illustration.texture == null:
+        _fail("The story must show a loaded illustration in the main battlefield pane")
         return
     if ui.get("setup_panel").visible or ui.get("combat_action_row").visible:
         _fail("Combat/setup buttons visible during narration")
@@ -101,6 +105,9 @@ func _run() -> void:
     if story.stage != "deployment" or not ui.get("setup_panel").visible:
         _fail("Continue failed to reveal party deployment")
         return
+    if illustration.visible:
+        _fail("Story illustration must disappear for party deployment")
+        return
     ui.call("_on_begin_battle")
     if story.stage != "battle" or game.deployment_active:
         _fail("Begin Battle did not start initiative")
@@ -112,6 +119,9 @@ func _run() -> void:
     ui.call("_refresh")
     if story.stage != "victory" or not ui.get("story_panel").visible:
         _fail("Victory screen did not display after final goblin fell")
+        return
+    if not illustration.visible:
+        _fail("Story illustration should appear again during narrative aftermath")
         return
     if not ui.get("story_rewards").text.contains("200") or not ui.get("story_rewards").text.contains("12 gp"):
         _fail("Victory screen omitted XP and gold")
