@@ -3,11 +3,13 @@ extends Control
 
 signal cell_clicked(cell: Vector2i)
 
+const CombatEngine = preload("res://combat/combat_engine.gd")
+
 const CELL_SIZE := 44
 const PARTY_BLUE := Color("#244b78")
 const ENEMY_RED := Color("#9c4745")
 
-var engine
+var engine: CombatEngine
 var _sprite_cache: Dictionary = {}
 
 
@@ -20,7 +22,7 @@ func _ready() -> void:
 func _draw() -> void:
     if engine == null:
         return
-    var current := engine.current_id()
+    var current: String = engine.current_id()
     var reachable: Dictionary = {}
     if engine.current_is_party():
         reachable = engine.get_reachable(current)
