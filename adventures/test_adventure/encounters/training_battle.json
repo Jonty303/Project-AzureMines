@@ -74,7 +74,10 @@
       "equipment": [
         "shortsword",
         "shield"
-      ]
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/hesk_sword_shield_64.svg"
+      }
     },
     {
       "id": "goblin_blade_two",
