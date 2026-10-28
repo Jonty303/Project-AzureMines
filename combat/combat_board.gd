@@ -56,7 +56,7 @@ func _draw() -> void:
         if texture != null:
             draw_texture_rect(texture, rect, false)
         else:
-            var is_party := actor["team"] == "party"
+            var is_party: bool = actor["team"] == "party"
             draw_circle(rect.get_center(), 17.0, PARTY_BLUE if is_party else ENEMY_RED)
             var first_letter := str(actor["name"]).substr(0, 1)
             draw_string(get_theme_default_font(), rect.position + Vector2(6, 26), first_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
