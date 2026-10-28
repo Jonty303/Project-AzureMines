@@ -133,17 +133,12 @@ func _run() -> void:
     if story.gold_gp != 12 or int(story.xp_by_character["brunna"]) != 50:
         _fail("Repeated UI refresh duplicated rewards")
         return
-    ui.call("_on_story_continue")
-    if story.stage != "aftermath" or not ui.get("story_panel").visible:
-        _fail("Continue failed to show post-ambush story")
+    if ui.get("story_continue_button").text != "Continue to Wagon Clearing":
+        _fail("Victory button must clearly lead to wagon exploration")
         return
-    if ui.get("story_continue_button").text != "Continue":
-        _fail("Aftermath button must say Continue, not Replay the Encounter")
-        return
-
     ui.call("_on_story_continue")
     if ui.get("adventure").stage != "exploration":
-        _fail("Post-ambush continue must enter narrative exploration")
+        _fail("One Continue after victory must enter exploration, without a second story page")
         return
     if not ui.get("story_choices_scroll").visible or ui.get("adventure").campaign.current_location != "wagon_clearing":
         _fail("Narrative choices and wagon clearing did not appear")
