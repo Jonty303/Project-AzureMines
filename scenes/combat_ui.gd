@@ -542,8 +542,12 @@ func _on_story_continue() -> void:
         "approach":
             adventure.begin_deployment()
         "victory":
-            adventure.continue_after_victory()
+            # Preserve the underlying aftermath stage for old saves, but do not
+            # display an extra story page between victory and the wagon clearing.
+            if adventure.continue_after_victory():
+                adventure.enter_exploration()
         "aftermath":
+            # Backward compatibility for saves created at the old interim page.
             adventure.enter_exploration()
         "defeat":
             _restart()
