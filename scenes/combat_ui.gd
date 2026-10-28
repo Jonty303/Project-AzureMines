@@ -398,9 +398,14 @@ func _refresh() -> void:
     reaction_row.visible = reaction_pending
     if reaction_pending:
         var prompt: Dictionary = engine.pending_reaction
-        reaction_label.text = "%s can react to %s" % [
-            engine.actors[prompt["reactor"]]["name"], engine.actors[prompt["target"]]["name"]
-        ]
+        if prompt.get("kind", "") == "shield":
+            reaction_label.text = "%s: Shield (+5 AC, 1 spell slot)?" % engine.actors[prompt["reactor"]]["name"]
+            reaction_accept.text = "Cast Shield"
+        else:
+            reaction_label.text = "%s: Opportunity Attack against %s?" % [
+                engine.actors[prompt["reactor"]]["name"], engine.actors[prompt["target"]]["name"]
+            ]
+            reaction_accept.text = "Attack"
     var party_turn: bool = engine.current_is_party() and not reaction_pending
     var can_act: bool = party_turn and int(engine.current_actor().get("hp", 0)) > 0
     status_label.text = "VICTORY!" if engine.finished and engine.victor == "party" else (
@@ -445,9 +450,7 @@ func _refresh() -> void:
     )
     _set_crossed(move_button, engine.movement_remaining() <= 0)
     _set_crossed(attack_button, engine.action_used)
-    _set_crossed(spells_button, engine.action_used and engine.bonus_action_used or (
-        not engine.action_used and not engine.bonus_action_used and action_ids.is_empty()
-    ))
+    _set_crossed(spells_button, not action_ids.is_empty() and not engine.can_cast_any_current_spell())
     _set_crossed(second_wind_button, engine.bonus_action_used)
     _set_crossed(dash_button, engine.action_used)
     _set_crossed(dodge_button, engine.action_used)
