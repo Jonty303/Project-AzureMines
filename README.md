@@ -1,5 +1,10 @@
 # Project Azure Mines
 
+## Named survivor combat rules — v0.7.1
+
+Hesk, Roadwatch is now a shield-bearing swordsman with a distinct sprite and the special-NPC death saving throw rule. The player can choose nonlethal melee attacks using **Subdue** and can offer **First Aid** or **Cure Wounds** after a victory if Hesk survives. Regular goblins die at 0 HP unless deliberately subdued. Battles end when one side is incapacitated. Longer-term decisions and relationships are part of the upcoming narrative exploration system, not yet playable. See [Named Survivor v0.7.1](docs/named-survivor-v071.md).
+
+
 ## Exploration design direction — narrative adventure, not first-person movement
 
 Exploration will use authored **choice-driven narrative locations** with revisitable scenes, skill/ability checks, branching dialogue, quest decisions, persistent effects and a discovered **hand-annotated graph-paper dungeon map**. The same scene engine will drive towns and NPC interactions. Tactical combat remains its own mode. See [Narrative Exploration and Cartography Contract v0.1](docs/narrative-exploration-contract.md). The design is committed; gameplay implementation is the next major milestone.
