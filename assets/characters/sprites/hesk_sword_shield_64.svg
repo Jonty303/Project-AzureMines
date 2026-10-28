@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<!-- Hesk: goblin swordsman with an iron-rimmed round shield, pixel-friendly original art -->
+<path fill="#15181b" d="M17 55h30v7H17zM9 17h12v6H9zM43 16h12v7H43z"/>
+<path fill="#342c24" d="M20 46h12v13H18v-6zM34 46h12v13H33z"/>
+<path fill="#656b48" d="M19 28h26v20H19z"/>
+<path fill="#4c4936" d="M22 35h20v7H22z"/>
+<path fill="#7a854e" d="M19 14h27v18H19z"/>
+<path fill="#7a854e" d="M12 20h8v8h-8zM45 20h8v8h-8z"/>
+<path fill="#a3a268" d="M13 18h7v4h-7zM45 17h8v4h-8zM23 17h19v4H23z"/>
+<path fill="#33332c" d="M24 21h6v5h-6zM36 21h6v5h-6z"/>
+<path fill="#d6b76a" d="M26 22h2v2h-2zM38 22h2v2h-2z"/>
+<path fill="#43513a" d="M29 25h7v7h-7z"/>
+<path fill="#c3a278" d="M27 31h13v3H27z"/>
+<path fill="#3a3027" d="M31 31h3v2h-3z"/>
+<path fill="#845d3c" d="M24 7h19v8H24zM20 12h25v5H20z"/>
+<path fill="#ad9167" d="M26 9h15v3H26z"/>
+<path fill="#a58b5c" d="M21 34h5v14h-5zM41 34h5v14h-5z"/>
+<!-- right arm holds a steel shortsword -->
+<path fill="#3f452f" d="M44 34h7v16h-7z"/>
+<path fill="#b9bcc0" d="M50 9h4v33h-4zM49 10h6v5h-6z"/>
+<path fill="#747c82" d="M53 12h2v29h-2z"/>
+<path fill="#b18b51" d="M45 40h14v4H45zM50 43h4v12h-4z"/>
+<path fill="#3d3326" d="M49 53h6v5h-6z"/>
+<!-- left arm and shield -->
+<path fill="#4f5639" d="M16 33h9v19h-9z"/>
+<path fill="#1c2026" d="M3 33h27v23L17 63 4 55z"/>
+<path fill="#8f9ba5" d="M5 34h24v19L17 60 6 53z"/>
+<path fill="#4a606b" d="M9 38h16v13l-8 5-8-5z"/>
+<path fill="#ad8758" d="M15 38h4v16h-4zM9 44h16v4H9z"/>
+<path fill="#e5c48a" d="M16 43h3v5h-3z"/>
+</svg>
