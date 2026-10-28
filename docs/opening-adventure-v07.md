@@ -1,10 +1,10 @@
-# Opening adventure v0.7 — The Old Timber Road
+# Opening adventure v0.7 — The Old Trade Road
 
 **Status:** Implemented first playable sequence on the existing `feature/downed-sprites-action-bar` branch. This is the beginning of a proposed original Project Azure Mines adventure, not an adaptation of the published Lost Mine of Phandelver encounter. Existing characters remain **level 1**.
 
 ## Playable sequence
 
-1. **Approach:** The scene starts on a framed narrative panel, `A Wagon in the Trees`. The original text describes the old timber road, the abandoned covered wagon, a small campfire and signs of an imminent goblin ambush. A static night-camp illustration now fills the main area while the authored narrative appears beside it; the tactical grid replaces the illustration in setup and battle.
+1. **Approach:** The scene starts on a framed narrative panel, `The Watchfire`. The original text describes the old trade road, the abandoned covered wagon, a small campfire and signs of an imminent goblin ambush. A static night-camp illustration now fills the main area while the authored narrative appears beside it; the tactical grid replaces the illustration in setup and battle.
 2. **Party setup:** Choose **Arrange the Party** to enter the existing safe Line / Square / Diamond / manual deployment phase. Initiative has not yet been rolled.
 3. **Battle:** **Begin Battle** locks the party's positions, rolls initiative and plays the existing two melee (including Hesk's shortsword and shield) / two shortbow goblin encounter, including campfire fire damage and physical wagon/chest obstacles.
 4. **Victory:** Defeat all four goblins to display an authored **After the Ambush** story panel and a concise reward summary.
@@ -62,3 +62,7 @@ See [Goblin Trail, Survivor and Hideout](goblin-trail-and-survivor-quest.md). Th
 ## v0.7.2 — Commission and illustrated story presentation
 
 The opening now begins with **Tavian Marr's commission in Seabrook**: investigate caravan losses entering the Dales, and report to the Adventurers' Guild in **Harrowford** on the northern edge of the region. The party rests around a fire under pines before finding the sabotaged wagon at dawn. A static authored illustration fills the central screen during narrative reading and hides during party setup and tactical battle; the original art can later be replaced with animation. Art and prose are selected by each story screen's `art` and `paragraphs` fields. The illustrated concept image is a visual reference; the current in-game asset is a separate original SVG scene. Seabrook's old keep is **derelict and possibly inhabited by monsters**, not a functioning defence. See [the Dales settlement gazetteer](dales-settlement-gazetteer.md).
+
+## Regional trade premise
+
+Seabrook lies **west** of the Dales; Harrowford is its northern market town. Dwarven mines produce the ore, precious metals and gems that sustain the Old Trade Road. The Dales remain a wild limestone country of caves, waterfalls, wooded valleys, high moorland and mountains. Caravans normally hire a minor mage and a sellsword, sometimes also a priest, so **entire escorted caravans vanishing without survivors** are an exceptional mystery. See [the regional gazetteer](dales-settlement-gazetteer.md).
