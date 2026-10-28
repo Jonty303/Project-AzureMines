@@ -30,8 +30,18 @@ func _run_test() -> void:
     if not (board_instance is Control):
         _fail("Combat scene did not construct its board")
         return
-    if not engine_instance.current_is_party():
-        _fail("AI prelude did not advance to a party turn")
+    if not engine_instance.deployment_active:
+        _fail("Scene should open with party deployment")
+        return
+    if not scene_root.get("setup_panel").visible:
+        _fail("Formation choices should be visible before combat")
+        return
+    if engine_instance.turn_order.size() != 0:
+        _fail("Initiative must not roll before deployment ends")
+        return
+    scene_root.call("_on_begin_battle")
+    if engine_instance.deployment_active or not engine_instance.current_is_party():
+        _fail("Begin Battle failed to advance to a party turn")
         return
 
     var current: String = engine_instance.current_id()
