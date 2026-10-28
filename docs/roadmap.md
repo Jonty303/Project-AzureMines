@@ -1,4 +1,4 @@
-# Roadmap — v0.2
+# Roadmap — updated after the first playable adventure opening
 
 Milestones are deliverable-driven, not scheduled deadlines.
 
@@ -6,12 +6,12 @@ Milestones are deliverable-driven, not scheduled deadlines.
 | --- | --- | --- |
 | 0 | Godot/bootstrap and example module loader | Implemented; local validation needed |
 | 0.5 | Canonical immutable level-1 party and reference artwork | Character fixtures drafted, sprite tokens supplied |
-| 1 | First playable tutorial battle | **Current prototype branch:** grid, four vs two, attacks, log, AI |
+| 1 | First playable tactical battle | Implemented on feature branch: four heroes vs four goblins, ranged/melee AI, cover, hazards and deployment |
 | 2 | Combat correctness | Opportunity attacks, cover, reactions, weapon mastery, death saves |
 | 3 | Four starting classes' spells and signature abilities | Core spell engine, Sneak Attack, Second Wind and Channel Divinity |
 | 4 | Level 1–5 progression for all five classes | Hunter added, class levels, new enemies and extensive tests |
-| 5 | Gold Box exploration, rewards and town economy | First-person grid, quests, dialogue, inventory/saves, sparse XP-and-gold rewards, shop services and occasional named magical stock |
-| 6 | Original small complete adventure | One content pack validates adventure / ruleset separation |
+| 5 | Narrative adventure engine | Authored choice-driven scenes, graph navigation, checks, conversations, revisits, quest flags, persistent save/load and hand-annotated map |
+| 6 | Original opening adventure and town economy | Extend Old Timber Road into revisitable locations and one town; quest dialogue, scarce named magic items, services and gold sinks |
 | 7 | Bard expansion | Bard + College of Lore once RPG interactions exist |
 
 ## Next validation
@@ -24,8 +24,14 @@ Milestones are deliverable-driven, not scheduled deadlines.
 
 ## Scope guardrails
 
-No permanent character creation, levels beyond one, dungeon mode, full spell catalogue or generic adventure editor in this first playable. Implement only features demonstrated by the fixed party and encounter.
+No permanent character creation or levels beyond one until the current slice is stable. Exploration means authored narrative location nodes and choices, **not** a first-person movement grid. Build one small revisitable area, check, map and conversation before a generic editor or broad content.
 
 ## Loot and town economy
 
 See [Loot, Treasure and Town Economy v0.1](loot-and-economy.md). Routine victories primarily grant XP and coin, sometimes consumables. Ordinary discarded equipment is not collected as loot. Named magical items are scarce, from authored enemies, rare constrained generation or occasional persistent merchant stock. Gold sinks include town services and selected purchases. **Documentation only** until inventory/rewards/services are implemented.
+
+## Exploration direction — supersedes older first-person proposals
+
+Azure Mines uses a **narrative choice-based exploration engine**, with persistent scene variants, actor conversations, skill/attribute checks, quests, interactive objects, story-triggered combat and consequences, plus a graph-paper-style, hand-annotated discovery map. See [Narrative Exploration and Cartography Contract v0.1](narrative-exploration-contract.md). This is the next major system after the v0.7 opening; it is **not yet implemented**.
+
+The first integration slice connects the existing wagon ambush to several revisitable narrative locations, one check, one branching conversation/quest, discovered map annotations and a real save/load record for persistent rewards/flags.
