@@ -4,8 +4,8 @@ extends Control
 const CombatEngine = preload("res://combat/combat_engine.gd")
 const CombatBoard = preload("res://combat/combat_board.gd")
 
-var engine
-var board
+var engine: CombatEngine
+var board: CombatBoard
 var status_label: Label
 var party_label: Label
 var active_label: Label
