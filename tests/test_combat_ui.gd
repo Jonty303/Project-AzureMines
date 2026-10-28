@@ -33,11 +33,15 @@ func _run_test() -> void:
     if not engine_instance.deployment_active:
         _fail("Scene should open with party deployment")
         return
-    if not scene_root.get("setup_panel").visible:
-        _fail("Formation choices should be visible before combat")
+    if scene_root.get("adventure").stage != "approach" or not scene_root.get("story_panel").visible:
+        _fail("Original opening story should appear first")
         return
     if engine_instance.turn_order.size() != 0:
         _fail("Initiative must not roll before deployment ends")
+        return
+    scene_root.call("_on_story_continue")
+    if not scene_root.get("setup_panel").visible:
+        _fail("Continue did not reveal party setup")
         return
     scene_root.call("_on_begin_battle")
     if engine_instance.deployment_active or not engine_instance.current_is_party():
