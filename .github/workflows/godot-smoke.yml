@@ -18,6 +18,8 @@ jobs:
           chmod +x Godot_v4.5.2-stable_linux.x86_64
       - name: Import Godot project
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --editor --quit
+      - name: Launch combat UI headlessly
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --quit-after 30
       - name: Module loader test
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_module_loader.gd
       - name: Canonical party test
