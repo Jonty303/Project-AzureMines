@@ -11,7 +11,7 @@ Milestones are deliverable-driven, not scheduled deadlines.
 | 3 | Four starting classes' spells and signature abilities | Core spell engine, Sneak Attack, Second Wind and Channel Divinity |
 | 4 | Level 1–5 progression for all five classes | Hunter added, class levels, new enemies and extensive tests |
 | 5 | Narrative adventure engine | Authored choice-driven scenes, graph navigation, checks, conversations, revisits, quest flags, persistent save/load and hand-annotated map |
-| 6 | Original opening adventure and town economy | Extend Old Timber Road into revisitable locations and one town; quest dialogue, scarce named magic items, services and gold sinks |
+| 6 | Original opening adventure and town economy | Extend Old Trade Road into revisitable locations and one town; quest dialogue, scarce named magic items, services and gold sinks |
 | 7 | Bard expansion | Bard + College of Lore once RPG interactions exist |
 
 ## Next validation
@@ -35,3 +35,7 @@ See [Loot, Treasure and Town Economy v0.1](loot-and-economy.md). Routine victori
 Azure Mines uses a **narrative choice-based exploration engine**, with persistent scene variants, actor conversations, skill/attribute checks, quests, interactive objects, story-triggered combat and consequences, plus a graph-paper-style, hand-annotated discovery map. See [Narrative Exploration and Cartography Contract v0.1](narrative-exploration-contract.md). This is the next major system after the v0.7 opening; it is **not yet implemented**.
 
 The first integration slice connects the existing wagon ambush to several revisitable narrative locations, one check, one branching conversation/quest, discovered map annotations and a real save/load record for persistent rewards/flags.
+
+## Regional story anchor — Old Trade Road
+
+Seabrook is the western coastal outlet for the Dales' dwarven mining economy. Harrowford lies on the northern edge. Much of the country remains wild limestone moor, mountain, wood and fertile valley, with new settlement, mine expansion, farmland and timbercraft held in an uneasy truce with local woodland communities. Ordinary guarded caravan raids are known; **the disappearance of entire escorted convoys without survivors is not**. All future overland maps, narrative checks, trade and quest content should uphold those constraints. See [Dales settlement gazetteer](dales-settlement-gazetteer.md).
