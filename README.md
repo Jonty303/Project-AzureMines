@@ -1,5 +1,12 @@
 # Project Azure Mines
 
+## Latest iteration: downed poses and bottom action bar
+
+On `feature/downed-sprites-action-bar`, the tutorial battle now has a mock-up-inspired dark-stone floor/wall visual, crates/barrels/torches, downed character and goblin poses, a compact bottom **Move / Attack / Spells / Second Wind / Dash / Dodge / End Turn** action bar and weapon/spell selection. Unconscious adventurers can be healed, and the combat engine now tracks basic Death Saving Throws. All characters remain level 1.
+
+See [Combat v0.3 — Action Bar and Downed Poses](docs/action-bar-and-downed-v03.md) for controls, assets, tests and known limitations.
+
+
 A modular, Gold Box-inspired tactical RPG built with **Godot 4.5.2**, using a custom **Classic 5E** rules package based on SRD 5.2.1.
 
 ## Play the level-1 combat prototype
