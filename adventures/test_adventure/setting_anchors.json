@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "status": "worldbuilding_proposal",
+  "region": {
+    "id": "the_dales",
+    "name": "The Dales",
+    "description": "A custom region whose geography, history and cosmology will be expanded by the setting author."
+  },
+  "settlements": [
+    {
+      "id": "seabrook",
+      "name": "Seabrook",
+      "kind": "small_coastal_city",
+      "position": "Southwest approaches to the Dales",
+      "notes": "A busy mixed-ancestry port city whose trade outgrew its walls. Only scattered stone watchtowers and a crumbling keep protect the harbour; smuggling and cargo theft thrive in the unwalled dock wards.",
+      "important_sites": [
+        {
+          "id": "seabrook_docks",
+          "name": "Seabrook Docks",
+          "role": "caravans_and_coastal_trade"
+        },
+        {
+          "id": "old_rookhold",
+          "name": "Old Rookhold",
+          "role": "ruined_keep",
+          "condition": "derelict",
+          "monsters": "rumoured_not_confirmed",
+          "description": "The old keep on a headland has fallen into serious disrepair. Collapsed roofs, broken walls and flooded vaults make it unsuitable for defence. Residents whisper of something nesting below, but no one has verified what lives there."
+        },
+        {
+          "id": "watchtowers",
+          "name": "Harbour Watchtowers",
+          "role": "fragmentary_defences",
+          "condition": "poorly_manned"
+        }
+      ]
+    },
+    {
+      "id": "harrowford",
+      "name": "Harrowford",
+      "kind": "northern_dales_market_town",
+      "position": "Northern edge of the Dales",
+      "notes": "A small market town astride the old ford and ore road; a market meets twice a week around the trading post.",
+      "important_sites": [
+        {
+          "id": "guildhall",
+          "name": "Harrowford Adventurers' Guild",
+          "role": "commission_reporting",
+          "notes": "The party must report here as a contractual requirement."
+        },
+        {
+          "id": "golden_stag_inn",
+          "name": "The Golden Stag",
+          "role": "inn_rest_and_rumours"
+        },
+        {
+          "id": "wrens_store",
+          "name": "Wren's Sundries",
+          "role": "general_store"
+        },
+        {
+          "id": "bramwell_farm",
+          "name": "Bramwell Farm",
+          "role": "farm",
+          "notes": "One of two rival farming families."
+        },
+        {
+          "id": "kestrel_farm",
+          "name": "Kestrel Farm",
+          "role": "farm",
+          "notes": "The Bramwells' rivals in land and livestock."
+        },
+        {
+          "id": "red_anvil",
+          "name": "The Red Anvil",
+          "role": "blacksmith"
+        },
+        {
+          "id": "carpenters_yard",
+          "name": "Hollis's Yard",
+          "role": "carpentry_and_town_upgrades",
+          "notes": "Possible woodworks contracts, repairs and town investments as a future gold sink."
+        },
+        {
+          "id": "lethiel_shrine",
+          "name": "The Shrine of Lethiel",
+          "role": "life_shrine",
+          "deity": "Lethiel",
+          "notes": "Small local sanctuary dedicated to the goddess of life; healing and refuge may be offered at a cost."
+        },
+        {
+          "id": "vale_manor",
+          "name": "Vale Manor",
+          "role": "local_lords_residence",
+          "lord": "Lord Osric Vale",
+          "notes": "Modest occupied manor house. The lord is self-serving and may be exploiting miners and farmers."
+        },
+        {
+          "id": "ore_weighhouse",
+          "name": "The Stoneweight Trading Post",
+          "role": "ore_and_market_trade",
+          "market_days_per_week": 2,
+          "notes": "Ore brought from surrounding mines is weighed and sold. Twice-weekly markets draw farmers, miners and craftspeople."
+        }
+      ]
+    }
+  ],
+  "people": [
+    {
+      "id": "tavian_marr",
+      "name": "Tavian Marr",
+      "home": "seabrook",
+      "role": "merchant_patron",
+      "quest": "marr_missing_caravans",
+      "notes": "Commissions the party to investigate caravans vanishing in the Dales; requires an Adventurers' Guild report at Harrowford."
+    },
+    {
+      "id": "mara_venn",
+      "name": "Mara Venn",
+      "home": "harrowford",
+      "role": "wagoner_witness",
+      "notes": "Has previously suffered raids; can disclose the goblin trail without a mandatory roll if tracking fails."
+    },
+    {
+      "id": "osric_vale",
+      "name": "Lord Osric Vale",
+      "home": "harrowford",
+      "role": "local_lord",
+      "notes": "Self-interested and politically compromised, but his actual crimes should be discovered in play."
+    },
+    {
+      "id": "hesk_roadwatch",
+      "name": "Hesk, Roadwatch",
+      "role": "named_goblin_survivor",
+      "notes": "Can become an informant, ally or antagonist depending on survival and treatment. Not linked to the ruined coastal keep."
+    }
+  ]
+}
