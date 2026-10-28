@@ -1,9 +1,16 @@
 extends Control
-## Four-character tutorial combat UI. Pure battle mechanics live in CombatEngine.
+## First-pass mock-up-inspired UI: tactical map + right log + bottom action bar.
+## Only clickable, implemented level-1 commands are shown.
 
 const CombatEngine = preload("res://combat/combat_engine.gd")
 const CombatBoard = preload("res://combat/combat_board.gd")
 const Level1Spells = preload("res://combat/level1_spells.gd")
+const BG := Color("#0e141b")
+const PANEL := Color("#121b23")
+const BORDER := Color("#4a5662")
+const CREAM := Color("#e8ddc9")
+const GOLD := Color("#d7aa58")
+const BLUE := Color("#399bd5")
 
 var engine: CombatEngine
 var board: CombatBoard
@@ -12,11 +19,19 @@ var party_label: Label
 var active_label: Label
 var combat_log: RichTextLabel
 var end_turn_button: Button
-var ability_picker: OptionButton
 var self_cast_button: Button
 var second_wind_button: Button
+var dash_button: Button
+var dodge_button: Button
+var move_button: Button
+var attack_button: Button
+var spells_button: Button
+var weapon_picker: OptionButton
+var ability_picker: OptionButton
 var action_ids: Array[String] = []
+var weapon_ids: Array[String] = []
 var current_picker_actor := ""
+var action_mode := "attack"
 
 
 func _ready() -> void:
@@ -24,149 +39,208 @@ func _ready() -> void:
     _restart()
 
 
+func _panel_style() -> StyleBoxFlat:
+    var style := StyleBoxFlat.new()
+    style.bg_color = PANEL
+    style.border_color = BORDER
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(5)
+    style.content_margin_left = 12
+    style.content_margin_right = 12
+    style.content_margin_top = 10
+    style.content_margin_bottom = 10
+    return style
+
+
+func _button_style(selected: bool = false) -> StyleBoxFlat:
+    var style := StyleBoxFlat.new()
+    style.bg_color = Color("#20313e") if selected else Color("#1c2530")
+    style.border_color = BLUE if selected else BORDER
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(4)
+    style.content_margin_left = 8
+    style.content_margin_right = 8
+    style.content_margin_top = 7
+    style.content_margin_bottom = 7
+    return style
+
+
+func _make_button(title: String, callback: Callable, parent: Node, minimum_width: int = 86) -> Button:
+    var button := Button.new()
+    button.text = title
+    button.custom_minimum_size = Vector2(minimum_width, 48)
+    button.add_theme_stylebox_override("normal", _button_style())
+    button.add_theme_color_override("font_color", CREAM)
+    button.pressed.connect(callback)
+    parent.add_child(button)
+    return button
+
+
+func _make_label(title: String, parent: Node, font_size: int = 15) -> Label:
+    var label := Label.new()
+    label.text = title
+    label.add_theme_color_override("font_color", CREAM)
+    label.add_theme_font_size_override("font_size", font_size)
+    parent.add_child(label)
+    return label
+
+
 func _build_ui() -> void:
     var background := ColorRect.new()
-    background.color = Color("#141d29")
+    background.color = BG
     background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     background.mouse_filter = Control.MOUSE_FILTER_IGNORE
     add_child(background)
 
     var margin := MarginContainer.new()
     margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    margin.add_theme_constant_override("margin_left", 22)
-    margin.add_theme_constant_override("margin_top", 18)
-    margin.add_theme_constant_override("margin_right", 22)
-    margin.add_theme_constant_override("margin_bottom", 18)
+    margin.add_theme_constant_override("margin_left", 16)
+    margin.add_theme_constant_override("margin_top", 12)
+    margin.add_theme_constant_override("margin_right", 16)
+    margin.add_theme_constant_override("margin_bottom", 12)
     add_child(margin)
 
-    var layout := HBoxContainer.new()
-    layout.add_theme_constant_override("separation", 24)
-    margin.add_child(layout)
+    var screen := VBoxContainer.new()
+    screen.add_theme_constant_override("separation", 8)
+    margin.add_child(screen)
 
-    var left := VBoxContainer.new()
-    left.add_theme_constant_override("separation", 12)
-    layout.add_child(left)
-    var heading := Label.new()
-    heading.text = "PROJECT AZURE MINES — LEVEL 1"
-    heading.add_theme_font_size_override("font_size", 26)
-    left.add_child(heading)
-    status_label = Label.new()
-    left.add_child(status_label)
+    var heading := HBoxContainer.new()
+    heading.add_theme_constant_override("separation", 18)
+    screen.add_child(heading)
+    _make_label("PROJECT AZURE MINES", heading, 24)
+    status_label = _make_label("Loading encounter...", heading, 16)
+
+    var battlefield_and_log := HBoxContainer.new()
+    battlefield_and_log.add_theme_constant_override("separation", 12)
+    battlefield_and_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    screen.add_child(battlefield_and_log)
+
+    var map_frame := PanelContainer.new()
+    map_frame.add_theme_stylebox_override("panel", _panel_style())
+    battlefield_and_log.add_child(map_frame)
     board = CombatBoard.new()
     board.cell_clicked.connect(_on_cell_clicked)
-    left.add_child(board)
-    var help := Label.new()
-    help.text = "Click a highlighted tile to move. Choose a spell, then click its target. End Turn advances initiative."
-    help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    left.add_child(help)
+    map_frame.add_child(board)
 
-    var right := VBoxContainer.new()
-    right.custom_minimum_size = Vector2(400, 0)
+    var right := PanelContainer.new()
+    right.custom_minimum_size = Vector2(360, 0)
     right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    right.add_theme_constant_override("separation", 9)
-    layout.add_child(right)
-    var party_heading := Label.new()
-    party_heading.text = "PARTY"
-    party_heading.add_theme_font_size_override("font_size", 20)
-    right.add_child(party_heading)
-    party_label = Label.new()
-    right.add_child(party_label)
-
-    var turn_heading := Label.new()
-    turn_heading.text = "ACTIVE TURN"
-    turn_heading.add_theme_font_size_override("font_size", 20)
-    right.add_child(turn_heading)
-    active_label = Label.new()
-    active_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    right.add_child(active_label)
-
-    var action_heading := Label.new()
-    action_heading.text = "ATTACK / LEVEL-1 SPELL"
-    right.add_child(action_heading)
-    ability_picker = OptionButton.new()
-    ability_picker.item_selected.connect(_on_action_selected)
-    right.add_child(ability_picker)
-
-    var ability_buttons := HBoxContainer.new()
-    right.add_child(ability_buttons)
-    self_cast_button = Button.new()
-    self_cast_button.text = "Cast on Self"
-    self_cast_button.pressed.connect(_on_cast_self)
-    ability_buttons.add_child(self_cast_button)
-    second_wind_button = Button.new()
-    second_wind_button.text = "Second Wind"
-    second_wind_button.pressed.connect(_on_second_wind)
-    ability_buttons.add_child(second_wind_button)
-
-    var turn_buttons := HBoxContainer.new()
-    right.add_child(turn_buttons)
-    end_turn_button = Button.new()
-    end_turn_button.text = "End Turn"
-    end_turn_button.pressed.connect(_on_end_turn)
-    turn_buttons.add_child(end_turn_button)
-    var restart := Button.new()
-    restart.text = "Restart"
-    restart.pressed.connect(_restart)
-    turn_buttons.add_child(restart)
-
-    var log_heading := Label.new()
-    log_heading.text = "COMBAT LOG"
-    log_heading.add_theme_font_size_override("font_size", 20)
-    right.add_child(log_heading)
+    right.add_theme_stylebox_override("panel", _panel_style())
+    battlefield_and_log.add_child(right)
+    var right_content := VBoxContainer.new()
+    right_content.add_theme_constant_override("separation", 8)
+    right.add_child(right_content)
+    _make_label("COMBAT LOG", right_content, 19)
     combat_log = RichTextLabel.new()
-    combat_log.scroll_following = true
-    combat_log.custom_minimum_size = Vector2(390, 260)
     combat_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    right.add_child(combat_log)
+    combat_log.scroll_following = true
+    combat_log.add_theme_color_override("default_color", CREAM)
+    right_content.add_child(combat_log)
+
+    var bottom := HBoxContainer.new()
+    bottom.add_theme_constant_override("separation", 8)
+    screen.add_child(bottom)
+
+    var party_panel := PanelContainer.new()
+    party_panel.custom_minimum_size = Vector2(266, 0)
+    party_panel.add_theme_stylebox_override("panel", _panel_style())
+    bottom.add_child(party_panel)
+    var details := VBoxContainer.new()
+    party_panel.add_child(details)
+    _make_label("ACTIVE CHARACTER / PARTY", details, 16)
+    active_label = _make_label("", details, 14)
+    party_label = _make_label("", details, 13)
+
+    var bar_panel := PanelContainer.new()
+    bar_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    bar_panel.add_theme_stylebox_override("panel", _panel_style())
+    bottom.add_child(bar_panel)
+    var bar_content := VBoxContainer.new()
+    bar_content.add_theme_constant_override("separation", 7)
+    bar_panel.add_child(bar_content)
+    _make_label("ACTION BAR", bar_content, 16)
+
+    var actions := HBoxContainer.new()
+    actions.add_theme_constant_override("separation", 5)
+    bar_content.add_child(actions)
+    move_button = _make_button("Move", func() -> void: _set_mode("move"), actions, 64)
+    attack_button = _make_button("Attack", func() -> void: _set_mode("attack"), actions, 72)
+    spells_button = _make_button("Spells", func() -> void: _set_mode("spell"), actions, 72)
+    second_wind_button = _make_button("Second Wind", _on_second_wind, actions, 105)
+    dash_button = _make_button("Dash", _on_dash, actions, 64)
+    dodge_button = _make_button("Dodge", _on_dodge, actions, 70)
+    end_turn_button = _make_button("End Turn", _on_end_turn, actions, 95)
+    end_turn_button.add_theme_stylebox_override("normal", _button_style(true))
+
+    var selectors := HBoxContainer.new()
+    selectors.add_theme_constant_override("separation", 8)
+    bar_content.add_child(selectors)
+    _make_label("Weapon", selectors, 13)
+    weapon_picker = OptionButton.new()
+    weapon_picker.custom_minimum_size = Vector2(155, 35)
+    weapon_picker.item_selected.connect(_on_weapon_selected)
+    selectors.add_child(weapon_picker)
+    _make_label("Spell", selectors, 13)
+    ability_picker = OptionButton.new()
+    ability_picker.custom_minimum_size = Vector2(190, 35)
+    ability_picker.item_selected.connect(_on_spell_selected)
+    selectors.add_child(ability_picker)
+    self_cast_button = _make_button("Cast on Self", _on_cast_self, selectors, 98)
 
 
 func _restart() -> void:
     engine = CombatEngine.new()
     if not engine.start():
-        status_label.text = "ERROR: cannot load the combat fixture."
+        status_label.text = "ERROR: combat fixtures could not load."
         end_turn_button.disabled = true
         return
     board.engine = engine
     current_picker_actor = ""
+    action_mode = "attack"
     _run_enemy_turns()
     _refresh()
+
+
+func _set_mode(mode: String) -> void:
+    if not engine.current_is_party():
+        return
+    action_mode = mode
+    _refresh()
+
+
+func _on_weapon_selected(_idx: int) -> void:
+    action_mode = "attack"
+    _refresh()
+
+
+func _on_spell_selected(_idx: int) -> void:
+    action_mode = "spell"
+    _refresh()
+
+
+func _selected_weapon() -> String:
+    var idx: int = weapon_picker.get_selected_id()
+    return weapon_ids[idx] if idx >= 0 and idx < weapon_ids.size() else ""
+
+
+func _selected_spell() -> String:
+    var idx: int = ability_picker.get_selected_id()
+    return action_ids[idx] if idx >= 0 and idx < action_ids.size() else ""
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
     if not engine.current_is_party():
         return
-    var target_id: String = engine.actor_at(cell)
+    var target_id: String = engine.target_at(cell)
     if target_id.is_empty():
-        engine.move_to(cell)
-    else:
+        if action_mode != "spell":
+            engine.move_to(cell)
+    elif action_mode == "spell":
         var spell_id: String = _selected_spell()
-        if spell_id.is_empty():
-            if engine.actors[target_id]["team"] == "enemy":
-                engine.attack(target_id)
-        else:
+        if not spell_id.is_empty():
             engine.cast_spell(spell_id, target_id)
-    _refresh()
-
-
-func _on_action_selected(_index: int) -> void:
-    _refresh()
-
-
-func _selected_spell() -> String:
-    if ability_picker == null:
-        return ""
-    var index: int = ability_picker.get_selected_id()
-    if index < 0 or index >= action_ids.size():
-        return ""
-    return action_ids[index]
-
-
-func _on_cast_self() -> void:
-    if not engine.current_is_party():
-        return
-    var spell_id: String = _selected_spell()
-    if not spell_id.is_empty():
-        engine.cast_spell(spell_id, engine.current_id())
+    elif action_mode == "attack" and engine.actors[target_id]["team"] == "enemy":
+        engine.attack(target_id, _selected_weapon())
     _refresh()
 
 
@@ -176,16 +250,36 @@ func _on_second_wind() -> void:
     _refresh()
 
 
+func _on_dash() -> void:
+    if engine.current_is_party():
+        engine.use_dash()
+        action_mode = "move"
+    _refresh()
+
+
+func _on_dodge() -> void:
+    if engine.current_is_party():
+        engine.use_dodge()
+    _refresh()
+
+
+func _on_cast_self() -> void:
+    if engine.current_is_party():
+        var spell_id: String = _selected_spell()
+        if not spell_id.is_empty():
+            engine.cast_spell(spell_id, engine.current_id())
+    _refresh()
+
+
 func _on_end_turn() -> void:
-    if engine.finished or not engine.current_is_party():
-        return
-    engine.end_turn()
-    _run_enemy_turns()
+    if engine.current_is_party():
+        engine.end_turn()
+        _run_enemy_turns()
     _refresh()
 
 
 func _run_enemy_turns() -> void:
-    var safety := 20
+    var safety := 25
     while not engine.finished and not engine.current_is_party() and safety > 0:
         engine.take_ai_turn()
         safety -= 1
@@ -196,55 +290,78 @@ func _refresh_picker() -> void:
     if active_id == current_picker_actor:
         return
     current_picker_actor = active_id
-    ability_picker.clear()
+    weapon_ids.clear()
     action_ids.clear()
-    action_ids.append("")
-    ability_picker.add_item("Weapon Attack")
+    weapon_picker.clear()
+    ability_picker.clear()
+    if active_id.is_empty():
+        return
+    var active: Dictionary = engine.current_actor()
+    for weapon in active.get("attacks", []):
+        if weapon.get("kind", "") == "spell_attack":
+            continue
+        weapon_ids.append(str(weapon["id"]))
+        weapon_picker.add_item(str(weapon["id"]).replace("_", " ").capitalize())
     for spell_id in engine.get_current_spells():
         action_ids.append(spell_id)
         var spell: Dictionary = Level1Spells.get_definition(spell_id)
-        var tag := "Cantrip" if int(spell["level"]) == 0 else "Slot 1"
-        ability_picker.add_item("%s (%s)" % [spell_id.replace("_", " ").capitalize(), tag])
-    ability_picker.select(0)
+        var cost: String = "Cantrip" if int(spell["level"]) == 0 else "Slot 1"
+        ability_picker.add_item("%s [%s]" % [spell_id.replace("_", " ").capitalize(), cost])
+    if not weapon_ids.is_empty():
+        weapon_picker.select(0)
+    if not action_ids.is_empty():
+        ability_picker.select(0)
 
 
 func _refresh() -> void:
     if engine == null:
         return
-    board.queue_redraw()
     _refresh_picker()
+    board.queue_redraw()
+    var party_turn: bool = engine.current_is_party()
+    status_label.text = "VICTORY!" if engine.finished and engine.victor == "party" else (
+        "DEFEAT!" if engine.finished else "Round %d — %s" % [
+            engine.round_number, engine.current_actor()["name"]
+        ]
+    )
     if engine.finished:
-        status_label.text = "VICTORY — goblins defeated!" if engine.victor == "party" else "DEFEAT — party down."
-        active_label.text = "Battle complete."
+        active_label.text = "Battle complete"
     else:
         var actor: Dictionary = engine.current_actor()
-        status_label.text = "Round %d | Active: %s" % [engine.round_number, actor["name"]]
-        var remaining: int = maxi(0, int(actor.get("speed_feet", 30)) / 5 - engine.movement_used)
-        var extra := ""
-        if actor.get("spellcasting") != null:
-            extra = "\nLevel-1 slots remaining: %d" % int(actor.get("spell_slots_remaining", 0))
-        if actor.get("class_id", "") == "champion":
-            extra += "\nSecond Wind uses: %d" % int(actor.get("second_wind_remaining", 0))
-        active_label.text = "%s\nAction: %s | Bonus: %s | Move: %d tiles%s" % [
-            actor["name"], "Used" if engine.action_used else "Ready",
-            "Used" if engine.bonus_action_used else "Ready", remaining, extra
+        var total_movement: int = int(actor.get("speed_feet", 30)) / 5 + engine.dash_extra_squares
+        var move_left: int = maxi(0, total_movement - engine.movement_used)
+        active_label.text = "%s  HP %d/%d  AC %d\nAction: %s | Bonus: %s | Move: %d" % [
+            actor["name"], actor["hp"], actor["max_hp"], actor["armor_class"],
+            "spent" if engine.action_used else "ready",
+            "spent" if engine.bonus_action_used else "ready", move_left
         ]
-
     var party_lines: PackedStringArray = []
     for id in ["alden", "elyra", "brunna", "pip"]:
-        var member: Dictionary = engine.actors[id]
-        party_lines.append("%s  HP %d/%d  AC %d" % [
-            member["name"], member["hp"], member["max_hp"], member["armor_class"]
-        ])
+        var actor: Dictionary = engine.actors[id]
+        var state: String = str(actor.get("combat_state", "active"))
+        var suffix: String = " — UNCONSCIOUS" if state == "unconscious" else (
+            " — DEAD" if state == "dead" else ""
+        )
+        party_lines.append("%s  %d/%d HP%s" % [actor["name"], actor["hp"], actor["max_hp"], suffix])
     party_label.text = "\n".join(party_lines)
-    end_turn_button.disabled = not engine.current_is_party()
     second_wind_button.disabled = not engine.can_use_second_wind()
-    var selected: String = _selected_spell()
-    var definition: Dictionary = Level1Spells.get_definition(selected)
-    self_cast_button.disabled = not engine.current_is_party() or definition.get("target", "") != "self" \
-        or not engine.can_cast_spell(selected, engine.current_id())
-
-    var lines: PackedStringArray = []
-    for event in engine.events:
-        lines.append(str(event["text"]))
-    combat_log.text = "\n".join(lines)
+    dash_button.disabled = not engine.can_dash()
+    dodge_button.disabled = not engine.can_dodge()
+    end_turn_button.disabled = not party_turn
+    move_button.disabled = not party_turn
+    attack_button.disabled = not party_turn or engine.action_used
+    spells_button.disabled = not party_turn or action_ids.is_empty()
+    weapon_picker.disabled = not party_turn or engine.action_used or weapon_ids.is_empty()
+    ability_picker.disabled = not party_turn or action_ids.is_empty()
+    var spell_id: String = _selected_spell()
+    var spell: Dictionary = Level1Spells.get_definition(spell_id)
+    self_cast_button.disabled = not party_turn or spell.get("target", "") != "self" or (
+        not engine.can_cast_spell(spell_id, engine.current_id())
+    )
+    for entry in [[move_button, "move"], [attack_button, "attack"], [spells_button, "spell"]]:
+        var button: Button = entry[0]
+        button.add_theme_stylebox_override("normal", _button_style(entry[1] == action_mode))
+    var log_lines: PackedStringArray = []
+    for entry in engine.events:
+        log_lines.append(str(entry["text"]))
+    combat_log.text = "\n".join(log_lines)
