@@ -11,7 +11,7 @@ const PARTY_BLUE := Color("#399bd5")
 const ENEMY_RED := Color("#cb4c43")
 const GOLD := Color("#d7aa58")
 const DOWNED_ATLAS := "assets/characters/sprites/downed_party_atlas_64.png"
-const TERRAIN_ATLAS := "assets/environment/dungeon_tiles_64.png"
+const TERRAIN_ATLAS := "assets/environment/dungeon_tiles_64.svg"
 const PROPS_ATLAS := "assets/environment/dungeon_props_64.png"
 
 var engine: CombatEngine
