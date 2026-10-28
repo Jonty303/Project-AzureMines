@@ -22,6 +22,9 @@ var slotted_cast_this_turn := false
 var sneak_attack_used := false
 var movement_used := 0
 var dash_extra_squares := 0
+var pending_reaction: Dictionary = {}
+var pending_move: Dictionary = {}
+var reaction_checked: Array[String] = []
 var finished := false
 var victor := ""
 var rng := RandomNumberGenerator.new()
@@ -40,6 +43,9 @@ func start(seed: int = 42024) -> bool:
     difficult_terrain.clear()
     turn_order.clear()
     events.clear()
+    pending_reaction.clear()
+    pending_move.clear()
+    reaction_checked.clear()
     finished = false
     victor = ""
     round_number = 1
@@ -66,6 +72,8 @@ func start(seed: int = 42024) -> bool:
         actor["death_successes"] = 0
         actor["death_failures"] = 0
         actor["dodging"] = false
+        actor["reaction_used"] = false
+        actor["disengaged"] = false
         actor["max_hp"] = int(actor.get("max_hp", 1))
         var casting: Variant = actor.get("spellcasting")
         actor["spell_slots_remaining"] = int(casting.get("spell_slots", {}).get("1", 0)) if casting is Dictionary else 0
@@ -86,6 +94,8 @@ func start(seed: int = 42024) -> bool:
         actor["death_successes"] = 0
         actor["death_failures"] = 0
         actor["dodging"] = false
+        actor["reaction_used"] = false
+        actor["disengaged"] = false
         actor["art"] = {"combat_sprite": "assets/characters/sprites/goblin_front_64.png"}
         actor["sap_pending"] = false
         actor["vex_target"] = ""
@@ -175,26 +185,157 @@ func get_reachable(id: String) -> Dictionary:
 
 
 func move_to(destination: Vector2i) -> bool:
-    if finished or current_id().is_empty():
+    if finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return false
-    var actor_id := current_id()
+    var actor_id: String = current_id()
     var actor: Dictionary = actors[actor_id]
     if int(actor["hp"]) <= 0:
         return false
-    var reachable := get_reachable(actor_id)
-    if not reachable.has(destination):
+    var reachable: Dictionary = get_reachable(actor_id)
+    if not reachable.has(destination) or int(reachable[destination]["cost"]) <= 0:
         return false
-    var cost: int = reachable[destination]["cost"]
-    if cost <= 0:
+    var path: Array[Vector2i] = []
+    var current: Vector2i = destination
+    var origin: Vector2i = actor["position"]
+    while current != origin:
+        path.push_front(current)
+        current = reachable[current]["previous"]
+    pending_move = {"actor": actor_id, "path": path, "index": 0}
+    reaction_checked.clear()
+    _advance_move()
+    return true
+
+
+func _advance_move() -> void:
+    while not pending_move.is_empty() and pending_reaction.is_empty() and not finished:
+        var mover_id: String = str(pending_move["actor"])
+        if int(actors[mover_id]["hp"]) <= 0:
+            pending_move.clear()
+            reaction_checked.clear()
+            return
+        var path: Array = pending_move["path"]
+        var idx: int = int(pending_move["index"])
+        if idx >= path.size():
+            pending_move.clear()
+            reaction_checked.clear()
+            return
+        var from_cell: Vector2i = actors[mover_id]["position"]
+        var next_cell: Vector2i = path[idx]
+        if not _can_step(mover_id, from_cell, next_cell):
+            pending_move.clear()
+            reaction_checked.clear()
+            return
+        var reactor_id: String = _opportunity_reactor(mover_id, from_cell, next_cell)
+        if not reactor_id.is_empty():
+            reaction_checked.append(reactor_id)
+            if actors[reactor_id]["team"] == "party":
+                pending_reaction = {"kind": "opportunity", "reactor": reactor_id, "target": mover_id}
+                _record("%s may make an Opportunity Attack against %s." % [
+                    actors[reactor_id]["name"], actors[mover_id]["name"]
+                ])
+                return
+            _make_opportunity_attack(reactor_id, mover_id)
+            continue
+        var mover: Dictionary = actors[mover_id]
+        var cost: int = 2 if next_cell in difficult_terrain else 1
+        if movement_used + cost > int(mover.get("speed_feet", 30)) / 5 + dash_extra_squares:
+            pending_move.clear()
+            return
+        mover["position"] = next_cell
+        actors[mover_id] = mover
+        movement_used += cost
+        pending_move["index"] = idx + 1
+        reaction_checked.clear()
+        _record("%s moves from (%d,%d) to (%d,%d)." % [
+            mover["name"], from_cell.x, from_cell.y, next_cell.x, next_cell.y
+        ])
+        _emit_sound("footstep")
+
+
+func _opportunity_reactor(mover_id: String, from_cell: Vector2i, next_cell: Vector2i) -> String:
+    if bool(actors[mover_id].get("disengaged", false)):
+        return ""
+    var mover: Dictionary = actors[mover_id]
+    for id_variant in actors.keys():
+        var reactor_id: String = str(id_variant)
+        var reactor: Dictionary = actors[reactor_id]
+        if reactor["team"] == mover["team"] or int(reactor["hp"]) <= 0:
+            continue
+        if bool(reactor.get("reaction_used", false)) or reaction_checked.has(reactor_id):
+            continue
+        var pos: Vector2i = reactor["position"]
+        if _distance(pos, from_cell) > 1 or _distance(pos, next_cell) <= 1:
+            continue
+        if not _line_clear(pos, from_cell):
+            continue
+        for attack_data in reactor.get("attacks", []):
+            if attack_data.get("kind", "") == "melee_weapon":
+                return reactor_id
+    return ""
+
+
+func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
+    var reactor: Dictionary = actors[reactor_id]
+    var target: Dictionary = actors[target_id]
+    var weapon: Dictionary = {}
+    for attack_data in reactor.get("attacks", []):
+        if attack_data.get("kind", "") == "melee_weapon":
+            weapon = attack_data
+            break
+    if weapon.is_empty() or int(target["hp"]) <= 0:
+        return
+    reactor["reaction_used"] = true
+    actors[reactor_id] = reactor
+    var natural: int = Dice.roll_d20(rng)
+    var result: Dictionary = RulesMath.attack_hits(natural, int(weapon.get("to_hit", 0)), int(target["armor_class"]))
+    if not bool(result["hit"]):
+        _emit_sound("miss")
+        _record("%s Opportunity Attack against %s: %d — MISS." % [
+            reactor["name"], target["name"], result["total"]
+        ])
+        return
+    var damage: int = RulesMath.roll_damage(str(weapon["damage"]), rng, bool(result["critical"]))
+    _emit_sound("melee_hit")
+    _emit_sound("damage")
+    _record("%s Opportunity Attack hits %s for %d damage." % [reactor["name"], target["name"], damage])
+    _deal_damage(target_id, damage)
+    _check_victory()
+
+
+func resolve_reaction(accept: bool) -> bool:
+    if pending_reaction.is_empty():
         return false
-    var old_position: Vector2i = actor["position"]
-    movement_used += cost
-    actor["position"] = destination
-    actors[actor_id] = actor
-    _record("%s moves from (%d,%d) to (%d,%d), spending %d square(s)." % [
-        actor["name"], old_position.x, old_position.y, destination.x, destination.y, cost
-    ])
-    _emit_sound("footstep")
+    var decision: Dictionary = pending_reaction.duplicate()
+    pending_reaction.clear()
+    if decision["kind"] == "opportunity":
+        if accept and int(actors[decision["reactor"]]["hp"]) > 0:
+            _make_opportunity_attack(str(decision["reactor"]), str(decision["target"]))
+        if not finished:
+            _advance_move()
+    return true
+
+
+func _deal_damage(target_id: String, damage: int) -> void:
+    var target: Dictionary = actors[target_id]
+    target["hp"] = maxi(0, int(target["hp"]) - damage)
+    if int(target["hp"]) == 0:
+        target["combat_state"] = "unconscious" if target["team"] == "party" else "dead"
+        _emit_sound("death")
+    actors[target_id] = target
+
+
+func can_disengage() -> bool:
+    return not finished and current_is_party() and not action_used and int(current_actor().get("hp", 0)) > 0
+
+
+func use_disengage() -> bool:
+    if not can_disengage():
+        return false
+    action_used = true
+    var actor: Dictionary = current_actor()
+    actor["disengaged"] = true
+    actors[current_id()] = actor
+    _record("%s Disengages, preventing Opportunity Attacks from their movement this turn." % actor["name"])
     return true
 
 
@@ -302,7 +443,7 @@ func attack(target_id: String, weapon_id: String = "") -> bool:
 
 
 func end_turn() -> void:
-    if finished or current_id().is_empty():
+    if finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
     _record("%s ends their turn." % current_actor()["name"])
     for offset in range(1, turn_order.size() + 1):
@@ -317,7 +458,7 @@ func end_turn() -> void:
 
 
 func take_ai_turn() -> void:
-    if finished or current_is_party():
+    if finished or current_is_party() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
     var source: Dictionary = current_actor()
     var target_id := _nearest_opponent(current_id())
@@ -337,6 +478,8 @@ func take_ai_turn() -> void:
                 best_cell = cell
         if best_cell != source["position"]:
             move_to(best_cell)
+            if not pending_reaction.is_empty():
+                return
     if not finished:
         var current_target := _nearest_opponent(current_id())
         if not current_target.is_empty():
@@ -437,6 +580,8 @@ func _begin_turn() -> void:
     if not current_id().is_empty():
         var actor: Dictionary = actors[current_id()]
         actor["dodging"] = false
+        actor["reaction_used"] = false
+        actor["disengaged"] = false
         actors[current_id()] = actor
         _record("Turn: %s." % current_actor()["name"])
         if actor.get("combat_state", "") == "unconscious":
