@@ -42,6 +42,7 @@ var survivor_first_aid_button: Button
 var survivor_heal_button: Button
 var log_heading: Label
 var status_label: Label
+var debug_skip_battle_button: Button
 var party_label: Label
 var active_label: Label
 var combat_log: RichTextLabel
@@ -182,6 +183,14 @@ func _build_ui() -> void:
     screen.add_child(heading)
     _make_label("PROJECT AZURE MINES", heading, 24)
     status_label = _make_label("Loading encounter...", heading, 16)
+    # Never expose encounter bypasses in release builds.
+    if OS.has_feature("debug"):
+        debug_skip_battle_button = _make_button(
+            "DEBUG: Skip Goblins (Spare Hesk)", _on_debug_skip_battle, heading, 225
+        )
+        debug_skip_battle_button.tooltip_text = (
+            "Test narrative exploration without combat. Hesk survives unconscious at 1 HP."
+        )
 
     var battlefield_and_log := HBoxContainer.new()
     battlefield_and_log.add_theme_constant_override("separation", 12)
@@ -548,6 +557,50 @@ func _on_formation(formation_id: String) -> void:
     _refresh()
 
 
+func _on_debug_skip_battle() -> void:
+    # Developer-only shortcut: exercise the *normal* victory and global-state flow.
+    # Hesk is the named shield-bearing raider, not the unseen goblin lord.
+    if not OS.has_feature("debug") or engine == null or adventure == null:
+        return
+    if adventure.stage not in ["approach", "deployment", "battle"] or engine.finished:
+        return
+    if adventure.stage == "approach" and not adventure.begin_deployment():
+        return
+    if adventure.stage == "deployment":
+        if not engine.begin_battle() or not adventure.begin_combat():
+            return
+    if adventure.stage != "battle":
+        return
+
+    for id in ["goblin_blade_two", "goblin_bow", "goblin_bow_two"]:
+        var raider: Dictionary = engine.actors[id]
+        raider["hp"] = 0
+        raider["combat_state"] = "dead"
+        engine.actors[id] = raider
+
+    var hesk: Dictionary = engine.actors["goblin_blade"]
+    if hesk.get("npc_id", "") != "hesk_roadwatch":
+        push_error("Debug skip requires the authored named goblin Hesk.")
+        return
+    hesk["hp"] = 1
+    hesk["combat_state"] = "knocked_out"
+    hesk["short_rest_started"] = true
+    hesk["death_successes"] = 0
+    hesk["death_failures"] = 0
+    engine.actors["goblin_blade"] = hesk
+    engine._check_victory()
+    if not engine.finished or engine.victor != "party":
+        push_error("Debug skip failed to complete the encounter.")
+        return
+
+    adventure.campaign.flags["debug_wagon_battle_skipped"] = true
+    adventure.campaign.record_event(
+        "debug_skip_wagon", "[DEBUG] Wagon ambush bypassed; Hesk spared at 1 HP."
+    )
+    story_feedback = "[DEBUG] Battle skipped. Hesk was subdued alive, at 1 HP."
+    _refresh()
+
+
 func _on_begin_battle() -> void:
     if adventure.stage != "deployment" or not engine.begin_battle():
         return
@@ -805,6 +858,10 @@ func _refresh_story() -> void:
 func _refresh() -> void:
     if engine == null:
         return
+    if debug_skip_battle_button != null:
+        debug_skip_battle_button.visible = OS.has_feature("debug") and (
+            adventure.stage in ["approach", "deployment", "battle"] and not engine.finished
+        )
     if engine.finished and adventure.stage == "battle":
         adventure.conclude_battle(engine.victor)
         if adventure.stage == "victory":
