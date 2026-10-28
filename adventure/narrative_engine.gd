@@ -37,6 +37,18 @@ func current_scene() -> Dictionary:
     var scene: Dictionary = locations[id].duplicate(true)
     if state.visited.has(id) and state.flags.get("revisited_" + id, false):
         scene["description"] = scene.get("revisit_text", scene.get("description", ""))
+    if id == "cave_approach" or id == "cave_entrance" or id == "cave_threshold":
+        var notices: PackedStringArray = []
+        if state.flags.get("watchpost_alarm_raised", false):
+            notices.append("The lookouts have sounded the alarm. Voices carry between the trees and the cave.")
+        elif str(state.flags.get("goblin_lair_readiness", "")) == "alerted":
+            notices.append("There are signs of heightened vigilance. Someone may have warned the cave before you arrived.")
+        if id == "cave_approach" and state.flags.get("watchpost_spotted", false):
+            notices.append("Now that you know where to look, you can make out two goblins at a concealed platform in the branches.")
+        if id == "cave_approach" and state.flags.get("watchpost_outflanked", false):
+            notices.append("You have scouted a concealed approach behind the tree watchpost.")
+        if not notices.is_empty():
+            scene["description"] = str(scene.get("description", "")) + "\n\n" + "\n\n".join(notices)
     if id == "wagon_clearing":
         var hesk_text: String = hesk.description()
         if not hesk_text.is_empty():
@@ -119,19 +131,30 @@ func choose(choice_id: String, party: Dictionary, combat: RefCounted = null) -> 
         if best_id.is_empty():
             return {"ok": false, "text": "No conscious adventurer can attempt this check."}
         var die: int = Dice.roll_d20(state.check_rng)
+        var die2: int = 0
+        var advantage: bool = choice.has("advantage_if_flag") and bool(state.flags.get(str(choice["advantage_if_flag"]), false))
+        if advantage:
+            die2 = Dice.roll_d20(state.check_rng)
+            die = maxi(die, die2)
         var total: int = die + best_bonus
         var won: bool = total >= dc
         state.checks[identifier] = {"character_id": best_id, "die": die, "bonus": best_bonus,
-            "total": total, "dc": dc, "success": won}
+            "total": total, "dc": dc, "success": won, "advantage": advantage,
+            "extra_die": die2}
         state.flags["choice_" + identifier] = true
         var outcome: Dictionary = choice.get("success", {}) if won else choice.get("failure", {})
         _apply_effects(outcome.get("effects", []))
-        var heading: String = "%s: %s (%s) %d + %d = %d vs DC %d — %s." % [
+        var heading: String = "%s: %s (%s) %d + %d = %d vs DC %d%s — %s." % [
             str(party[best_id].get("name", best_id)), ability.capitalize(),
-            skill.capitalize(), die, best_bonus, total, dc, "SUCCESS" if won else "FAILURE"
+            skill.capitalize(), die, best_bonus, total, dc,
+            " (advantage from outflanking)" if advantage else "",
+            "SUCCESS" if won else "FAILURE"
         ]
         state.record_event("check_" + identifier, heading)
-        return {"ok": true, "text": heading + "\n\n" + str(outcome.get("text", "")), "check": true}
+        var outcome_text: String = str(outcome.get("text", ""))
+        if identifier == "watchpost_sneak" and state.flags.get("watchpost_alarm_raised", false) and won:
+            outcome_text = "You reach the cave mouth without a second shout, but the earlier alarm has already been raised. The goblin sentries remain at their posts."
+        return {"ok": true, "text": heading + "\n\n" + outcome_text, "check": true}
     return {"ok": false, "text": "Unsupported adventure choice."}
 
 
