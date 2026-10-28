@@ -130,24 +130,25 @@ func choose(choice_id: String, party: Dictionary, combat: RefCounted = null) -> 
                 best_id = id
         if best_id.is_empty():
             return {"ok": false, "text": "No conscious adventurer can attempt this check."}
-        var die: int = Dice.roll_d20(state.check_rng)
+        var die1: int = Dice.roll_d20(state.check_rng)
+        var die: int = die1
         var die2: int = 0
         var advantage: bool = choice.has("advantage_if_flag") and bool(state.flags.get(str(choice["advantage_if_flag"]), false))
         if advantage:
             die2 = Dice.roll_d20(state.check_rng)
-            die = maxi(die, die2)
+            die = maxi(die1, die2)
         var total: int = die + best_bonus
         var won: bool = total >= dc
         state.checks[identifier] = {"character_id": best_id, "die": die, "bonus": best_bonus,
             "total": total, "dc": dc, "success": won, "advantage": advantage,
-            "extra_die": die2}
+            "rolls": [die1, die2] if advantage else [die1]}
         state.flags["choice_" + identifier] = true
         var outcome: Dictionary = choice.get("success", {}) if won else choice.get("failure", {})
         _apply_effects(outcome.get("effects", []))
         var heading: String = "%s: %s (%s) %d + %d = %d vs DC %d%s — %s." % [
             str(party[best_id].get("name", best_id)), ability.capitalize(),
             skill.capitalize(), die, best_bonus, total, dc,
-            " (advantage from outflanking)" if advantage else "",
+            " (advantage %d/%d from outflanking)" % [die1, die2] if advantage else "",
             "SUCCESS" if won else "FAILURE"
         ]
         state.record_event("check_" + identifier, heading)
