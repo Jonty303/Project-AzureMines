@@ -7,6 +7,11 @@ const RulesMath = preload("res://combat/rules_math.gd")
 const Level1Spells = preload("res://combat/level1_spells.gd")
 const PARTY_FIXTURE := "res://tests/fixtures/party/level_01_v1.json"
 const ENCOUNTER_FIXTURE := "res://adventures/test_adventure/encounters/training_battle.json"
+const FORMATIONS := {
+    "line": {"alden": [3, 5], "brunna": [2, 5], "pip": [1, 5], "elyra": [0, 5]},
+    "square": {"alden": [3, 4], "brunna": [3, 5], "elyra": [2, 4], "pip": [2, 5]},
+    "diamond": {"alden": [3, 5], "brunna": [2, 4], "elyra": [2, 6], "pip": [1, 5]}
+}
 
 var actors: Dictionary = {}
 var walls: Array[Vector2i] = []
@@ -17,6 +22,9 @@ var blocked_cells: Array[Vector2i] = []
 var sight_blockers: Array[Vector2i] = []
 var cover_cells: Array[Vector2i] = []
 var backdrop: Dictionary = {}
+var deployment_active := false
+var deployment_zone: Array[Vector2i] = []
+var active_formation := ""
 var grid_size := Vector2i(12, 10)
 var turn_order: Array[String] = []
 var events: Array[Dictionary] = []
@@ -36,7 +44,7 @@ var victor := ""
 var rng := RandomNumberGenerator.new()
 
 
-func start(seed: int = 42024) -> bool:
+func start(seed: int = 42024, with_deployment: bool = false) -> bool:
     var party: Dictionary = _read_json(PARTY_FIXTURE)
     var encounter: Dictionary = _read_json(ENCOUNTER_FIXTURE)
     if party.is_empty() or encounter.is_empty():
@@ -53,6 +61,9 @@ func start(seed: int = 42024) -> bool:
     sight_blockers.clear()
     cover_cells.clear()
     backdrop.clear()
+    deployment_zone.clear()
+    deployment_active = false
+    active_formation = ""
     turn_order.clear()
     events.clear()
     pending_reaction.clear()
@@ -86,6 +97,12 @@ func start(seed: int = 42024) -> bool:
                     sight_blockers.append(cell)
                 if prop.get("cover", "") == "half" and not cover_cells.has(cell):
                     cover_cells.append(cell)
+    var zone: Dictionary = encounter.get("deployment_zone", {})
+    var corner_min: Array = zone.get("min", [0, 3])
+    var corner_max: Array = zone.get("max", [3, 8])
+    for y in range(int(corner_min[1]), int(corner_max[1]) + 1):
+        for x in range(int(corner_min[0]), int(corner_max[0]) + 1):
+            deployment_zone.append(Vector2i(x, y))
     for template in encounter.get("hazards", []):
         var hazard: Dictionary = template.duplicate(true)
         var pos: Array = hazard.get("position", [0, 0])
@@ -141,6 +158,17 @@ func start(seed: int = 42024) -> bool:
         actor["vex_target"] = ""
         actors[id] = actor
 
+    if with_deployment:
+        deployment_active = true
+        if not set_formation("square"):
+            return false
+        _record("A snapped twig. Goblins lurk around the covered wagon. Arrange your party before battle.")
+        return true
+    _roll_initiative_and_start()
+    return true
+
+
+func _roll_initiative_and_start() -> void:
     var rolls: Array[Dictionary] = []
     var tie_order := 0
     for id_variant in actors.keys():
@@ -159,9 +187,88 @@ func start(seed: int = 42024) -> bool:
     )
     for item in rolls:
         turn_order.append(str(item["id"]))
-    _record("Encounter begins: four adventurers versus %d goblins at a wagon camp." % encounter["enemies"].size())
+    _record("Encounter begins: four adventurers versus four goblins at the wagon camp.")
     _begin_turn()
+
+
+func is_deployment_cell(cell: Vector2i) -> bool:
+    if not deployment_zone.has(cell):
+        return false
+    if cell in walls or cell in blocked_cells or cell.x < 0 or cell.y < 0:
+        return false
+    if cell.x >= grid_size.x or cell.y >= grid_size.y:
+        return false
+    for hazard in hazards:
+        if hazard["position"] == cell:
+            return false
+    for actor in actors.values():
+        if actor["team"] == "enemy" and int(actor["hp"]) > 0 and actor["position"] == cell:
+            return false
     return true
+
+
+func can_place_character(actor_id: String, cell: Vector2i) -> bool:
+    if not deployment_active or not actors.has(actor_id) or actors[actor_id]["team"] != "party":
+        return false
+    if not is_deployment_cell(cell):
+        return false
+    for key in actors.keys():
+        if str(key) != actor_id and actors[key]["position"] == cell:
+            return false
+    return true
+
+
+func place_character(actor_id: String, cell: Vector2i) -> bool:
+    if not can_place_character(actor_id, cell):
+        return false
+    var actor: Dictionary = actors[actor_id]
+    actor["position"] = cell
+    actors[actor_id] = actor
+    active_formation = "custom"
+    _record("%s takes position at (%d,%d)." % [actor["name"], cell.x, cell.y])
+    return true
+
+
+func set_formation(formation_id: String) -> bool:
+    if not deployment_active or not FORMATIONS.has(formation_id):
+        return false
+    var formation: Dictionary = FORMATIONS[formation_id]
+    var chosen: Array[Vector2i] = []
+    for actor_id_variant in formation.keys():
+        var actor_id: String = str(actor_id_variant)
+        var pos: Array = formation[actor_id]
+        var cell := Vector2i(int(pos[0]), int(pos[1]))
+        if not actors.has(actor_id) or not is_deployment_cell(cell) or chosen.has(cell):
+            return false
+        chosen.append(cell)
+    if chosen.size() != 4:
+        return false
+    for actor_id_variant in formation.keys():
+        var actor_id: String = str(actor_id_variant)
+        var pos: Array = formation[actor_id]
+        var actor: Dictionary = actors[actor_id]
+        actor["position"] = Vector2i(int(pos[0]), int(pos[1]))
+        actors[actor_id] = actor
+    active_formation = formation_id
+    _record("Formation selected: %s." % formation_id.capitalize())
+    return true
+
+
+func begin_battle() -> bool:
+    if not deployment_active:
+        return false
+    var occupied: Array[Vector2i] = []
+    for actor_id in ["alden", "elyra", "brunna", "pip"]:
+        var pos: Vector2i = actors[actor_id]["position"]
+        if not is_deployment_cell(pos) or occupied.has(pos):
+            return false
+        occupied.append(pos)
+    deployment_active = false
+    _record("The party is ready. The goblins attack!")
+    _roll_initiative_and_start()
+    return true
+
+
 
 
 func current_id() -> String:
@@ -176,7 +283,7 @@ func current_actor() -> Dictionary:
 
 
 func current_is_party() -> bool:
-    return not finished and current_actor().get("team", "") == "party"
+    return not deployment_active and not finished and current_actor().get("team", "") == "party"
 
 
 func actor_at(cell: Vector2i) -> String:
@@ -225,7 +332,7 @@ func get_reachable(id: String) -> Dictionary:
 
 
 func move_to(destination: Vector2i) -> bool:
-    if finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
+    if deployment_active or finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return false
     var actor_id: String = current_id()
     var actor: Dictionary = actors[actor_id]
@@ -439,7 +546,7 @@ func use_disengage() -> bool:
 
 
 func available_attack(target_id: String, weapon_id: String = "") -> Dictionary:
-    if finished or action_used or not actors.has(target_id):
+    if deployment_active or finished or action_used or not actors.has(target_id):
         return {}
     var source_id := current_id()
     if source_id.is_empty():
@@ -469,6 +576,8 @@ func available_attack(target_id: String, weapon_id: String = "") -> Dictionary:
 
 
 func attack(target_id: String, weapon_id: String = "") -> bool:
+    if deployment_active:
+        return false
     var weapon: Dictionary = available_attack(target_id, weapon_id)
     if weapon.is_empty():
         return false
@@ -566,7 +675,7 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
 
 
 func end_turn() -> void:
-    if finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
+    if deployment_active or finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
     _record("%s ends their turn." % current_actor()["name"])
     for offset in range(1, turn_order.size() + 1):
@@ -581,7 +690,7 @@ func end_turn() -> void:
 
 
 func take_ai_turn() -> void:
-    if finished or current_is_party() or not pending_reaction.is_empty() or not pending_move.is_empty():
+    if deployment_active or finished or current_is_party() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
     var actor_id: String = current_id()
     var source: Dictionary = current_actor()
