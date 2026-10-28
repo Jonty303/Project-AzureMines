@@ -319,6 +319,7 @@ func _refresh() -> void:
     _refresh_picker()
     board.queue_redraw()
     var party_turn: bool = engine.current_is_party()
+    var can_act: bool = party_turn and int(engine.current_actor().get("hp", 0)) > 0
     status_label.text = "VICTORY!" if engine.finished and engine.victor == "party" else (
         "DEFEAT!" if engine.finished else "Round %d — %s" % [
             engine.round_number, engine.current_actor()["name"]
@@ -348,11 +349,11 @@ func _refresh() -> void:
     dash_button.disabled = not engine.can_dash()
     dodge_button.disabled = not engine.can_dodge()
     end_turn_button.disabled = not party_turn
-    move_button.disabled = not party_turn
-    attack_button.disabled = not party_turn or engine.action_used
-    spells_button.disabled = not party_turn or action_ids.is_empty()
-    weapon_picker.disabled = not party_turn or engine.action_used or weapon_ids.is_empty()
-    ability_picker.disabled = not party_turn or action_ids.is_empty()
+    move_button.disabled = not can_act
+    attack_button.disabled = not can_act or engine.action_used
+    spells_button.disabled = not can_act or action_ids.is_empty()
+    weapon_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
+    ability_picker.disabled = not can_act or action_ids.is_empty()
     var spell_id: String = _selected_spell()
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
     self_cast_button.disabled = not party_turn or spell.get("target", "") != "self" or (
