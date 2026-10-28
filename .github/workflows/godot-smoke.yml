@@ -68,3 +68,5 @@ jobs:
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_named_survivor_ui.gd
       - name: Dales settlements and illustrated opening contract
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_setting_and_story_art.gd
+      - name: Campaign state, narrative exploration and save reload
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_campaign_exploration.gd
