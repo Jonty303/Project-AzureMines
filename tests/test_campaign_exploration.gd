@@ -165,7 +165,9 @@ func _run() -> void:
         combat.actors[id] = goblin
     combat._check_victory()
     ui.call("_refresh")
-    ui.call("_on_story_continue")
+    if ui.get("story_continue_button").text != "Continue to Wagon Clearing":
+        _fail("Victory button is not labelled for exploration")
+        return
     ui.call("_on_story_continue")
     if ui.get("adventure").stage != "exploration" or not ui.get("story_choices_scroll").visible:
         _fail("Narrative choices were not rendered after victory")
