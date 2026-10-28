@@ -42,8 +42,8 @@ func _run_test() -> void:
     await process_frame
     await process_frame
 
-    if int(engine_instance.actors.size()) != 6:
-        _fail("Expected four party members and two tutorial goblins")
+    if int(engine_instance.actors.size()) != 8:
+        _fail("Expected four party members and four campsite goblins")
         return
     var status: Variant = scene_root.get("status_label")
     if not (status is Label) or not status.text.begins_with("Round "):
