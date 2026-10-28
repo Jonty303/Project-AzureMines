@@ -87,6 +87,22 @@ The party should have **three genuine options**: avoid it, distract it with food
 
 The supposed **goblin lord is a bugbear** imposed by the shadowy society to disrupt traffic on the **Old Trade Road**. His cruel treatment of his goblin subordinates has alienated some of them. He is **not interested in surrendering the mage**, **not interested in trade**, and **not receptive to deals or an alliance with the adventurers**. This is an established personality constraint. The party can still use tactics, stealth, the waterfall route or goblin assistance, but should not get a fake high-DC Persuasion button whose success forces him to contradict his character.
 
+### Standing orders — seize dwarves alive
+
+**Author-established fact:** The shadowy organisation has instructed its installed bugbear overlord that, **whenever the raiders attack caravans, they must watch for dwarves, capture any they encounter if possible, and send the captives to the old high-moor tower**. This is a deliberate, ongoing order alongside disrupting mineral trade. Dwarven passengers are targets even if their apparent role is merchant, driver, escort or traveller; **the order does not depend on whether an individual dwarf actually knows the mines' secret**.
+
+The previously captured **dwarven trader** is a concrete example: he was taken alive and transferred to the tower for interrogation about the mines. The **mage** from that caravan was instead left chained in the bugbear's chamber; his **spellbook** travelled with the trader. Neither their separation nor the book's transfer proves why the organisation wants the mage's book.
+
+**Consequences for future adventure authoring:**
+
+- Raiders may try to **subdue and bind** a dwarf rather than kill one. Their behaviour should reflect a capture objective instead of blindly attacking every target to the death; the bugbear must still be dangerous to the party.
+- A guard, Hesk or the displaced chief **may know fragments** of the orders, their wording, repeated searches for dwarf travellers, or the route taken by escorted captives. Do not assume every goblin knows who ultimately gave the command.
+- A discovered **instruction, cargo/prisoner tally, escort testimony or transfer record** could provide a clue that dwarven prisoners are treated differently. Keep each clue discoverable through credible observations or social interaction, with certainty recorded correctly.
+- A captured dwarf is **not automatically a mine insider**, and prisoner transfer to the tower is **not proof that every missing caravan has been accounted for**. The organisation's wider aim remains an author-only mystery.
+- Record separate state for each named prisoner, capture attempt, transfer and rescue; do not abstract living captives into missing cargo. No free all-purpose “rescue dwarves” event should resolve unseen prisoners.
+
+The bugbear will not willingly release the **mage** in his lair or bargain with the adventurers, even if the party knows about the dwarf-capture orders.
+
 The **displaced goblin ex-chief** lives with **five other goblins** in the common area (six total). If the circumstances are right, he may offer or accept a plan for the party to help the goblins overthrow the bugbear. He could be bitter, frightened or cautious about retaliation, so his support is earned and contingent rather than a guaranteed virtue reward.
 
 The eventual power arrangement after the bugbear falls is **not preordained**. The former chief might regain authority, someone else might rise, or the goblins might split. Consequences should reflect whom the party trusted, harmed or protected.
@@ -115,6 +131,9 @@ Hesk, the previously encountered named road scout, is **not one of these fourtee
 | `former_chief_contact`, `former_chief_support` | Earned diplomacy and possible goblin uprising |
 | `bugbear_lord_fate` | Alive, defeated, fled, captured, killed or otherwise displaced |
 | `waterfall_guard_state`, `guardroom_state` | Defenders do not respawn just because the party leaves and returns |
+| `bugbear_dwarf_capture_orders_known` | Whether the party has actually discovered the standing orders to seize dwarves from caravans |
+| `dwarf_prisoner_transfer_evidence` | Credible evidence of transfers from the hideout to the high-moor tower; independent of merely knowing a dwarf is missing |
+| `named_dwarf_captive_states` | Individual captive identities, conditions, whereabouts and rescue/transfer history; a proposed structured registry, not an implemented flag |
 | `mage_captive_state`, `mage_recovery` | Distinct captivity, release, recuperation and whereabouts |
 | `rubbish_tip_discovered`, `midden_grub_state` | Original scavenger's fate independent of main enemies |
 | `rubbish_shaft_noticed`, `rubbish_shaft_examined` | Record the hole and what was learned, without revealing an unauthored destination |
