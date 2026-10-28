@@ -105,7 +105,7 @@ func _draw() -> void:
         var actor: Dictionary = engine.actors[id_variant]
         var cell: Vector2i = actor["position"]
         var dest := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
-        var active: bool = int(actor["hp"]) > 0
+        var active: bool = engine.is_combat_capable(str(id_variant))
         var actor_id: String = str(actor["id"])
         if actor_id == current or (engine.deployment_active and actor_id == selected_deployment_actor):
             draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(66, 66)), GOLD, false, 3.0)
