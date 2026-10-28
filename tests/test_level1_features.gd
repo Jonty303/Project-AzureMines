@@ -52,6 +52,14 @@ func _run() -> void:
         _fail("Sneak Attack must not apply with Disadvantage")
         return
 
+    # Restore the canonical positions for the spell-range tests.
+    alden = combat.actors["alden"]
+    alden["position"] = Vector2i(2, 3)
+    combat.actors["alden"] = alden
+    var goblin: Dictionary = combat.actors["goblin_blade"]
+    goblin["position"] = Vector2i(4, 6)
+    combat.actors["goblin_blade"] = goblin
+
     # Mage Armor uses one of Elyra's two level-1 slots and raises AC to 15.
     _turn_of(combat, "elyra")
     if not combat.can_cast_spell("mage_armor", "elyra"):
