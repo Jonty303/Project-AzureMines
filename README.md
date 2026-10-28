@@ -1,5 +1,12 @@
 # Project Azure Mines
 
+## Current development update: Combat v0.4
+
+The current feature branch adds **context-only targeting**, visibly crossed-out exhausted actions, interruptible Opportunity Attacks, Disengage, Shield reactions, Bless concentration and **eight original combat sound effects**. Select Move, Attack or Spells to see only that action's valid destinations/targets. The game remains limited to the fixed level-1 party.
+
+See [v0.4 controls, sounds and known limitations](docs/combat-v04-actions-audio.md). This is draft code pending an interactive desktop playtest.
+
+
 ## Latest iteration: downed poses and bottom action bar
 
 On `feature/downed-sprites-action-bar`, the tutorial battle now has a mock-up-inspired dark-stone floor/wall visual, crates/barrels/torches, downed character and goblin poses, a compact bottom **Move / Attack / Spells / Second Wind / Dash / Dodge / End Turn** action bar and weapon/spell selection. Unconscious adventurers can be healed, and the combat engine now tracks basic Death Saving Throws. All characters remain level 1.
