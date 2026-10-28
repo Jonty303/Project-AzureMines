@@ -194,6 +194,7 @@ func move_to(destination: Vector2i) -> bool:
     _record("%s moves from (%d,%d) to (%d,%d), spending %d square(s)." % [
         actor["name"], old_position.x, old_position.y, destination.x, destination.y, cost
     ])
+    _emit_sound("footstep")
     return true
 
 
@@ -265,11 +266,13 @@ func attack(target_id: String, weapon_id: String = "") -> bool:
     var attack_name := str(weapon.get("id", "attack")).replace("_", " ")
     var disadvantage_label := " (Disadvantage)" if disadvantage else ""
     if not roll["hit"]:
+        _emit_sound("miss")
         _record("%s uses %s against %s: %d vs AC %d — MISS%s." % [
             source["name"], attack_name, target["name"], roll["total"], target["armor_class"], disadvantage_label
         ])
         return true
     var damage: int = RulesMath.roll_damage(str(weapon.get("damage", "1d4")), rng, bool(roll["critical"]))
+    _emit_sound("ranged" if weapon.get("kind", "") == "ranged_weapon" else "melee_hit")
     if _sneak_attack_eligible(source_id, target_id, weapon, disadvantage):
         var sneak_damage: int = RulesMath.roll_damage("1d6", rng, bool(roll["critical"]))
         damage += sneak_damage
@@ -290,7 +293,9 @@ func attack(target_id: String, weapon_id: String = "") -> bool:
         source["name"], attack_name, target["name"], roll["total"], target["armor_class"],
         critical_label, damage, weapon.get("damage_type", ""), old_hp, target["hp"], disadvantage_label
     ])
+    _emit_sound("damage")
     if int(target["hp"]) <= 0:
+        _emit_sound("death")
         _record("%s is down." % target["name"])
     _check_victory()
     return true
@@ -462,6 +467,7 @@ func _roll_death_save(actor_id: String) -> void:
         ])
         if int(actor["death_failures"]) >= 3:
             actor["combat_state"] = "dead"
+            _emit_sound("death")
             _record("%s has died." % actor["name"])
         elif int(actor["death_successes"]) >= 3:
             actor["combat_state"] = "stable"
@@ -548,6 +554,7 @@ func use_second_wind() -> bool:
     actor["second_wind_remaining"] = int(actor["second_wind_remaining"]) - 1
     actors[actor_id] = actor
     bonus_action_used = true
+    _emit_sound("heal")
     _record("%s uses Second Wind, healing %d HP (%d/%d); %d use(s) left." % [
         actor["name"], restored, actor["hp"], actor["max_hp"], actor["second_wind_remaining"]
     ])
@@ -620,6 +627,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
         actors[caster_id] = caster
     var target: Dictionary = actors[target_id]
     var effect: String = str(spell["effect"])
+    _emit_sound("magic")
     var title: String = spell_id.replace("_", " ").capitalize()
     match effect:
         "mage_armor":
@@ -638,6 +646,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
                 target["death_successes"] = 0
                 target["death_failures"] = 0
             actors[target_id] = target
+            _emit_sound("heal")
             _record("%s casts %s on %s for %d HP (%d/%d)." % [
                 caster["name"], title, target["name"], gained, target["hp"], target["max_hp"]
             ])
@@ -661,6 +670,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
                 var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng, bool(hit["critical"]))
                 _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
             else:
+                _emit_sound("miss")
                 _record("%s casts %s at %s: %d vs AC %d — MISS." % [
                     caster["name"], title, target["name"], hit["total"], target["armor_class"]
                 ])
@@ -670,6 +680,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
 func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: String, damage: int, damage_type: String) -> void:
     var target: Dictionary = actors[target_id]
     target["hp"] = maxi(0, int(target["hp"]) - damage)
+    _emit_sound("damage")
     if int(target["hp"]) == 0:
         target["combat_state"] = "unconscious" if target["team"] == "party" else "dead"
     actors[target_id] = target
@@ -677,6 +688,7 @@ func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: Stri
         caster["name"], spell_name, target["name"], damage, damage_type, target["hp"]
     ])
     if int(target["hp"]) == 0:
+        _emit_sound("death")
         _record("%s is down." % target["name"])
     _check_victory()
 
@@ -688,7 +700,11 @@ func get_current_spells() -> Array[String]:
 
 
 func _record(line: String) -> void:
-    events.append({"round": round_number, "text": line})
+    events.append({"round": round_number, "text": line, "sound": ""})
+
+
+func _emit_sound(sound_id: String) -> void:
+    events.append({"round": round_number, "text": "", "sound": sound_id})
 
 
 func _read_json(path: String) -> Dictionary:
