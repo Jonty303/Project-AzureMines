@@ -8,7 +8,7 @@
       "eyebrow": "CHAPTER I • THE OLD TRADE ROAD",
       "title": "The Watchfire",
       "paragraphs": [
-        "West of the Dales, the harbour city of Seabrook grows rich on dwarven ore, precious metals and gemstones. Tavian Marr, a merchant with caravans on the Old Trade Road, has commissioned Alden, Elyra, Brunna and Pip to discover why his shipments have stopped reaching the coast.",
+        "West of the Dales, the harbour city of Seabrook grows rich on dwarven ore, precious metals and gemstones. Lately the mines have sent irregular loads, though their representatives insist the workings are sound. Tavian Marr, a merchant on the Old Trade Road, has commissioned Alden, Elyra, Brunna and Pip to discover why his caravans have stopped reaching the coast.",
         "The roads have always been dangerous. A cheap swordsman and a hedge-mage are usual protection; prosperous merchants may hire a priest besides. Bandits and goblins take their chances, yet a driver or guard ordinarily escapes to tell the tale. Lately entire caravans have disappeared, with no wagons, no cargo and no survivors.",
         "The contract requires a report to the Adventurers' Guild at Harrowford, a small market town on the northern edge of the Dales. Beyond the settled valleys lie wild woods, high moors and limestone hills riddled with old passages.",
         "Tonight the four companions rest in shadow around a small fire beneath dark pines. At dawn they find a covered wagon abandoned on the road. A second campfire is still warm, goblin tracks mark the mud, and somewhere through the trees a bowstring creaks."
@@ -68,6 +68,11 @@
       "precious_metals",
       "gems"
     ],
-    "contract_objective": "Report to the Adventurers' Guild in Harrowford and investigate losses along the Old Trade Road"
+    "contract_objective": "Report to the Adventurers' Guild in Harrowford and investigate losses along the Old Trade Road",
+    "public_clues": [
+      "ore_shipments_have_become_irregular",
+      "mine_representatives_deny_trouble",
+      "guarded_caravans_disappear_without_survivors"
+    ]
   }
 }
