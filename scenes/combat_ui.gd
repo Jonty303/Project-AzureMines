@@ -39,6 +39,13 @@ var action_ids: Array[String] = []
 var weapon_ids: Array[String] = []
 var current_picker_actor := ""
 var action_mode := ""
+var deployment_selected_id := ""
+var setup_panel: VBoxContainer
+var combat_action_row: HBoxContainer
+var combat_selector_row: HBoxContainer
+var begin_battle_button: Button
+var deployment_instructions: Label
+var formation_buttons: Dictionary = {}
 var sfx_players: Dictionary = {}
 var _heard_event_count := 0
 
@@ -197,11 +204,31 @@ func _build_ui() -> void:
     var bar_content := VBoxContainer.new()
     bar_content.add_theme_constant_override("separation", 7)
     bar_panel.add_child(bar_content)
-    _make_label("ACTION BAR", bar_content, 16)
+    _make_label("ACTIONS / PARTY DEPLOYMENT", bar_content, 16)
+
+    setup_panel = VBoxContainer.new()
+    setup_panel.add_theme_constant_override("separation", 6)
+    bar_content.add_child(setup_panel)
+    deployment_instructions = _make_label(
+        "Formation first, then select a hero and click an available blue square.", setup_panel, 13
+    )
+    deployment_instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    var setup_buttons := HBoxContainer.new()
+    setup_buttons.add_theme_constant_override("separation", 8)
+    setup_panel.add_child(setup_buttons)
+    for formation_id in ["line", "square", "diamond"]:
+        var button: Button = _make_button(
+            formation_id.capitalize(), _on_formation.bind(formation_id), setup_buttons, 98
+        )
+        button.tooltip_text = "Arrange the whole party in a %s formation" % formation_id
+        formation_buttons[formation_id] = button
+    begin_battle_button = _make_button("Begin Battle", _on_begin_battle, setup_buttons, 145)
+    begin_battle_button.add_theme_stylebox_override("normal", _button_style(true))
 
     var actions := HBoxContainer.new()
     actions.add_theme_constant_override("separation", 5)
     bar_content.add_child(actions)
+    combat_action_row = actions
     move_button = _make_button("Move", func() -> void: _set_mode("move"), actions, 64)
     attack_button = _make_button("Attack", func() -> void: _set_mode("attack"), actions, 72)
     spells_button = _make_button("Spells", func() -> void: _set_mode("spell"), actions, 72)
@@ -215,6 +242,7 @@ func _build_ui() -> void:
     var selectors := HBoxContainer.new()
     selectors.add_theme_constant_override("separation", 8)
     bar_content.add_child(selectors)
+    combat_selector_row = selectors
     _make_label("Weapon", selectors, 13)
     weapon_picker = OptionButton.new()
     weapon_picker.custom_minimum_size = Vector2(155, 35)
@@ -238,15 +266,31 @@ func _build_ui() -> void:
 
 func _restart() -> void:
     engine = CombatEngine.new()
-    if not engine.start():
+    if not engine.start(42024, true):
         status_label.text = "ERROR: combat fixtures could not load."
         end_turn_button.disabled = true
         return
     board.engine = engine
     current_picker_actor = ""
     action_mode = ""
-    _run_enemy_turns()
+    deployment_selected_id = ""
     _heard_event_count = engine.events.size()
+    _refresh()
+
+
+func _on_formation(formation_id: String) -> void:
+    if engine.deployment_active and engine.set_formation(formation_id):
+        deployment_selected_id = ""
+    _refresh()
+
+
+func _on_begin_battle() -> void:
+    if not engine.begin_battle():
+        return
+    deployment_selected_id = ""
+    action_mode = ""
+    current_picker_actor = ""
+    _run_enemy_turns()
     _refresh()
 
 
@@ -284,6 +328,14 @@ func _selected_spell() -> String:
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
+    if engine.deployment_active:
+        var clicked_id: String = engine.actor_at(cell)
+        if not clicked_id.is_empty() and engine.actors[clicked_id]["team"] == "party":
+            deployment_selected_id = clicked_id
+        elif not deployment_selected_id.is_empty():
+            engine.place_character(deployment_selected_id, cell)
+        _refresh()
+        return
     if not engine.pending_reaction.is_empty() or not engine.current_is_party():
         return
     var target_id: String = engine.target_at(cell)
@@ -347,6 +399,8 @@ func _on_end_turn() -> void:
 
 
 func _run_enemy_turns() -> void:
+    if engine.deployment_active:
+        return
     var safety := 25
     while not engine.finished and not engine.current_is_party() and engine.pending_reaction.is_empty() and safety > 0:
         engine.take_ai_turn()
@@ -389,6 +443,45 @@ func _set_crossed(button: Button, exhausted: bool) -> void:
 func _refresh() -> void:
     if engine == null:
         return
+    setup_panel.visible = engine.deployment_active
+    combat_action_row.visible = not engine.deployment_active
+    combat_selector_row.visible = not engine.deployment_active
+    if engine.deployment_active:
+        reaction_row.visible = false
+        board.action_mode = ""
+        board.selected_deployment_actor = deployment_selected_id
+        board.queue_redraw()
+        status_label.text = "PREPARE FOR AMBUSH"
+        if deployment_selected_id.is_empty():
+            active_label.text = "Choose Line, Square or Diamond.\nClick a party member to move them."
+        else:
+            active_label.text = "%s selected.\nClick a free blue square to reposition." % (
+                engine.actors[deployment_selected_id]["name"]
+            )
+        deployment_instructions.text = "Formation: %s  •  Click a hero, then a blue square." % (
+            engine.active_formation.capitalize()
+        )
+        for formation_id in formation_buttons.keys():
+            var formation_button: Button = formation_buttons[formation_id]
+            formation_button.add_theme_stylebox_override(
+                "normal", _button_style(engine.active_formation == formation_id)
+            )
+        var lines: PackedStringArray = []
+        for actor_id in ["alden", "elyra", "brunna", "pip"]:
+            var actor: Dictionary = engine.actors[actor_id]
+            lines.append("%s  •  (%d,%d)" % [
+                actor["name"], actor["position"].x, actor["position"].y
+            ])
+        party_label.text = "\n".join(lines)
+        var log_lines: PackedStringArray = []
+        for evt in engine.events:
+            var line: String = str(evt.get("text", ""))
+            if not line.is_empty():
+                log_lines.append(line)
+        combat_log.text = "\n".join(log_lines)
+        _heard_event_count = engine.events.size()
+        return
+    board.selected_deployment_actor = ""
     _refresh_picker()
     board.action_mode = action_mode
     board.selected_weapon = _selected_weapon()
