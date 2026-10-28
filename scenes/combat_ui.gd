@@ -24,6 +24,10 @@ var story_title: Label
 var story_paragraphs: RichTextLabel
 var story_rewards: Label
 var story_continue_button: Button
+var survivor_panel: VBoxContainer
+var survivor_label: Label
+var survivor_first_aid_button: Button
+var survivor_heal_button: Button
 var log_heading: Label
 var status_label: Label
 var party_label: Label
@@ -201,6 +205,16 @@ func _build_ui() -> void:
     story_panel.add_child(story_paragraphs)
     story_rewards = _make_label("", story_panel, 16)
     story_rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    survivor_panel = VBoxContainer.new()
+    survivor_panel.add_theme_constant_override("separation", 6)
+    story_panel.add_child(survivor_panel)
+    survivor_label = _make_label("", survivor_panel, 13)
+    survivor_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    var aid_row := HBoxContainer.new()
+    aid_row.add_theme_constant_override("separation", 8)
+    survivor_panel.add_child(aid_row)
+    survivor_first_aid_button = _make_button("First Aid", _on_survivor_first_aid, aid_row, 120)
+    survivor_heal_button = _make_button("Cure Wounds", _on_survivor_heal, aid_row, 130)
     story_continue_button = _make_button("Continue", _on_story_continue, story_panel, 235)
     story_continue_button.add_theme_stylebox_override("normal", _button_style(true))
 
@@ -311,6 +325,23 @@ func _restart() -> void:
     deployment_selected_id = ""
     subdue_mode = false
     _heard_event_count = engine.events.size()
+    _refresh()
+
+
+func _on_survivor_first_aid() -> void:
+    if adventure.stage != "victory" or not engine.actors.has("goblin_blade"):
+        return
+    var result: Dictionary = engine.stabilize_creature("goblin_blade", "brunna")
+    if result.get("allowed", false):
+        var goblin: Dictionary = engine.actors["goblin_blade"]
+        goblin["first_aid_attempted"] = true
+        engine.actors["goblin_blade"] = goblin
+    _refresh()
+
+
+func _on_survivor_heal() -> void:
+    if adventure.stage == "victory":
+        engine.heal_survivor("brunna", "goblin_blade")
     _refresh()
 
 
@@ -533,6 +564,26 @@ func _refresh_story() -> void:
     story_continue_button.text = str(info.get("button", "Continue"))
     status_label.text = "THE OLD TIMBER ROAD" if adventure.stage == "approach" else story_eyebrow.text
 
+    survivor_panel.visible = adventure.stage == "victory" and engine.actors.has("goblin_blade")
+    if survivor_panel.visible:
+        var survivor: Dictionary = engine.actors["goblin_blade"]
+        if survivor.get("npc_id", "") != "hesk_roadwatch":
+            survivor_panel.visible = false
+        else:
+            var state: String = str(survivor.get("combat_state", "active"))
+            match state:
+                "unconscious":
+                    survivor_label.text = "Hesk, the shield-bearing goblin, is dying. Brunna may attempt first aid or spend a spell slot."
+                "stable":
+                    survivor_label.text = "Hesk has been stabilised, but remains unconscious at 0 HP. Healing could wake him."
+                "knocked_out":
+                    survivor_label.text = "Hesk was subdued at 1 HP. He is unconscious, but not dying."
+                "active":
+                    survivor_label.text = "Hesk is conscious and alive. His fate and any bargain belong to the next narrative scene."
+                _:
+                    survivor_label.text = "Hesk died in the fighting. Ordinary first aid and healing cannot restore him."
+            survivor_first_aid_button.disabled = state not in ["unconscious", "knocked_out"] or bool(survivor.get("first_aid_attempted", false))
+            survivor_heal_button.disabled = state not in ["unconscious", "stable", "knocked_out"] or int(engine.actors["brunna"].get("spell_slots_remaining", 0)) <= 0 or not engine.is_combat_capable("brunna")
     story_rewards.visible = adventure.stage == "victory"
     if adventure.stage == "victory":
         var reward: Dictionary = adventure.last_reward
