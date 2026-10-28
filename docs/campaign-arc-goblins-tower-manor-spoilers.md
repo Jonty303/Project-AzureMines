@@ -6,7 +6,7 @@ This establishes the causal thread the setting author has now specified. It is p
 
 ## Author-established facts — canonical direction
 
-1. The **goblin lord controlling the raiders** receives payment from the mysterious secret organisation to **disrupt trade on the Old Trade Road**. The goblins are not merely freebooters, although individual goblins may not know who finances the raids. The goblin lord is currently unnamed.
+1. The **goblin lord controlling the raiders** receives payment from the mysterious secret organisation to **disrupt trade on the Old Trade Road**. The goblins are not merely freebooters, although individual goblins may not know who finances the raids. The bugbear overlord is currently unnamed; the displaced former goblin chief is also not named yet.
 2. During a previous caravan attack, the raiders captured **a dwarven trader** and **a mage travelling with the caravan**. Both were alive when separated, and neither returned to civilisation. This explains why the earlier merchant's reports listed *no returned survivors*—it does not imply everyone was killed.
 3. The organisation **took the dwarf to an old tower on the high moor**, where he is **being tortured for information about the dwarven mines**. The dwarf's identity, what he truly knows and whether he is able to cooperate remain open.
 4. The mage is **alive, malnourished and chained in the goblin hideout**, without his spellbook. He is distressed about its loss. A rescue should involve releasing the chains, food, water and safe recovery—not instant combat readiness.
@@ -44,16 +44,22 @@ This establishes the causal thread the setting author has now specified. It is p
 
 The diagram shows **connections, not a compulsory order**. The player may go to town first, revisit the wagon clearing, obtain the tower's location from another clue, or return to rescue someone later. The map reveals the tower only when the party has grounds to know its location. The lord's manor is a known Harrowford location; his involvement is not known until supported by evidence.
 
-## Goblin hideout — credible decision space
+## Goblin hideout — canonical limestone-cave design
 
-The goblin lord receives money or valuable supplies to raid merchant traffic; define his compensation, intermediaries and awareness later. His orders may be pragmatic rather than ideological. The wider goblin community includes families and non-raiders, so confronting the lord need not imply killing the whole lair.
+The setting author has established the full room geography, inhabitants and command structure in [Goblin Hideout — Wooded Valley and Limestone Cave](goblin-hideout-limestone-valley.md). **The apparent goblin lord is really a bugbear overlord installed by the society** to suppress trade on the Old Trade Road. He abuses his goblin subordinates and **will not bargain, trade, form an alliance or willingly surrender the captive mage**. Any earlier speculation that the overlord himself might negotiate has been superseded.
 
-- **Parley possible:** A surviving Hesk might persuade the guards to allow a conversation. The lord may lie about who pays him, bargain for sanctuary, demand a price, or refuse access to the captive. Readiness and diplomatic attitude remain independent.
-- **Combat possible:** The party may infiltrate, ambush, besiege or openly assault the hideout. If Hesk warned them, the goblins may be well prepared even if they are receptive to dialogue.
-- **Mage rescue:** The imprisoned mage is not loot. Unlock shackles, move him to safety, manage deprivation and allow roleplaying. Record whether he was rescued, abandoned, harmed, or voluntarily released by the goblins. Relief and rest should affect his ability to travel or speak, not simply turn him into a combatant.
-- **Clue handling:** The mage knows that his spellbook went away with the dwarf, but he need not know where the tower stands or who funds the goblins. Credible testimony could point to hooded collectors, high-moor travellers, payments or unusual orders, without dumping the whole conspiracy.
-- **Goblin lord outcomes:** killed, captured, surrendered, replaced, negotiated with, fled or still ruling. Store one persistent fate and adjust future raids, town dialogue and faction security.
-- **Hesk's family:** preserve prior mercy outcomes independently of the lord's status; if Hesk is alive, his earlier treatment still shapes which goblins assist or resist.
+The hideout entrance sits in the rocky side of a wooded valley. **Two goblin watchers in trees** intend to ambush strangers or sound the alarm; a party that detects them first can ambush or evade them. A **long main passage** leads toward an **underground waterfall** with **three goblin guards**. Branches serve a **rubbish tip**, **guardroom (1 goblin and a large wolf)**, **shared kitchen/eating/sleeping area (six goblins including the displaced former goblin chief)**, and the **bugbear's chamber (bugbear, two goblin guards, another wolf, and the mage chained in a corner)**. A **private tunnel from the bugbear chamber connects to the waterfall**.
+
+The **rubbish tip** has an open **hole in the floor** used for dumping most of the waste. Its destination is **deliberately unknown for future use**. A small original **Midden Grub** scavenges among the refuse; it should be a low-risk, avoidable encounter for level-one adventurers, not a trap that silently forces descent or instant death. Proposed statistics and choices are in the hideout design document.
+
+- **Diplomacy:** The **former goblin chief**, displaced by the abusive bugbear and living in the common area, may ally with the party **against the bugbear** when given sufficient reason and security. Negotiation is with the goblins, not the unreceptive overlord.
+- **Security:** Hesk's fate and whether the tree watchers raise an alarm can alter defenders' readiness. These state changes remain separate from goblins' trust and willingness to talk; not every goblin shares the same motivation.
+- **Combat/stealth:** The total cave roster is 14 goblins, 2 wolves, 1 bugbear, one small scavenger, plus a captive. These are **location populations**, not a fair single encounter. The party should have room for scouting, careful tactics, withdrawal or encouraging an uprising.
+- **Mage rescue:** The mage is living, chained, malnourished and afraid in the overlord's cave. After being freed he needs care and time to recover. His spellbook remains with the captured dwarf at the high-moor tower; returning it is a later separate objective.
+- **Nonlinear exploration:** The waterfall/lord passage enables alternative positioning, and the refuse shaft remains a mystery to mark for a later return. The discovered map, event log and NPC registry must not spoil unseen chambers or unbuilt places.
+
+The bugbear's **eventual outcome**—killed, captured, fled, driven out or remaining in power—and the **former chief's subsequent rule** are independent persistent consequences. Hesk's family and personal treatment remain relevant. No society-leader identity or lower-level content is established by this dungeon design.
+
 
 ## High-moor tower — two intertwined rescue objectives
 
