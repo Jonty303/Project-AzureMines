@@ -22,9 +22,9 @@
       "paragraphs": [
         "The fighting ceases. The goblins lie dead or incapacitated, and the clearing grows quiet except for the crackle of the abandoned fire.",
         "Beneath an overturned chest the party recovers a little coin. There is no worthwhile equipment to carry away.",
-        "Whoever attacked this wagon left tracks towards the woods. The trail may lead towards the missing caravans, but the contract also requires a report to the Adventurers' Guild at Harrowford. The clearing can be revisited once overland exploration is implemented."
+        "Whoever attacked this wagon left tracks towards the woods. The trail may lead towards the missing caravans, but the contract also requires a report to the Adventurers' Guild at Harrowford. You can search the wagon and follow the tracks now, or leave for Harrowford and return later."
       ],
-      "button": "Continue Along the Road",
+      "button": "Continue to Wagon Clearing",
       "art": "res://assets/story/old_timber_road_campfire.svg"
     },
     "defeat": {
@@ -44,7 +44,7 @@
         "The Old Trade Road winds on towards Harrowford and the mines beyond. For all the wealth carried over its worn stones, the settlements still feel small amid the hills and woodland.",
         "You can return to the wagon clearing, investigate the raiders' trail, or continue towards Harrowford. The choice is yours."
       ],
-      "button": "Continue",
+      "button": "Continue to Wagon Clearing",
       "art": "res://assets/story/old_timber_road_campfire.svg"
     }
   },
