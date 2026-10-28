@@ -62,3 +62,5 @@ jobs:
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_party_deployment.gd
       - name: Opening narrative and once-only XP/gold rewards
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_opening_adventure.gd
+      - name: Named goblin death saves and nonlethal survival
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_named_survivors.gd
