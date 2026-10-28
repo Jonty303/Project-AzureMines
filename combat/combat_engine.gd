@@ -21,6 +21,7 @@ var bonus_action_used := false
 var slotted_cast_this_turn := false
 var sneak_attack_used := false
 var movement_used := 0
+var dash_extra_squares := 0
 var finished := false
 var victor := ""
 var rng := RandomNumberGenerator.new()
@@ -61,6 +62,8 @@ func start(seed: int = 42024) -> bool:
         actor["team"] = "party"
         actor["position"] = Vector2i(int(cell[0]), int(cell[1]))
         actor["hp"] = int(actor.get("starting_hp", actor.get("max_hp", 1)))
+        actor["combat_state"] = "active"
+        actor["dodging"] = false
         actor["max_hp"] = int(actor.get("max_hp", 1))
         var casting: Variant = actor.get("spellcasting")
         actor["spell_slots_remaining"] = int(casting.get("spell_slots", {}).get("1", 0)) if casting is Dictionary else 0
@@ -77,6 +80,8 @@ func start(seed: int = 42024) -> bool:
         actor["position"] = Vector2i(int(cell[0]), int(cell[1]))
         actor["team"] = "enemy"
         actor["hp"] = int(actor.get("max_hp", 1))
+        actor["combat_state"] = "active"
+        actor["dodging"] = false
         actor["art"] = {"combat_sprite": "assets/characters/sprites/goblin_front_64.png"}
         actor["sap_pending"] = false
         actor["vex_target"] = ""
@@ -136,7 +141,7 @@ func get_reachable(id: String) -> Dictionary:
     if int(actor["hp"]) <= 0:
         return result
     var origin: Vector2i = actor["position"]
-    var remaining := maxi(0, int(actor.get("speed_feet", 30)) / 5 - movement_used)
+    var remaining := maxi(0, int(actor.get("speed_feet", 30)) / 5 + dash_extra_squares - movement_used)
     var pending: Array[Vector2i] = [origin]
     result[origin] = {"cost": 0, "previous": origin}
 
@@ -188,7 +193,7 @@ func move_to(destination: Vector2i) -> bool:
     return true
 
 
-func available_attack(target_id: String) -> Dictionary:
+func available_attack(target_id: String, weapon_id: String = "") -> Dictionary:
     if finished or action_used or not actors.has(target_id):
         return {}
     var source_id := current_id()
@@ -205,6 +210,8 @@ func available_attack(target_id: String) -> Dictionary:
     var ranged: Dictionary = {}
     for entry in options:
         var attack: Dictionary = entry
+        if not weapon_id.is_empty() and str(attack.get("id", "")) != weapon_id:
+            continue
         if attack.get("kind", "") == "melee_weapon" and distance <= 1:
             return attack
         if attack.get("kind", "") == "ranged_weapon":
@@ -214,8 +221,8 @@ func available_attack(target_id: String) -> Dictionary:
     return ranged
 
 
-func attack(target_id: String) -> bool:
-    var weapon: Dictionary = available_attack(target_id)
+func attack(target_id: String, weapon_id: String = "") -> bool:
+    var weapon: Dictionary = available_attack(target_id, weapon_id)
     if weapon.is_empty():
         return false
     var source_id := current_id()
@@ -233,7 +240,7 @@ func attack(target_id: String) -> bool:
                     disadvantage = true
                     break
     var advantage: bool = source.get("vex_target", "") == target_id
-    if bool(source.get("sap_pending", false)):
+    if bool(source.get("sap_pending", false)) or bool(target.get("dodging", false)):
         disadvantage = true
     var first: int = Dice.roll_d20(rng)
     var natural: int = first
@@ -269,6 +276,8 @@ func attack(target_id: String) -> bool:
         actors[source_id] = source
     var old_hp := int(target["hp"])
     target["hp"] = maxi(0, old_hp - damage)
+    if int(target["hp"]) == 0:
+        target["combat_state"] = "unconscious" if target["team"] == "party" else "dead"
     actors[target_id] = target
     var critical_label := " CRITICAL!" if roll["critical"] else ""
     _record("%s uses %s on %s: %d vs AC %d — HIT%s %d %s damage (%d → %d HP)%s." % [
@@ -324,6 +333,49 @@ func take_ai_turn() -> void:
         end_turn()
 
 
+
+func target_at(cell: Vector2i) -> String:
+    # Corpses remain rendered, but only active creatures and downed party members
+    # are valid targets. Dead monsters should never intercept clicks.
+    for key in actors.keys():
+        var actor: Dictionary = actors[key]
+        if actor["position"] != cell:
+            continue
+        if int(actor["hp"]) > 0 or actor.get("combat_state", "") == "unconscious":
+            return str(key)
+    return ""
+
+
+func can_dash() -> bool:
+    return not finished and current_is_party() and not action_used
+
+
+func use_dash() -> bool:
+    if not can_dash():
+        return false
+    action_used = true
+    dash_extra_squares = int(current_actor().get("speed_feet", 30)) / 5
+    _record("%s Dashes, gaining %d extra squares of movement." % [
+        current_actor()["name"], dash_extra_squares
+    ])
+    return true
+
+
+func can_dodge() -> bool:
+    return not finished and current_is_party() and not action_used
+
+
+func use_dodge() -> bool:
+    if not can_dodge():
+        return false
+    action_used = true
+    var actor: Dictionary = current_actor()
+    actor["dodging"] = true
+    actors[current_id()] = actor
+    _record("%s Dodges until their next turn." % actor["name"])
+    return true
+
+
 func _nearest_opponent(source_id: String) -> String:
     var source: Dictionary = actors[source_id]
     var best_id := ""
@@ -346,7 +398,11 @@ func _begin_turn() -> void:
     slotted_cast_this_turn = false
     sneak_attack_used = false
     movement_used = 0
+    dash_extra_squares = 0
     if not current_id().is_empty():
+        var actor: Dictionary = actors[current_id()]
+        actor["dodging"] = false
+        actors[current_id()] = actor
         _record("Turn: %s." % current_actor()["name"])
 
 
@@ -512,6 +568,8 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
                 Dice.ability_modifier(int(caster["ability_scores"][str(caster["spellcasting"]["ability"])]))
             var gained: int = mini(maxi(0, healing), int(target["max_hp"]) - int(target["hp"]))
             target["hp"] = int(target["hp"]) + gained
+            if int(target["hp"]) > 0 and target.get("combat_state", "") == "unconscious":
+                target["combat_state"] = "active"
             actors[target_id] = target
             _record("%s casts %s on %s for %d HP (%d/%d)." % [
                 caster["name"], title, target["name"], gained, target["hp"], target["max_hp"]
@@ -545,6 +603,8 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
 func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: String, damage: int, damage_type: String) -> void:
     var target: Dictionary = actors[target_id]
     target["hp"] = maxi(0, int(target["hp"]) - damage)
+    if int(target["hp"]) == 0:
+        target["combat_state"] = "unconscious" if target["team"] == "party" else "dead"
     actors[target_id] = target
     _record("%s casts %s on %s: %d %s damage (%d HP left)." % [
         caster["name"], spell_name, target["name"], damage, damage_type, target["hp"]
