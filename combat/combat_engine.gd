@@ -583,33 +583,74 @@ func end_turn() -> void:
 func take_ai_turn() -> void:
     if finished or current_is_party() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
+    var actor_id: String = current_id()
     var source: Dictionary = current_actor()
-    var target_id := _nearest_opponent(current_id())
-    if target_id.is_empty():
+    var role: String = str(source.get("role", "melee"))
+    var enemy_ids: Array[String] = []
+    for target_id_variant in actors.keys():
+        var id: String = str(target_id_variant)
+        var target: Dictionary = actors[id]
+        if target["team"] != source["team"] and int(target["hp"]) > 0:
+            enemy_ids.append(id)
+    if enemy_ids.is_empty():
         _check_victory()
         return
-    if available_attack(target_id).is_empty():
-        var reachable: Dictionary = get_reachable(current_id())
+
+    # Archers prefer line-of-sight shortbow shots instead of charging melee.
+    # They only resort to a knife when already engaged in adjacent combat.
+    var chosen_id := ""
+    var chosen_weapon := ""
+    var best_distance := 9999
+    for id in enemy_ids:
+        var distance: int = _distance(source["position"], actors[id]["position"])
+        var weapon_id: String = "shortbow" if role == "ranged" and distance > 1 else "knife"
+        if role == "ranged" and distance <= 1:
+            weapon_id = "dagger"
+        if not available_attack(id, weapon_id).is_empty() and distance < best_distance:
+            best_distance = distance
+            chosen_id = id
+            chosen_weapon = weapon_id
+    if not chosen_id.is_empty():
+        attack(chosen_id, chosen_weapon)
+    else:
+        var reachable: Dictionary = get_reachable(actor_id)
         var best_cell: Vector2i = source["position"]
-        var best_distance := 999999
+        var best_score: int = 999999
         for cell_variant in reachable.keys():
             var cell: Vector2i = cell_variant
-            var target: Dictionary = actors[target_id]
-            var proximity := _distance(cell, target["position"])
-            if proximity < best_distance and proximity > 0:
-                best_distance = proximity
-                best_cell = cell
+            if cell == source["position"]:
+                continue
+            for id in enemy_ids:
+                var target: Dictionary = actors[id]
+                var distance: int = _distance(cell, target["position"])
+                if distance <= 0:
+                    continue
+                var clear: bool = _line_clear(cell, target["position"])
+                var score: int = 0
+                if role == "ranged":
+                    score = (0 if clear else 400) + absi(distance - 4) * 10
+                else:
+                    score = distance * 15 + (0 if clear else 50)
+                score += int(reachable[cell]["cost"])
+                if score < best_score:
+                    best_score = score
+                    best_cell = cell
         if best_cell != source["position"]:
             move_to(best_cell)
-            if not pending_reaction.is_empty():
+            if not pending_reaction.is_empty() or not pending_move.is_empty() or finished:
                 return
-    if not finished:
-        var current_target := _nearest_opponent(current_id())
-        if not current_target.is_empty():
-            attack(current_target)
-    if not finished:
+        if not finished:
+            for id in enemy_ids:
+                var target: Dictionary = actors[id]
+                var distance: int = _distance(actors[actor_id]["position"], target["position"])
+                var weapon_id: String = "shortbow" if role == "ranged" and distance > 1 else "knife"
+                if role == "ranged" and distance <= 1:
+                    weapon_id = "dagger"
+                if not available_attack(id, weapon_id).is_empty():
+                    attack(id, weapon_id)
+                    break
+    if not finished and pending_reaction.is_empty() and pending_move.is_empty():
         end_turn()
-
 
 
 func target_at(cell: Vector2i) -> String:
