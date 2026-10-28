@@ -19,7 +19,7 @@ An undiscovered hideout is not marked as a freely accessible map destination. A 
 
 A provisional goblin survivor, **Hesk**, knows the route but fears for his mate and younger sibling at the lair. Not everyone in the caves is a raider. He has a believable reason to withhold information from adventurers who might harm his family.
 
-A goblin at zero HP cannot simply be healed if the combat engine has already marked him **dead**. We need an explicitly authored survival/dying/nonlethal state, plus correct stabilisation and healing rules, before making this dialogue playable. Stabilising a dying creature does not automatically make it conscious; actual healing must use the requisite item or spell resources.
+A goblin at zero HP cannot be healed if the combat engine has already marked him **dead**. Hesk now has a special survival/dying state, with playable First Aid and Cure Wounds after battle. Full prisoner dialogue, release and quest outcomes are still to be built. Stabilisation alone does not make a 0-HP creature conscious. Stabilising a dying creature does not automatically make it conscious; actual healing must use the requisite item or spell resources.
 
 Possible actions when Hesk is genuinely alive include stabilise, heal, provide water, question him, promise protection, bargain, threaten, take prisoner, release, leave, or kill. He may provide a clue if capable of speaking, but healing does not purchase automatic loyalty.
 
@@ -63,6 +63,18 @@ These scene states must be determined by world flags and prior decisions, not ra
 **Left dying:** Later survival depends on actual stabilisation, time and possible intervention; the story must not pretend he was deliberately released.
 
 **Promise broken:** A false offer of family protection can close a diplomatic path, even if it once helped acquire a lead.
+
+## The goblin lord's employer and the two lost prisoners — author spoilers
+
+The goblin lord is **taking payments from the secret society to disrupt Old Trade Road traffic**. Not all raiders know why, and Hesk's family and the lair's noncombatants retain independent motivations. Parley, capture or combat can expose part of the payment arrangement. The goblin lord's name and individual history remain unassigned.
+
+A previous convoy's **malnourished mage is chained alive in the goblin hideout**. Another captive, a **dwarf trader**, has already been transferred to an old **high-moor tower** by agents of the society, who are torturing him for information about the mines. The mage's missing **spellbook went with the dwarf to the tower** and is not in the goblin hideout. These characters and the unique book each need their own state and ownership history. Two captives survived the raid, but **no survivors returned to civilisation**, consistent with the merchant's alarm.
+
+Rescue and treatment of the mage should be a narrative interaction, not an instant recruited party member. The spellbook can later be recovered as a **quest object** and returned to its owner. This may lead him to offer magical services in Harrowford after recovery, on appropriate terms.
+
+A distinct clue at the tower must implicate **Lord Osric Vale**, unlocking political choices to expose, constrain or unseat him. The tower is a **high-moor location**, not Seabrook's ruined coastal keep. These further adventures should be discoverable from multiple leads, with the route back to Harrowford and the wagon still available.
+
+See the full **author-only** design: [Paid Raiders, Moor Tower and Manor](campaign-arc-goblins-tower-manor-spoilers.md). This section, and all its objectives, are **not yet implemented** in the choice-driven exploration engine.
 
 ## Quest: Road Raiders
 
@@ -109,7 +121,7 @@ All important transitions must be persistent and applied exactly once. A choice 
 
 ## Implementation order
 
-First build the narrative node/choice graph, visited overland map, return travel and town witness lead. Add checks and persistent save/load. Then introduce the Hesk survivor branch when the engine supports a genuinely living goblin after combat, followed by alert/parley-dependent hideout entry and quest resolutions.
+First build the narrative node/choice graph, visited overland map, return travel and town witness lead. Add checks and persistent save/load. The Hesk survivor engine rules now exist; introduce the actual survivor conversation/release branch next. Build separate mage captivity, transferred dwarf, unique spellbook and tower evidence quests, followed by lord-related political resolutions.
 
 Do **not** present this as working gameplay in v0.7.
 ## Trade-road context
