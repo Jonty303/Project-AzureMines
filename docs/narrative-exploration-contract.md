@@ -158,3 +158,7 @@ The new exploration framework should be the next **major engine system**, before
 ## First substantial quest: the goblin hideout
 
 See [Goblin Trail, Survivor and Hideout](goblin-trail-and-survivor-quest.md). The wagon clearing is always returnable via an overland map even if the party goes to town first. The hideout has independent discovery routes (tracking, investigation, living goblin conversation, town witness), and no failed check permanently blocks the story. A spared/released goblin may **alert and fortify** the hideout while also making its inhabitants **receptive to parley**. Readiness and diplomacy are distinct persistent variables, not a single moral outcome. All of this remains **planned rather than implemented**.
+
+## Narrative scene illustration contract — current playable prototype
+
+Each narrative screen may name an art asset in the `art` field; a static scene image fills the main centre-left view while prose and choices remain legible alongside it. The combat grid reappears only when setup or combat starts. The initial playable art depicts the four adventurers around a campfire beneath dark pines. Animation should later replace or augment the same slot without changing authored story IDs. See [Dales settlement gazetteer](dales-settlement-gazetteer.md) for the opening commission and Seabrook/Harrowford setting anchors. The wider map and town conversation runtime remain planned.
