@@ -131,7 +131,7 @@ Every main narrative location should eventually have a large static image in the
 - **Rubbish tip:** heaps of torn sacks, bones and broken pots around a **black hole in the limestone floor**; a seemingly inert mound conceals the scavenger.
 - **Underground waterfall:** white water plunging through a dark vaulted chamber, wet rock ledges and sentries barely visible through mist.
 - **Common area:** dirty cooking fire, bedding and downtrodden goblins; ex-chief identifiable in dialogue rather than by omniscient visual cue.
-- **Bugbear chamber:** intimidating bugbear overloard in a torchlit limestone lair, two guarded approaches, a wolf and the thin chained mage in a corner.
+- **Bugbear chamber:** intimidating bugbear overlord in a torchlit limestone lair, two guarded approaches, a wolf and the thin chained mage in a corner.
 
 This dungeon is designed for **gamebook-style narrative exploration between tactical combat encounters**. Do not build a first-person corridor crawler. The art should never reveal a secret the party has not discovered (such as the otherwise hidden watchpost).
 
