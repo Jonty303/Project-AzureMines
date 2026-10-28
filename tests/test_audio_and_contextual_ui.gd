@@ -49,6 +49,7 @@ func _run() -> void:
     if not none["move"].is_empty() or not none["attack"].is_empty() or not none["spell"].is_empty():
         _fail("Highlights visible without a selected action")
         return
+    scene.call("_on_story_continue")
     scene.call("_on_begin_battle")
     if game.deployment_active:
         _fail("Begin Battle failed from action-bar scene")
