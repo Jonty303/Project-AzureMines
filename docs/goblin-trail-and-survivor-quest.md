@@ -1,6 +1,6 @@
 # Goblin Trail, Survivor and Hideout — Narrative Quest Design
 
-**Status: design only; not yet playable.** This expands the choice-driven exploration contract. Our present combat prototype treats all zero-HP goblins as dead, so survivor interaction must not be exposed until a separate rules-correct living survivor state is implemented.
+**Status: design only; not yet playable.** This expands the choice-driven exploration contract. The v0.7.1 combat build now gives **Hesk, Roadwatch** Death Saving Throws, permits melee Subdue and supports first aid and Cure Wounds after the battle. Full story choices to interrogate, bargain, release, take prisoner or respond to the lair are still not implemented.
 
 ## Meaningful choice after the wagon ambush
 
