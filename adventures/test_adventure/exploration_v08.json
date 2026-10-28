@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "starting_location": "wagon_clearing",
+  "locations": [
+    {
+      "id": "wagon_clearing",
+      "title": "The Wagon Clearing",
+      "subtitle": "THE OLD TRADE ROAD",
+      "map_pos": [
+        178,
+        304
+      ],
+      "art": "res://assets/story/old_timber_road_campfire.svg",
+      "description": "The broken wagon stands beneath the trees. Its wheels have sunk into the mud, and the campfire has burned low. Scattered crates bear the stamps of Seabrook merchants.",
+      "revisit_text": "The abandoned wagon is familiar now. Its ruined canvas stirs in the breeze. You remember the clues you found here, and the way the raiders moved through the woods.",
+      "choices": [
+        {
+          "id": "search_wagon",
+          "label": "Search the wagon and scattered crates",
+          "type": "check",
+          "ability": "intelligence",
+          "skill": "investigation",
+          "dc": 12,
+          "once": true,
+          "success": {
+            "text": "Among the broken crates you find a partial freight manifest, with a shipment missing from the tally.",
+            "effects": [
+              {
+                "type": "clue",
+                "id": "partial_freight_manifest",
+                "text": "A partial manifest reveals a missing mineral consignment."
+              },
+              {
+                "type": "flag",
+                "key": "wagon_searched",
+                "value": true
+              }
+            ]
+          },
+          "failure": {
+            "text": "The wagon has been badly disturbed. You cannot establish what was taken.",
+            "effects": [
+              {
+                "type": "event",
+                "id": "wagon_search_failed",
+                "text": "The party searched the wagon but found no reliable manifest."
+              }
+            ]
+          }
+        },
+        {
+          "id": "follow_tracks",
+          "label": "Follow the goblin tracks into the woods",
+          "type": "check",
+          "ability": "wisdom",
+          "skill": "survival",
+          "dc": 12,
+          "once": true,
+          "success": {
+            "text": "The tracks skirt a fallen oak, then descend towards an overgrown ravine path.",
+            "effects": [
+              {
+                "type": "clue",
+                "id": "goblin_trail",
+                "text": "Goblin tracks lead towards an overgrown ravine trail."
+              },
+              {
+                "type": "reveal_route",
+                "id": "overgrown_track"
+              },
+              {
+                "type": "flag",
+                "key": "goblin_trail_known",
+                "value": true
+              }
+            ]
+          },
+          "failure": {
+            "text": "The prints disappear amongst older tracks and wet limestone gravel. Someone in town may know the road better.",
+            "effects": [
+              {
+                "type": "event",
+                "id": "tracking_failed",
+                "text": "The party lost the goblin trail; the hideout remains undiscovered."
+              }
+            ]
+          }
+        },
+        {
+          "id": "follow_known_track",
+          "label": "Take the discovered ravine path",
+          "type": "travel",
+          "target": "overgrown_track",
+          "requires_known": "overgrown_track"
+        },
+        {
+          "id": "to_town_road",
+          "label": "Continue towards Harrowford",
+          "type": "travel",
+          "target": "town_road"
+        }
+      ]
+    },
+    {
+      "id": "town_road",
+      "title": "The Northern Road",
+      "subtitle": "ON THE WAY TO HARROWFORD",
+      "map_pos": [
+        364,
+        276
+      ],
+      "description": "The Old Trade Road cuts through open valleys. Beyond the fields, the high moor rises against grey mountains. Ahead, roofs cluster around an ore weighhouse.",
+      "choices": [
+        {
+          "id": "go_harrowford",
+          "label": "Enter Harrowford and report to the guild",
+          "type": "travel",
+          "target": "harrowford_guild"
+        },
+        {
+          "id": "go_market",
+          "label": "Visit the trading post and market",
+          "type": "travel",
+          "target": "harrowford_market"
+        },
+        {
+          "id": "return_wagon",
+          "label": "Return to the wagon clearing",
+          "type": "travel",
+          "target": "wagon_clearing"
+        }
+      ]
+    },
+    {
+      "id": "harrowford_guild",
+      "title": "Harrowford Adventurers' Guild",
+      "subtitle": "THE MARKET TOWN",
+      "map_pos": [
+        580,
+        190
+      ],
+      "description": "The guild occupies a sturdy stone-fronted hall. An overworked clerk listens carefully to the report of the goblin attack and opens Tavian Marr's contract ledger.",
+      "revisit_text": "The guild's noticeboard is familiar. The clerk has not forgotten your account of the road ambush.",
+      "choices": [
+        {
+          "id": "report_contract",
+          "label": "Report the ambush under Tavian Marr's contract",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "quest",
+              "id": "marr_missing_caravans",
+              "status": "reported"
+            },
+            {
+              "type": "event",
+              "id": "guild_report",
+              "text": "The party reported the ambush to Harrowford's Adventurers' Guild."
+            }
+          ],
+          "result": "The clerk records the surviving details of the ambush. The guild expects a fuller account when the caravan mystery is solved."
+        },
+        {
+          "id": "ask_mines",
+          "label": "Ask why ore deliveries have slowed",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "ore_deliveries_irregular",
+              "text": "The guild confirms ore shipments are sporadic, though the dwarves insist nothing is wrong.",
+              "certainty": "confirmed"
+            }
+          ],
+          "result": "The clerk admits the ore consignments have become unreliable. Mine representatives say their workings are sound, but the weighhouse records suggest otherwise."
+        },
+        {
+          "id": "go_market",
+          "label": "Visit the Stoneweight Trading Post",
+          "type": "travel",
+          "target": "harrowford_market"
+        },
+        {
+          "id": "return_road",
+          "label": "Return to the northern road",
+          "type": "travel",
+          "target": "town_road"
+        }
+      ]
+    },
+    {
+      "id": "harrowford_market",
+      "title": "Stoneweight Trading Post",
+      "subtitle": "HARROWFORD MARKET",
+      "map_pos": [
+        645,
+        308
+      ],
+      "description": "Ore scales stand beside market stalls. A woman with a worn wagoner's coat watches traders argue over missing consignments. She introduces herself as Mara Venn.",
+      "revisit_text": "Mara Venn recognises you among the traders. Empty ore carts still wait beside the scales.",
+      "choices": [
+        {
+          "id": "ask_mara",
+          "label": "Ask Mara about the goblin raids",
+          "type": "effects",
+          "unless_flag": "mara_lead_given",
+          "effects": [
+            {
+              "type": "clue",
+              "id": "mara_ravine_lead",
+              "text": "Mara Venn knows a route to the goblin ravine beyond the wagon clearing."
+            },
+            {
+              "type": "reveal_route",
+              "id": "overgrown_track"
+            },
+            {
+              "type": "flag",
+              "key": "mara_lead_given",
+              "value": true
+            },
+            {
+              "type": "quest",
+              "id": "road_raiders",
+              "status": "offered"
+            },
+            {
+              "type": "npc",
+              "id": "mara_venn",
+              "attitude": "helpful",
+              "trust": 1
+            },
+            {
+              "type": "event",
+              "id": "mara_witness",
+              "text": "Mara Venn offered reliable directions to the raiders' ravine."
+            }
+          ],
+          "result": "Mara has suffered the same raiders. She describes a split rock beside the ravine trail, offers a modest reward for stopping the attacks, and marks your overland map. No further check is needed."
+        },
+        {
+          "id": "accept_raider_task",
+          "label": "Accept Mara's offer to investigate the raiders",
+          "type": "effects",
+          "requires_flag": "mara_lead_given",
+          "unless_flag": "road_raiders_accepted",
+          "effects": [
+            {
+              "type": "flag",
+              "key": "road_raiders_accepted",
+              "value": true
+            },
+            {
+              "type": "quest",
+              "id": "road_raiders",
+              "status": "accepted"
+            },
+            {
+              "type": "event",
+              "id": "raider_quest_accepted",
+              "text": "The party accepted Mara Venn's request to investigate the raiders."
+            }
+          ],
+          "result": "Mara nods. 'Bring an end to the attacks, and we shall make sure you are paid.'"
+        },
+        {
+          "id": "back_guild",
+          "label": "Return to the Adventurers' Guild",
+          "type": "travel",
+          "target": "harrowford_guild"
+        },
+        {
+          "id": "back_road",
+          "label": "Leave town by the northern road",
+          "type": "travel",
+          "target": "town_road"
+        }
+      ]
+    },
+    {
+      "id": "overgrown_track",
+      "title": "The Overgrown Ravine",
+      "subtitle": "OFF THE OLD TRADE ROAD",
+      "map_pos": [
+        310,
+        440
+      ],
+      "description": "A narrow track disappears between wet limestone walls. Bent branches and goblin prints confirm that this is no ordinary animal path. Farther uphill lies the likely approach to a hidden lair, but its interior is not yet part of this adventure.",
+      "choices": [
+        {
+          "id": "record_hideout_rumour",
+          "label": "Mark the likely hideout approach in your journal",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "suspected_hideout",
+              "text": "The ravine likely leads towards the goblins' hideout.",
+              "certainty": "suspected"
+            },
+            {
+              "type": "event",
+              "id": "ravine_scouted",
+              "text": "The party scouted the overgrown ravine but did not enter a cave."
+            }
+          ],
+          "result": "You sketch the narrow limestone pass in the margin of your map. The cave system beyond must wait for a later expedition."
+        },
+        {
+          "id": "back_wagon",
+          "label": "Return to the wagon clearing",
+          "type": "travel",
+          "target": "wagon_clearing"
+        },
+        {
+          "id": "to_harrowford",
+          "label": "Travel onward towards Harrowford",
+          "type": "travel",
+          "target": "town_road"
+        }
+      ]
+    }
+  ]
+}
