@@ -86,8 +86,15 @@ func _run() -> void:
     await process_frame
     var scene_game = ui.get("engine")
     var board = ui.get("board")
-    if not scene_game.deployment_active or not ui.get("setup_panel").visible:
-        _fail("Scene did not open with formation controls")
+    if not scene_game.deployment_active or ui.get("adventure").stage != "approach":
+        _fail("Scene did not open with story before deployment")
+        return
+    if not ui.get("story_panel").visible:
+        _fail("Original story introduction missing")
+        return
+    ui.call("_on_story_continue")
+    if not ui.get("setup_panel").visible:
+        _fail("Continue did not reveal formation controls")
         return
     if ui.get("combat_action_row").visible:
         _fail("Combat actions must be hidden in setup")
