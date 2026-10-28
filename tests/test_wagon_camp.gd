@@ -14,14 +14,17 @@ func _run() -> void:
         return
     var melee := 0
     var ranged := 0
+    var named := 0
     for actor in game.actors.values():
         if actor["team"] == "enemy":
             if actor["role"] == "ranged" and actor["attacks"][0]["id"] == "shortbow":
                 ranged += 1
-            if actor["role"] == "melee" and actor["attacks"][0]["id"] == "knife":
+            if actor["role"] == "melee" and actor["attacks"][0]["id"] in ["knife", "shortsword"]:
                 melee += 1
-    if melee != 2 or ranged != 2:
-        _fail("Campsite must have exactly two knife goblins and two shortbow goblins")
+            if actor.get("npc_id", "") == "hesk_roadwatch" and actor.get("death_saves", false):
+                named += 1
+    if melee != 2 or ranged != 2 or named != 1:
+        _fail("Expected two melee, two shortbow and exactly one named survivor-eligible goblin")
         return
     for cell in [Vector2i(5, 3), Vector2i(6, 3), Vector2i(7, 4), Vector2i(4, 5), Vector2i(8, 6)]:
         if game._is_open("alden", cell):
