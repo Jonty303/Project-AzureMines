@@ -32,7 +32,28 @@
         "crafts_and_transport"
       ],
       "material_tension": "Farmers and timbercraft need cleared ground and building wood; local woodland elves guard the forest closely, particularly against excessive felling.",
-      "resource_character": "Great natural wealth, especially underground, despite sparse settlements and dangerous transport."
+      "resource_character": "Great natural wealth, especially underground, despite sparse settlements and dangerous transport.",
+      "public_trends": [
+        {
+          "id": "ore_deliveries_irregular",
+          "claim": "Mine consignments have become sporadic and unpredictable.",
+          "status": "reported_fact",
+          "source": "traders_and_freight_records"
+        },
+        {
+          "id": "dwarven_reassurances",
+          "claim": "Dwarven representatives publicly insist their mines have no problem.",
+          "status": "reported_statement",
+          "source": "mine_representatives"
+        },
+        {
+          "id": "cause_of_shortage_unknown",
+          "claim": "The cause of the inconsistent supply has not been established by outsiders.",
+          "status": "unresolved",
+          "source": "market_rumours"
+        }
+      ],
+      "impact": "Missed ore shipments strain caravans, smiths, markets, toll income and supplies, magnifying already uneasy relationships between mining holds, woodland communities and settlers."
     },
     "inhabitants": {
       "communities": [
@@ -207,7 +228,12 @@
         ],
         "notes": "The escorts are a believable deterrent, not a guarantee against a determined attack."
       },
-      "anomaly": "Caravan attacks are known, but complete disappearance of wagons, drivers and escorts with no survivors reaching settled areas is rare and alarming."
+      "anomaly": "Caravan attacks are known, but complete disappearance of wagons, drivers and escorts with no survivors reaching settled areas is rare and alarming.",
+      "connected_questions": [
+        "why_ore_supply_is_irregular",
+        "why_guarded_caravans_vanish",
+        "whether_disappearances_and_mining_delays_share_a_cause"
+      ]
     }
   ]
 }
