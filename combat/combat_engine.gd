@@ -74,6 +74,7 @@ func start(seed: int = 42024) -> bool:
         actor["dodging"] = false
         actor["reaction_used"] = false
         actor["disengaged"] = false
+        actor["shield_bonus"] = 0
         actor["max_hp"] = int(actor.get("max_hp", 1))
         var casting: Variant = actor.get("spellcasting")
         actor["spell_slots_remaining"] = int(casting.get("spell_slots", {}).get("1", 0)) if casting is Dictionary else 0
@@ -96,6 +97,7 @@ func start(seed: int = 42024) -> bool:
         actor["dodging"] = false
         actor["reaction_used"] = false
         actor["disengaged"] = false
+        actor["shield_bonus"] = 0
         actor["art"] = {"combat_sprite": "assets/characters/sprites/goblin_front_64.png"}
         actor["sap_pending"] = false
         actor["vex_target"] = ""
@@ -312,7 +314,42 @@ func resolve_reaction(accept: bool) -> bool:
             _make_opportunity_attack(str(decision["reactor"]), str(decision["target"]))
         if not finished:
             _advance_move()
+    elif decision["kind"] == "shield":
+        var defender_id: String = str(decision["reactor"])
+        var defender: Dictionary = actors[defender_id]
+        if accept and _can_shield(defender_id):
+            defender["reaction_used"] = true
+            defender["spell_slots_remaining"] = int(defender["spell_slots_remaining"]) - 1
+            defender["shield_bonus"] = 5
+            actors[defender_id] = defender
+            _emit_sound("magic")
+            _record("%s casts Shield! AC rises to %d until the start of their next turn." % [
+                defender["name"], int(defender["armor_class"]) + 5
+            ])
+        var result: Dictionary = decision["roll"]
+        if int(result["total"]) < effective_ac(actors[defender_id]):
+            _emit_sound("miss")
+            _record("Shield deflects the incoming attack on %s." % defender["name"])
+        else:
+            _resolve_hit(str(decision["source"]), defender_id,
+                decision["weapon"], result, bool(decision["disadvantage"]))
     return true
+
+
+func _can_shield(actor_id: String) -> bool:
+    if not actors.has(actor_id):
+        return false
+    var target: Dictionary = actors[actor_id]
+    if target.get("team", "") != "party" or int(target["hp"]) <= 0:
+        return false
+    if bool(target.get("reaction_used", false)) or int(target.get("spell_slots_remaining", 0)) <= 0:
+        return false
+    var casting: Variant = target.get("spellcasting")
+    return casting is Dictionary and casting.get("prepared_spells", []).has("shield")
+
+
+func effective_ac(actor: Dictionary) -> int:
+    return int(actor.get("armor_class", 10)) + int(actor.get("shield_bonus", 0))
 
 
 func _deal_damage(target_id: String, damage: int) -> void:
@@ -402,7 +439,7 @@ func attack(target_id: String, weapon_id: String = "") -> bool:
     source["vex_target"] = ""
     actors[source_id] = source
     var roll: Dictionary = RulesMath.attack_hits(
-        natural, int(weapon.get("to_hit", 0)), int(target.get("armor_class", 10))
+        natural, int(weapon.get("to_hit", 0)), effective_ac(target)
     )
     var attack_name := str(weapon.get("id", "attack")).replace("_", " ")
     var disadvantage_label := " (Disadvantage)" if disadvantage else ""
@@ -412,6 +449,26 @@ func attack(target_id: String, weapon_id: String = "") -> bool:
             source["name"], attack_name, target["name"], roll["total"], target["armor_class"], disadvantage_label
         ])
         return true
+    if not bool(roll["critical"]) and _can_shield(target_id):
+        pending_reaction = {
+            "kind": "shield", "reactor": target_id, "target": source_id,
+            "source": source_id, "weapon": weapon.duplicate(true),
+            "roll": roll.duplicate(true), "disadvantage": disadvantage
+        }
+        _record("%s can cast Shield against %s's attack (%d vs AC %d)." % [
+            target["name"], source["name"], roll["total"], effective_ac(target)
+        ])
+        return true
+    return _resolve_hit(source_id, target_id, weapon, roll, disadvantage)
+
+
+func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll: Dictionary, disadvantage: bool) -> bool:
+    if not actors.has(source_id) or not actors.has(target_id):
+        return false
+    var source: Dictionary = actors[source_id]
+    var target: Dictionary = actors[target_id]
+    var attack_name := str(weapon.get("id", "attack")).replace("_", " ")
+    var disadvantage_label := " (Disadvantage)" if disadvantage else ""
     var damage: int = RulesMath.roll_damage(str(weapon.get("damage", "1d4")), rng, bool(roll["critical"]))
     _emit_sound("ranged" if weapon.get("kind", "") == "ranged_weapon" else "melee_hit")
     if _sneak_attack_eligible(source_id, target_id, weapon, disadvantage):
@@ -582,6 +639,7 @@ func _begin_turn() -> void:
         actor["dodging"] = false
         actor["reaction_used"] = false
         actor["disengaged"] = false
+        actor["shield_bonus"] = 0
         actors[current_id()] = actor
         _record("Turn: %s." % current_actor()["name"])
         if actor.get("combat_state", "") == "unconscious":
