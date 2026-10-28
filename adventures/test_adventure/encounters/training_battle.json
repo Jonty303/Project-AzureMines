@@ -46,9 +46,9 @@
   "enemies": [
     {
       "id": "goblin_blade",
-      "name": "Goblin Knifehand",
-      "max_hp": 7,
-      "armor_class": 15,
+      "name": "Hesk, Roadwatch",
+      "max_hp": 9,
+      "armor_class": 16,
       "speed_feet": 30,
       "ability_scores": {
         "dexterity": 14
@@ -59,15 +59,22 @@
       ],
       "attacks": [
         {
-          "id": "knife",
+          "id": "shortsword",
           "kind": "melee_weapon",
           "to_hit": 4,
-          "damage": "1d4+2",
-          "damage_type": "piercing",
+          "damage": "1d6+2",
+          "damage_type": "slashing",
           "reach_feet": 5
         }
       ],
-      "role": "melee"
+      "role": "melee",
+      "npc_id": "hesk_roadwatch",
+      "special_npc": true,
+      "death_saves": true,
+      "equipment": [
+        "shortsword",
+        "shield"
+      ]
     },
     {
       "id": "goblin_blade_two",
@@ -163,7 +170,7 @@
       "role": "ranged"
     }
   ],
-  "note": "Four level-1 goblins, two knife melee and two shortbow ranged. Campfire burns on entry and turn start; wagon blocks shots/movement, chests obstruct movement and provide half cover.",
+  "note": "One named shield-bearing goblin Hesk uses player-style 0HP survival, three routine goblins use instant death. Four adversaries, two melee and two shortbows. Fire burns on entry and turn start.",
   "obstacles": [
     {
       "id": "covered_wagon",
