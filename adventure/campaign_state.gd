@@ -24,7 +24,7 @@ func _init() -> void:
     check_rng.seed = 872032
     npc_registry["hesk_roadwatch"] = {
         "alive": true, "state": "unmet", "whereabouts": "wagon_clearing",
-        "attitude": "wary", "trust": 0, "grievances": [], "promises": [],
+        "attitude": "wary", "trust": 0, "grievances": [], "promises": [], "fate": "unresolved",
         "hp": 9, "max_hp": 9, "first_aid_attempted": false
     }
     npc_registry["mara_venn"] = {
@@ -71,7 +71,7 @@ func set_npc(id: String, updates: Dictionary) -> bool:
         return false
     var state: Dictionary = npc_registry[id]
     for key in updates.keys():
-        if str(key) not in ["alive", "state", "whereabouts", "attitude", "trust", "grievances", "promises", "hp", "max_hp", "first_aid_attempted"]:
+        if str(key) not in ["alive", "state", "whereabouts", "attitude", "trust", "grievances", "promises", "fate", "hp", "max_hp", "first_aid_attempted"]:
             return false
     for key in updates:
         state[key] = updates[key]
