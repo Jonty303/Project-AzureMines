@@ -1,5 +1,14 @@
 # Project Azure Mines
 
+## Narrative exploration v0.8 — playable choice-driven adventure
+
+**New:** After the illustrated Old Trade Road ambush, continue into an authored **Wagon Clearing → Northern Road → Harrowford Guild / Stoneweight Market** adventure. Search for clues (Investigation), track the goblins (Survival), travel back to the clearing, and consult **Mara Venn** for a guaranteed alternative lead to the overgrown ravine. Reporting at the guild and accepting the raider investigation update real quest state.
+
+One **global campaign state** now stores party XP, gold, HP and resources, unique encounter rewards, discovered places, clue certainty, chronological events, once-only dice rolls, quest status, and named character survival, whereabouts, attitude, trust and promises. Use **Map** for an ink-and-grid-paper discovery map, **Journal** for clues/events/quests/people, and **Save / Load** for a versioned single-slot save (`user://azure_mines_slot1.json`). You may save after victory or while exploring, but **not during battle or deployment**.
+
+Read the [v0.8 campaign-state and exploration notes](docs/campaign-state-v08.md). The ravine is an **approach to a future hideout**; the cave dungeon, mage rescue, moor tower and Harrowford's complete services are not yet playable. The map is a functional vector prototype, not final hand-drawn art.
+
+
 ## The deeper campaign mystery — story direction
 
 The first adventure now hints that **dwarven ore deliveries are sporadic**, even as the miners' representatives insist there is no trouble. **Missing escorted caravans** remain the party's immediate commission. These are separate investigative threads whose eventual connection is not yet known to the adventurers. The setting author has established deeper dangers and covert interference in separate **author-only design files**; these revelations are intentionally absent from player-facing story content. These deeper events and the narrative exploration engine are **not yet implemented**.
