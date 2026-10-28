@@ -91,10 +91,12 @@ func _run() -> void:
         _fail("Save/load lost or duplicated victory rewards")
         return
 
-    ui.call("_on_story_continue")
+    if ui.get("story_continue_button").text != "Continue to Wagon Clearing":
+        _fail("Debug victory should show the direct wagon-clearing button")
+        return
     ui.call("_on_story_continue")
     if adventure.stage != "exploration" or adventure.campaign.current_location != "wagon_clearing":
-        _fail("Skip did not lead normally into narrative exploration")
+        _fail("One Continue after debug skip must reach exploration with no interim replay page")
         return
     if not adventure.campaign.npc_registry["hesk_roadwatch"]["alive"]:
         _fail("Entering exploration killed the spared goblin")
