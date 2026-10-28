@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "theme_id": "gold_box_dungeon_v1",
+  "notes": "Visual tokens only: not yet loaded by Godot runtime",
+  "colors": {
+    "background": "#0E141B",
+    "panel": "#121B23",
+    "panel_border": "#4A5662",
+    "text": "#E8DDC9",
+    "muted_text": "#B4B2AD",
+    "gold_focus": "#D7AA58",
+    "ally": "#399BD5",
+    "enemy": "#CB4C43",
+    "healing": "#65BD7C",
+    "stone_floor": "#51453D",
+    "stone_wall": "#25242A"
+  },
+  "grid": {
+    "tile_size_px": 64,
+    "static_actor_sprite_size_px": 64,
+    "sprite_filter": "nearest"
+  },
+  "regions": [
+    "battle_map",
+    "combat_log",
+    "active_character",
+    "action_bar",
+    "equipped_weapon"
+  ],
+  "asset_categories": [
+    "floor",
+    "wall",
+    "prop",
+    "actor_front",
+    "actor_downed",
+    "enemy_front",
+    "enemy_downed",
+    "overlay",
+    "action_icon",
+    "frame",
+    "effect"
+  ]
+}
