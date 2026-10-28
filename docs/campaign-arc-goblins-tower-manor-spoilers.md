@@ -7,7 +7,7 @@ This establishes the causal thread the setting author has now specified. It is p
 ## Author-established facts — canonical direction
 
 1. The **goblin lord controlling the raiders** receives payment from the mysterious secret organisation to **disrupt trade on the Old Trade Road**. The goblins are not merely freebooters, although individual goblins may not know who finances the raids. The bugbear overlord is currently unnamed; the displaced former goblin chief is also not named yet.
-2. During a previous caravan attack, the raiders captured **a dwarven trader** and **a mage travelling with the caravan**. Both were alive when separated, and neither returned to civilisation. This explains why the earlier merchant's reports listed *no returned survivors*—it does not imply everyone was killed.
+2. **Standing capture orders:** During every caravan attack, the society-installed bugbear must have his raiders **look out for dwarves, capture any they encounter where possible and send them to the old tower on the high moor**. This is an explicit secondary mission, not merely opportunistic kidnapping. During a previous caravan attack, the raiders captured **a dwarven trader** and **a mage travelling with the caravan**. Both were alive when separated, and neither returned to civilisation. This explains why the earlier merchant's reports listed *no returned survivors*—it does not imply everyone was killed.
 3. The organisation **took the dwarf to an old tower on the high moor**, where he is **being tortured for information about the dwarven mines**. The dwarf's identity, what he truly knows and whether he is able to cooperate remain open.
 4. The mage is **alive, malnourished and chained in the goblin hideout**, without his spellbook. He is distressed about its loss. A rescue should involve releasing the chains, food, water and safe recovery—not instant combat readiness.
 5. The **mage's spellbook travelled with the dwarf to the moor tower**. It is a named, unique quest object with provenance. Do not leave a duplicate copy in the hideout or randomly award it as loot.
@@ -60,6 +60,12 @@ The **rubbish tip** has an open **hole in the floor** used for dumping most of t
 
 The bugbear's **eventual outcome**—killed, captured, fled, driven out or remaining in power—and the **former chief's subsequent rule** are independent persistent consequences. Hesk's family and personal treatment remain relevant. No society-leader identity or lower-level content is established by this dungeon design.
 
+
+### The high-moor tower as prisoner destination
+
+The bugbear's standing orders are to **identify dwarves in attacked caravans, take them alive where possible and forward the captives to this tower**. The captive trader was one such transfer. Tower personnel might consequently possess prisoner lists, arrival dates, hand-off notices or interrogation records, but those are **proposed discoverable evidence**, not yet prescribed props or automatic revelations. The party can uncover evidence at the hideout that dwarves were singled out, then independently establish a tower connection. The fate of any additional captured dwarves is **not yet specified**—do not populate the tower with invented prisoners or silently kill them.
+
+The organisation seeks information about the mines, but the **ultimate reason it wants any dwarf traveller detained** remains open. A trader may know nothing about the concealed underground threat. The mage and his transferred spellbook remain a separate linked thread, not evidence that every captive is a wizard.
 
 ## High-moor tower — two intertwined rescue objectives
 
@@ -123,6 +129,8 @@ Owning a secluded magical site could be politically uncomfortable. Vale might de
 | `caravan_mage_spellbook_owner` | stable NPC owner reference, never a generic book |
 | `caravan_mage_spellbook_state` | at_tower / found_by_party / returned_to_mage / lost |
 | `caravan_mage_services_unlocked` | Only after suitable rescue, recovery and relationship conditions |
+| `bugbear_dwarf_capture_orders_known` | Player knows the explicit orders only after discovering evidence or reliable testimony |
+| `dwarf_prisoner_transfer_evidence` | Player has examined transfer evidence linking captured dwarves and the high-moor tower |
 | `dwarf_trader_state` | at_tower_captive / freed / recovered / missing / dead |
 | `high_moor_tower_known` | Party has a legitimate route or directions |
 | `high_moor_tower_visited` | Party has entered it |
