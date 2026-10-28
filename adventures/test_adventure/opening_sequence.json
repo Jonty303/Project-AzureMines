@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "id": "old_timber_road_opening",
+  "title": "The Old Timber Road",
+  "encounter_id": "training_battle",
+  "screens": {
+    "approach": {
+      "eyebrow": "CHAPTER I • THE OLD TIMBER ROAD",
+      "title": "A Wagon in the Trees",
+      "paragraphs": [
+        "The road turns north beneath a canopy of pines. Somewhere beyond the bend, a horse whinnies once and falls silent.",
+        "A canvas-covered wagon stands crooked across the track. Its wheel is caught in a rut; two travelling chests lie abandoned nearby. A small fire burns where no traveller can be seen.",
+        "Pip spots a hurried footprint beside the road. Alden hears a bowstring creak from the trees. There may still be time to choose where everyone stands."
+      ],
+      "button": "Arrange the Party"
+    },
+    "victory": {
+      "eyebrow": "AFTER THE AMBUSH",
+      "title": "The Road Falls Silent",
+      "paragraphs": [
+        "The last goblin falls, and the forest grows quiet again. Smoke curls over the fire beside the wagon.",
+        "Beneath the overturned travel chest, the party finds a little coin. No useful weapons or armour are worth salvaging.",
+        "Beyond the trees, the old road continues towards the Azure Mines."
+      ],
+      "button": "Continue Along the Road"
+    },
+    "defeat": {
+      "eyebrow": "THE AMBUSH",
+      "title": "The Road Takes Its Toll",
+      "paragraphs": [
+        "The goblins reclaim the clearing. The journey towards the Azure Mines ends at this broken wagon.",
+        "The party may try the approach again with a different deployment."
+      ],
+      "button": "Try Again"
+    },
+    "aftermath": {
+      "eyebrow": "CHAPTER I • CONTINUED",
+      "title": "Beyond the Wagon",
+      "paragraphs": [
+        "The adventurers gather their bearings and follow the wagon tracks east.",
+        "The next stretch of road—and the first town—will be built as we connect combat to exploration."
+      ],
+      "button": "Replay the Encounter"
+    }
+  },
+  "rewards": {
+    "xp_total": 200,
+    "gold_gp": 12,
+    "consumables": [],
+    "named_items": []
+  }
+}
