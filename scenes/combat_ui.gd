@@ -7,6 +7,7 @@ const CombatBoard = preload("res://combat/combat_board.gd")
 const Level1Spells = preload("res://combat/level1_spells.gd")
 const CombatActionButton = preload("res://scenes/combat_action_button.gd")
 const OpeningSession = preload("res://adventure/opening_session.gd")
+const OverlandMap = preload("res://adventure/overland_map.gd")
 const SOUND_NAMES := ["footstep", "melee_hit", "ranged", "magic", "heal", "miss", "damage", "death"]
 const BG := Color("#0e141b")
 const PANEL := Color("#121b23")
@@ -19,6 +20,16 @@ var engine: CombatEngine
 var adventure: OpeningSession
 var board: CombatBoard
 var story_image: TextureRect
+var overland_map: Control
+var story_choices_scroll: ScrollContainer
+var story_choices_box: VBoxContainer
+var story_feedback := ""
+var show_map := false
+var show_journal := false
+var map_toggle_button: Button
+var journal_button: Button
+var save_game_button: Button
+var load_game_button: Button
 var story_panel: VBoxContainer
 var story_eyebrow: Label
 var story_title: Label
@@ -191,6 +202,11 @@ func _build_ui() -> void:
     story_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
     story_image.visible = false
     board.add_child(story_image)
+    overland_map = OverlandMap.new()
+    overland_map.name = "DiscoveryMap"
+    overland_map.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    overland_map.visible = false
+    board.add_child(overland_map)
 
     var right := PanelContainer.new()
     right.custom_minimum_size = Vector2(360, 0)
@@ -226,6 +242,22 @@ func _build_ui() -> void:
     survivor_heal_button = _make_button("Cure Wounds", _on_survivor_heal, aid_row, 130)
     story_continue_button = _make_button("Continue", _on_story_continue, story_panel, 235)
     story_continue_button.add_theme_stylebox_override("normal", _button_style(true))
+    story_choices_scroll = ScrollContainer.new()
+    story_choices_scroll.name = "NarrativeChoices"
+    story_choices_scroll.custom_minimum_size = Vector2(0, 164)
+    story_choices_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    story_panel.add_child(story_choices_scroll)
+    story_choices_box = VBoxContainer.new()
+    story_choices_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    story_choices_box.add_theme_constant_override("separation", 5)
+    story_choices_scroll.add_child(story_choices_box)
+    var story_tools := HBoxContainer.new()
+    story_tools.add_theme_constant_override("separation", 4)
+    story_panel.add_child(story_tools)
+    map_toggle_button = _make_button("Map", _on_map_toggle, story_tools, 66)
+    journal_button = _make_button("Journal", _on_journal_toggle, story_tools, 78)
+    save_game_button = _make_button("Save", _on_save_game, story_tools, 66)
+    load_game_button = _make_button("Load", _on_load_game, story_tools, 66)
 
     log_heading = _make_label("COMBAT LOG", right_content, 19)
     combat_log = RichTextLabel.new()
@@ -333,6 +365,9 @@ func _restart() -> void:
     action_mode = ""
     deployment_selected_id = ""
     subdue_mode = false
+    story_feedback = ""
+    show_map = false
+    show_journal = false
     _heard_event_count = engine.events.size()
     _refresh()
 
@@ -342,6 +377,7 @@ func _on_survivor_first_aid() -> void:
         return
     var result: Dictionary = engine.stabilize_creature("goblin_blade", "brunna")
     if result.get("allowed", false):
+        adventure.campaign.capture_npc_from_combat(engine.actors)
         var goblin: Dictionary = engine.actors["goblin_blade"]
         goblin["first_aid_attempted"] = true
         engine.actors["goblin_blade"] = goblin
@@ -351,7 +387,144 @@ func _on_survivor_first_aid() -> void:
 func _on_survivor_heal() -> void:
     if adventure.stage == "victory":
         engine.heal_survivor("brunna", "goblin_blade")
+        adventure.campaign.capture_npc_from_combat(engine.actors)
+        adventure.campaign.capture_party(engine.actors)
     _refresh()
+
+
+func _on_map_toggle() -> void:
+    if adventure.stage != "exploration":
+        return
+    show_map = not show_map
+    _refresh()
+
+
+func _on_journal_toggle() -> void:
+    if adventure.stage != "exploration":
+        return
+    show_journal = not show_journal
+    _refresh()
+
+
+func _on_save_game() -> void:
+    var ok: bool = adventure.save_game(engine.actors)
+    story_feedback = "Campaign saved to slot 1." if ok else "Saving is unavailable during combat or deployment."
+    _refresh()
+
+
+func _on_load_game() -> void:
+    if not adventure.load_game():
+        story_feedback = "No valid campaign save was found in slot 1."
+        _refresh()
+        return
+    engine = CombatEngine.new()
+    engine.start(42024, true)
+    engine.finished = true
+    engine.victor = "party"
+    engine.deployment_active = false
+    adventure.campaign.restore_party(engine.actors)
+    board.engine = engine
+    story_feedback = "Campaign restored from slot 1."
+    show_map = false
+    show_journal = false
+    _refresh()
+
+
+func _on_exploration_choice(choice_id: String) -> void:
+    if adventure.stage != "exploration":
+        return
+    var result: Dictionary = adventure.choose_exploration(choice_id, engine.actors)
+    story_feedback = str(result.get("text", ""))
+    overland_map.queue_redraw()
+    _refresh()
+
+
+func _journal_text() -> String:
+    var lines: PackedStringArray = ["DISCOVERED CLUES"]
+    if adventure.campaign.clues.is_empty():
+        lines.append("Nothing recorded yet.")
+    for clue in adventure.campaign.clues:
+        lines.append("• %s (%s)" % [clue.get("text", ""), clue.get("certainty", "confirmed")])
+    lines.append("\nEVENTS")
+    for event in adventure.campaign.events:
+        lines.append("• " + str(event.get("text", "")))
+    lines.append("\nQUESTS")
+    for quest_id in adventure.campaign.quests.keys():
+        lines.append("• %s: %s" % [quest_id, adventure.campaign.quests[quest_id]])
+    lines.append("\nPEOPLE")
+    for npc_id in adventure.campaign.npc_registry.keys():
+        var npc: Dictionary = adventure.campaign.npc_registry[npc_id]
+        if npc_id == "hesk_roadwatch":
+            lines.append("• Hesk: %s; %s; attitude %s." % [
+                npc.get("state", "unknown"), npc.get("whereabouts", "unknown"),
+                npc.get("attitude", "unknown")
+            ])
+        elif adventure.campaign.flags.get("mara_lead_given", false):
+            lines.append("• Mara Venn: %s; trust %d." % [
+                npc.get("attitude", "neutral"), int(npc.get("trust", 0))
+            ])
+    return "\n".join(lines)
+
+
+func _refresh_exploration() -> void:
+    var info: Dictionary = adventure.exploration_screen()
+    story_panel.visible = true
+    story_eyebrow.text = str(info.get("subtitle", "THE DALES"))
+    story_title.text = str(info.get("title", "The Old Trade Road"))
+    story_continue_button.visible = false
+    story_rewards.visible = false
+    survivor_panel.visible = false
+    story_choices_scroll.visible = not show_journal
+    map_toggle_button.visible = true
+    journal_button.visible = true
+    save_game_button.visible = true
+    load_game_button.visible = true
+    journal_button.text = "Scene" if show_journal else "Journal"
+    map_toggle_button.text = "Picture" if show_map else "Map"
+    var body: String = str(info.get("description", ""))
+    if show_journal:
+        body = _journal_text()
+    elif not story_feedback.is_empty():
+        body += "\n\n" + story_feedback
+    story_paragraphs.text = body
+    for child in story_choices_box.get_children():
+        child.queue_free()
+    if not show_journal:
+        for choice in adventure.exploration_choices():
+            var label_text: String = str(choice.get("label", "Continue"))
+            var button := _make_button(label_text, _on_exploration_choice.bind(str(choice["id"])),
+                story_choices_box, 0)
+            button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    overland_map.campaign = adventure.campaign
+    overland_map.nodes = adventure.exploration.locations
+    var art_path: String = str(info.get("art", ""))
+    var picture_available: bool = not art_path.is_empty() and ResourceLoader.exists(art_path)
+    story_image.visible = picture_available and not show_map
+    if story_image.visible:
+        story_image.texture = load(art_path) as Texture2D
+    overland_map.visible = show_map or not picture_available
+    overland_map.queue_redraw()
+    map_toggle_button.disabled = not picture_available
+    setup_panel.visible = false
+    combat_action_row.visible = false
+    combat_selector_row.visible = false
+    reaction_row.visible = false
+    log_heading.visible = false
+    combat_log.visible = false
+    board.action_mode = ""
+    board.selected_deployment_actor = ""
+    board.queue_redraw()
+    status_label.text = "EXPLORATION • " + str(info.get("title", "THE DALES"))
+    var party_lines: PackedStringArray = []
+    for id in ["alden", "elyra", "brunna", "pip"]:
+        var actor: Dictionary = engine.actors[id]
+        party_lines.append("%s %d/%d HP • %d XP" % [
+            actor["name"], actor["hp"], actor["max_hp"], adventure.xp_by_character[id]
+        ])
+    party_label.text = "\n".join(party_lines)
+    active_label.text = "Pooled gold: %d gp\nLocation: %s" % [
+        adventure.gold_gp, adventure.campaign.current_location
+    ]
 
 
 func _on_story_continue() -> void:
@@ -360,7 +533,9 @@ func _on_story_continue() -> void:
             adventure.begin_deployment()
         "victory":
             adventure.continue_after_victory()
-        "defeat", "aftermath":
+        "aftermath":
+            adventure.enter_exploration()
+        "defeat":
             _restart()
             return
     _refresh()
@@ -554,6 +729,13 @@ func _set_crossed(button: Button, exhausted: bool) -> void:
 func _refresh_story() -> void:
     var info: Dictionary = adventure.screen()
     story_panel.visible = true
+    story_continue_button.visible = true
+    story_choices_scroll.visible = false
+    map_toggle_button.visible = false
+    journal_button.visible = false
+    save_game_button.visible = adventure.stage in ["victory", "aftermath"]
+    load_game_button.visible = true
+    overland_map.visible = false
     story_image.visible = true
     var image_path: String = str(info.get("art", "res://assets/story/old_timber_road_campfire.svg"))
     if ResourceLoader.exists(image_path):
@@ -574,6 +756,8 @@ func _refresh_story() -> void:
     for para in info.get("paragraphs", []):
         passages.append(str(para))
     story_paragraphs.text = "\n\n".join(passages)
+    if not story_feedback.is_empty():
+        story_paragraphs.text += "\n\n" + story_feedback
     story_continue_button.text = str(info.get("button", "Continue"))
     status_label.text = "THE OLD TRADE ROAD" if adventure.stage == "approach" else story_eyebrow.text
 
@@ -622,6 +806,12 @@ func _refresh() -> void:
         return
     if engine.finished and adventure.stage == "battle":
         adventure.conclude_battle(engine.victor)
+        if adventure.stage == "victory":
+            adventure.campaign.capture_party(engine.actors)
+            adventure.campaign.capture_npc_from_combat(engine.actors)
+    if adventure.stage == "exploration":
+        _refresh_exploration()
+        return
     if adventure.stage in ["approach", "victory", "defeat", "aftermath"]:
         _refresh_story()
         return
