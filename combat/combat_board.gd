@@ -31,22 +31,10 @@ func _draw() -> void:
     if engine == null:
         return
     var current: String = engine.current_id()
-    var can_preview: bool = engine.current_is_party() and int(engine.current_actor().get("hp", 0)) > 0
-    var reachable: Dictionary = {}
-    if can_preview and action_mode == "move" and engine.movement_remaining() > 0:
-        reachable = engine.get_reachable(current)
-    var attack_cells: Dictionary = {}
-    if can_preview and action_mode == "attack" and not engine.action_used:
-        for id_variant in engine.actors.keys():
-            var target_id: String = str(id_variant)
-            if not engine.available_attack(target_id, selected_weapon).is_empty():
-                attack_cells[engine.actors[target_id]["position"]] = true
-    var spell_cells: Dictionary = {}
-    if can_preview and action_mode == "spell" and not selected_spell.is_empty():
-        for id_variant in engine.actors.keys():
-            var target_id: String = str(id_variant)
-            if engine.can_cast_spell(selected_spell, target_id):
-                spell_cells[engine.actors[target_id]["position"]] = true
+    var highlights: Dictionary = get_highlights()
+    var reachable: Dictionary = highlights["move"]
+    var attack_cells: Dictionary = highlights["attack"]
+    var spell_cells: Dictionary = highlights["spell"]
     var terrain: Texture2D = _texture_for(TERRAIN_ATLAS)
     var props: Texture2D = _texture_for(PROPS_ATLAS)
 
@@ -125,6 +113,29 @@ func _draw() -> void:
         draw_rect(hp_bar, Color("#652d32"))
         var fraction: float = float(actor["hp"]) / float(maxi(1, int(actor["max_hp"])))
         draw_rect(Rect2(hp_bar.position, Vector2(hp_bar.size.x * fraction, 4)), Color("#65bd7c"))
+
+
+
+func get_highlights() -> Dictionary:
+    # Purely contextual. Never show a different action's targeting preview.
+    var indicators := {"move": {}, "attack": {}, "spell": {}}
+    if engine == null or not engine.current_is_party():
+        return indicators
+    if int(engine.current_actor().get("hp", 0)) <= 0:
+        return indicators
+    if action_mode == "move" and engine.movement_remaining() > 0:
+        indicators["move"] = engine.get_reachable(engine.current_id())
+    elif action_mode == "attack" and not engine.action_used:
+        for id_variant in engine.actors.keys():
+            var target_id: String = str(id_variant)
+            if not engine.available_attack(target_id, selected_weapon).is_empty():
+                indicators["attack"][engine.actors[target_id]["position"]] = true
+    elif action_mode == "spell" and not selected_spell.is_empty():
+        for id_variant in engine.actors.keys():
+            var target_id: String = str(id_variant)
+            if engine.can_cast_spell(selected_spell, target_id):
+                indicators["spell"][engine.actors[target_id]["position"]] = true
+    return indicators
 
 
 func _downed_index(actor_id: String) -> int:
