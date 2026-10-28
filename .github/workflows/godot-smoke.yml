@@ -58,3 +58,5 @@ jobs:
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_shield_and_bless.gd
       - name: Four-goblin campsite, hazards and cover
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_wagon_camp.gd
+      - name: Party setup, formations and manual deployment
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_party_deployment.gd
