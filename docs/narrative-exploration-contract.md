@@ -154,3 +154,7 @@ Real-time or first-person walking, random room generators, procedural prose as c
 ## Relationship to existing milestones
 
 The new exploration framework should be the next **major engine system**, before extending the adventure into town shops or dungeon depth. It retains our existing **Classic 5E combat rules**, the low-magic loot philosophy and the styled party/combat UI, but **replaces first-person-grid exploration as a project goal**.
+
+## First substantial quest: the goblin hideout
+
+See [Goblin Trail, Survivor and Hideout](goblin-trail-and-survivor-quest.md). The wagon clearing is always returnable via an overland map even if the party goes to town first. The hideout has independent discovery routes (tracking, investigation, living goblin conversation, town witness), and no failed check permanently blocks the story. A spared/released goblin may **alert and fortify** the hideout while also making its inhabitants **receptive to parley**. Readiness and diplomacy are distinct persistent variables, not a single moral outcome. All of this remains **planned rather than implemented**.
