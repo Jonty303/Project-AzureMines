@@ -67,6 +67,13 @@ func available_choices() -> Array[Dictionary]:
             continue
         if choice.has("unless_flag") and bool(state.flags.get(str(choice["unless_flag"]), false)):
             continue
+        var forbidden: bool = false
+        for flag_id in choice.get("unless_flags", []):
+            if bool(state.flags.get(str(flag_id), false)):
+                forbidden = true
+                break
+        if forbidden:
+            continue
         if choice.has("requires_known") and not state.knows_location(str(choice["requires_known"])):
             continue
         if choice.get("once", false) and state.flags.has("choice_" + str(choice["id"])):
