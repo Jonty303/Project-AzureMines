@@ -22,6 +22,17 @@ func _run() -> void:
     if session.stage != "battle":
         _fail("Did not reach the battle scene")
         return
+    game.turn_index = game.turn_order.find("alden")
+    game._begin_turn()
+    screen.call("_refresh")
+    if screen.get("subdue_button").disabled:
+        _fail("Subdue option should be available for Alden's melee weapon")
+        return
+    screen.call("_on_toggle_subdue")
+    if not screen.get("subdue_mode") or not screen.get("subdue_button").text.contains("ON"):
+        _fail("Melee Subdue toggle was not engaged")
+        return
+    screen.call("_on_toggle_subdue")
     for id in ["goblin_blade_two", "goblin_bow", "goblin_bow_two"]:
         var enemy: Dictionary = game.actors[id]
         enemy["hp"] = 0
