@@ -1,5 +1,10 @@
 # Project Azure Mines
 
+## Current encounter — Goblin Wagon Camp
+
+The level-1 battle now features **two knife goblins and two shortbow goblins**, a six-square **covered wagon** blocking movement and line of sight, **two blocking chests** that grant half cover (+2 AC) across firing lanes, a **campfire** dealing 1d4 Fire damage on entry and at turn start, and a northern **forest backdrop**. Assets are separate original SVGs. See [the v0.5 campsite specification](docs/wagon-camp-v05.md).
+
+
 ## Current development update: Combat v0.4
 
 The current feature branch adds **context-only targeting**, visibly crossed-out exhausted actions, interruptible Opportunity Attacks, Disengage, Shield reactions, Bless concentration and **eight original combat sound effects**. Select Move, Attack or Spells to see only that action's valid destinations/targets. The game remains limited to the fixed level-1 party.
