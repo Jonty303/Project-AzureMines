@@ -7,7 +7,7 @@ const CELL_SIZE := 44
 const PARTY_BLUE := Color("#244b78")
 const ENEMY_RED := Color("#9c4745")
 
-var engine: RefCounted
+var engine
 var _sprite_cache: Dictionary = {}
 
 
