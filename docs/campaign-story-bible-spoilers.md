@@ -29,13 +29,13 @@ This document records the setting author's central campaign premise and how it s
 
 ## The newly established conspiracy trail — author spoilers
 
-The goblin lord **is paid by the secret society** to raid commerce on the Old Trade Road. Two captives from an earlier caravan did not return: a malnourished mage chained in the goblin hideout and a dwarf trader taken to an **old tower on the high moor**, where he is being tortured for information about the mines. The mage's unique spellbook was taken with the dwarf and remains at the tower until recovered. Evidence at that tower **implicates Lord Osric Vale**, giving players options to expose, control or unseat him.
+The raiders' apparent goblin lord is **a bugbear overlord imposed and paid by the secret society** to raid commerce on the Old Trade Road. He is cruel to his goblin followers and refuses to bargain with adventurers. An older goblin chief, now living among the lair's common-room goblins, might help depose him. Two captives from an earlier caravan did not return: a malnourished mage chained in the goblin hideout and a dwarf trader taken to an **old tower on the high moor**, where he is being tortured for information about the mines. The mage's unique spellbook was taken with the dwarf and remains at the tower until recovered. Evidence at that tower **implicates Lord Osric Vale**, giving players options to expose, control or unseat him.
 
 Rescuing the mage and retrieving his spellbook are separate objectives. Reuniting him with it may persuade him to settle in Harrowford as a **magical-services provider**, but his safety, recovery, consent and service prices must remain meaningful. His book is a unique quest object, never random loot. The high-moor tower is separate from Seabrook's ruined coastal keep.
 
-See [Paid Raiders, Moor Tower and Manor](campaign-arc-goblins-tower-manor-spoilers.md) for the branching location graph, evidence, prisoner fates and proposed state flags.
+See [Paid Raiders, Moor Tower and Manor](campaign-arc-goblins-tower-manor-spoilers.md) for the branching conspiracy and prisoner arc, and [Goblin Hideout — Wooded Valley and Limestone Cave](goblin-hideout-limestone-valley.md) for the complete cave-room design, concealed tree watchpost, waterfall guards, possible ex-chief-led uprising and **rubbish tip shaft leading to as-yet-undefined depths**, with a modest original Midden Grub encounter. All are still design-only.
 
-**Previously open facts now settled:** the goblin lord's external funding and Vale's involvement are established by the setting author. Still undefined are the degree of Vale's knowledge, the society's identity and true objective, the significance of the mage's book to the agents, and the nature of what the miners uncovered.
+**Previously open facts now settled:** the bugbear overlord's external funding, the displaced goblin chief and Vale's involvement are established by the setting author. Still undefined are the degree of Vale's knowledge, the society's identity and true objective, the significance of the mage's book to the agents, and the nature of what the miners uncovered.
 
 ### Possible epilogue to the tower arc — a new keeper
 
