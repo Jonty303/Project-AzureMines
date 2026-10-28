@@ -108,7 +108,9 @@ func _run() -> void:
     if not trend_ids.has("ore_deliveries_irregular") or not trend_ids.has("dwarven_reassurances"):
         _fail("Mine shipment irregularity and public reassurances missing")
         return
-    var story_text: String = " ".join(story["paragraphs"]).to_lower()
+    var story_text := ""
+    for paragraph in story["paragraphs"]:
+        story_text += str(paragraph).to_lower() + " "
     if not story_text.contains("irregular loads") or not story_text.contains("workings are sound"):
         _fail("The opening needs a subtle public mine-supply clue")
         return
