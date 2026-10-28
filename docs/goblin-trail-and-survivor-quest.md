@@ -76,7 +76,7 @@ Rewards follow the established low-magic policy: mainly XP and gold, some usable
 
 Suggested overland links:
 
-- Old Timber Road → Wagon Clearing → Town Road → Frontier Town (accessible after the battle).
+- Old Trade Road → Wagon Clearing → Town Road → Frontier Town (accessible after the battle).
 - Wagon Clearing → Northern Ravine Track → Goblin Hideout (unlocked by tracking, investigation, Hesk or the town lead).
 - Frontier Town → Wagon Clearing (return travel; remains available).
 - Suspected hideout locations are map notes, **not** automatic fast-travel targets.
@@ -112,3 +112,6 @@ All important transitions must be persistent and applied exactly once. A choice 
 First build the narrative node/choice graph, visited overland map, return travel and town witness lead. Add checks and persistent save/load. Then introduce the Hesk survivor branch when the engine supports a genuinely living goblin after combat, followed by alert/parley-dependent hideout entry and quest resolutions.
 
 Do **not** present this as working gameplay in v0.7.
+## Trade-road context
+
+The optional goblin hideout is one possible lead in the broader mystery of ore and gemstone caravans vanishing from the Old Trade Road. Even affordable merchant escorts normally include a minor mage and hired sword; wealthier convoys may hire a priest. Conventional raiding does not explain why complete parties of teamsters, guards and cargo fail to return. Track the distinction in clues and town dialogue without prematurely assuming Hesk's raiders are responsible for every disappearance. Seabrook is to the west; Harrowford is on the Dales' northern edge.
