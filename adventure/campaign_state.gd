@@ -24,7 +24,8 @@ func _init() -> void:
     check_rng.seed = 872032
     npc_registry["hesk_roadwatch"] = {
         "alive": true, "state": "unmet", "whereabouts": "wagon_clearing",
-        "attitude": "wary", "trust": 0, "grievances": [], "promises": []
+        "attitude": "wary", "trust": 0, "grievances": [], "promises": [],
+        "hp": 9, "max_hp": 9, "first_aid_attempted": false
     }
     npc_registry["mara_venn"] = {
         "alive": true, "state": "active", "whereabouts": "harrowford_market",
@@ -70,7 +71,7 @@ func set_npc(id: String, updates: Dictionary) -> bool:
         return false
     var state: Dictionary = npc_registry[id]
     for key in updates.keys():
-        if str(key) not in ["alive", "state", "whereabouts", "attitude", "trust", "grievances", "promises"]:
+        if str(key) not in ["alive", "state", "whereabouts", "attitude", "trust", "grievances", "promises", "hp", "max_hp", "first_aid_attempted"]:
             return false
     for key in updates:
         state[key] = updates[key]
@@ -103,7 +104,12 @@ func capture_party(actors: Dictionary) -> void:
             "combat_state": str(actor.get("combat_state", "active")),
             "spell_slots_remaining": int(actor.get("spell_slots_remaining", 0)),
             "death_successes": int(actor.get("death_successes", 0)),
-            "death_failures": int(actor.get("death_failures", 0))
+            "death_failures": int(actor.get("death_failures", 0)),
+            "second_wind_used": bool(actor.get("second_wind_used", false)),
+            "hit_dice_remaining": int(actor.get("hit_dice_remaining", 0)),
+            "reaction_used": bool(actor.get("reaction_used", false)),
+            "class_resources": actor.get("class_resources", {}).duplicate(true),
+            "conditions": actor.get("conditions", []).duplicate(true)
         }
 
 
@@ -113,7 +119,7 @@ func restore_party(actors: Dictionary) -> void:
             continue
         var actor: Dictionary = actors[id]
         var saved: Dictionary = party_snapshots[id]
-        for property in ["hp", "combat_state", "spell_slots_remaining", "death_successes", "death_failures"]:
+        for property in ["hp", "combat_state", "spell_slots_remaining", "death_successes", "death_failures", "second_wind_used", "hit_dice_remaining", "reaction_used", "class_resources", "conditions"]:
             if saved.has(property):
                 actor[property] = saved[property]
         actors[id] = actor
@@ -130,8 +136,24 @@ func capture_npc_from_combat(actors: Dictionary) -> void:
     npc["state"] = state
     npc["alive"] = state != "dead"
     npc["whereabouts"] = "wagon_clearing"
+    npc["hp"] = int(actor.get("hp", 0))
+    npc["max_hp"] = int(actor.get("max_hp", 9))
+    npc["first_aid_attempted"] = bool(actor.get("first_aid_attempted", false))
     npc_registry["hesk_roadwatch"] = npc
     record_event("hesk_" + state, "Hesk, the shield-bearing goblin, was last seen %s." % state)
+
+
+func restore_named_npcs(actors: Dictionary) -> void:
+    if not actors.has("goblin_blade") or not npc_registry.has("hesk_roadwatch"):
+        return
+    var npc: Dictionary = npc_registry["hesk_roadwatch"]
+    if npc.get("state", "") == "unmet":
+        return
+    var actor: Dictionary = actors["goblin_blade"]
+    actor["combat_state"] = str(npc.get("state", "active"))
+    actor["hp"] = int(npc.get("hp", 0))
+    actor["first_aid_attempted"] = bool(npc.get("first_aid_attempted", false))
+    actors["goblin_blade"] = actor
 
 
 func export_data(stage: String) -> Dictionary:
