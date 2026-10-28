@@ -2,7 +2,7 @@
 
 ## Debug shortcut — skip the opening goblin battle
 
-In the **Godot editor/debug build only**, a **DEBUG: Skip Goblins (Spare Hesk)** button appears at the top of the opening story, deployment and battle screens. It immediately resolves the wagon encounter as a party victory. **Hesk, Roadwatch**, the named sword-and-shield raider, survives at **1 HP, unconscious (nonlethal knockout)**; the other three goblins are defeated. The usual once-only 200 XP/12 gp rewards, survivor-care choices, adventure journal, and return to exploration all work. Hesk's alive state persists when you save/reload. The shortcut is removed from release builds and disappears after victory. It is a testing shortcut, not a player story decision. **Hesk is not the separate goblin lord in the future hideout.**
+In the **Godot editor/debug build only**, a **DEBUG: Skip Goblins (Spare Hesk)** button appears at the top of the opening story, deployment and battle screens. It immediately resolves the wagon encounter as a party victory. **Hesk, Roadwatch**, the named sword-and-shield raider, survives at **1 HP, unconscious (nonlethal knockout)**; the other three goblins are defeated. The usual once-only 200 XP/12 gp rewards and return to exploration still work. **Hesk's care, conversation and fate choices appear after Continue to Wagon Clearing, not on the victory summary.** Hesk's alive state persists when you save/reload. The shortcut is removed from release builds and disappears after victory. It is a testing shortcut, not a player story decision. **Hesk is not the separate goblin lord in the future hideout.**
 
 
 ## Narrative exploration v0.8 — playable choice-driven adventure
@@ -32,7 +32,7 @@ Seabrook's old keep **Old Rookhold is in severe disrepair**, no longer an effect
 
 ## Named survivor combat rules — v0.7.1
 
-Hesk, Roadwatch is now a shield-bearing swordsman with a distinct sprite and the special-NPC death saving throw rule. The player can choose nonlethal melee attacks using **Subdue** and can offer **First Aid** or **Cure Wounds** after a victory if Hesk survives. Regular goblins die at 0 HP unless deliberately subdued. Battles end when one side is incapacitated. Longer-term decisions and relationships are part of the upcoming narrative exploration system, not yet playable. See [Named Survivor v0.7.1](docs/named-survivor-v071.md).
+Hesk, Roadwatch is now a shield-bearing swordsman with a distinct sprite and the special-NPC death saving throw rule. The player can choose nonlethal melee attacks using **Subdue**. If Hesk survives, the victory screen only reports the battle; **Continue to Wagon Clearing** opens narrative decisions to administer Medicine (DC 10) or spend a Cure Wounds spell slot, question him when conscious, promise to protect goblin families, release him, take him prisoner, leave him or kill him. Resolved choices, NPC relationships, discovered clues and separately tracked cave alert state persist in the campaign save. Regular goblins die at 0 HP unless deliberately subdued. The deeper hideout reactions are not yet implemented. See [Named Survivor v0.7.1](docs/named-survivor-v071.md).
 
 
 ## Exploration design direction — narrative adventure, not first-person movement
