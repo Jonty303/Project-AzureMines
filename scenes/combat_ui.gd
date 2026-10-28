@@ -43,6 +43,8 @@ var move_button: Button
 var attack_button: Button
 var spells_button: Button
 var weapon_picker: OptionButton
+var subdue_button: Button
+var subdue_mode := false
 var ability_picker: OptionButton
 var action_ids: Array[String] = []
 var weapon_ids: Array[String] = []
@@ -274,6 +276,8 @@ func _build_ui() -> void:
     weapon_picker.custom_minimum_size = Vector2(155, 35)
     weapon_picker.item_selected.connect(_on_weapon_selected)
     selectors.add_child(weapon_picker)
+    subdue_button = _make_button("Subdue: Off", _on_toggle_subdue, selectors, 103)
+    subdue_button.tooltip_text = "Choose a nonlethal melee strike to knock an enemy unconscious at 1 HP."
     _make_label("Spell", selectors, 13)
     ability_picker = OptionButton.new()
     ability_picker.custom_minimum_size = Vector2(190, 35)
@@ -305,6 +309,7 @@ func _restart() -> void:
     current_picker_actor = ""
     action_mode = ""
     deployment_selected_id = ""
+    subdue_mode = false
     _heard_event_count = engine.events.size()
     _refresh()
 
@@ -352,7 +357,25 @@ func _set_mode(mode: String) -> void:
 
 
 func _on_weapon_selected(_idx: int) -> void:
+    subdue_mode = false
     action_mode = "attack"
+    _refresh()
+
+
+func _selected_weapon_is_melee() -> bool:
+    if engine == null or engine.current_id().is_empty():
+        return false
+    var selected_id: String = _selected_weapon()
+    for weapon in engine.current_actor().get("attacks", []):
+        if str(weapon.get("id", "")) == selected_id:
+            return weapon.get("kind", "") == "melee_weapon"
+    return false
+
+
+func _on_toggle_subdue() -> void:
+    if engine.current_is_party() and not engine.action_used and _selected_weapon_is_melee():
+        subdue_mode = not subdue_mode
+        action_mode = "attack"
     _refresh()
 
 
@@ -393,7 +416,8 @@ func _on_cell_clicked(cell: Vector2i) -> void:
         if not spell_id.is_empty():
             engine.cast_spell(spell_id, target_id)
     elif action_mode == "attack" and engine.actors[target_id]["team"] == "enemy":
-        engine.attack(target_id, _selected_weapon())
+        engine.attack(target_id, _selected_weapon(), subdue_mode and _selected_weapon_is_melee())
+        subdue_mode = false
     _refresh()
 
 
@@ -439,6 +463,7 @@ func _on_cast_self() -> void:
 
 func _on_end_turn() -> void:
     if engine.current_is_party():
+        subdue_mode = false
         engine.end_turn()
         _run_enemy_turns()
     _refresh()
@@ -631,6 +656,11 @@ func _refresh() -> void:
     attack_button.disabled = not can_act or engine.action_used
     spells_button.disabled = not can_act or not engine.can_cast_any_current_spell()
     weapon_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
+    subdue_button.disabled = not can_act or engine.action_used or not _selected_weapon_is_melee()
+    if subdue_button.disabled:
+        subdue_mode = false
+    subdue_button.text = "Subdue: ON" if subdue_mode else "Subdue: Off"
+    subdue_button.add_theme_stylebox_override("normal", _button_style(subdue_mode))
     ability_picker.disabled = not can_act or action_ids.is_empty()
     var spell_id: String = _selected_spell()
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
