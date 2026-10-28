@@ -139,16 +139,25 @@ func _run() -> void:
         return
 
     ui.call("_on_story_continue")
-    if ui.get("adventure").stage != "approach":
-        _fail("Replay did not return to opening")
+    if ui.get("adventure").stage != "exploration":
+        _fail("Post-ambush continue must enter narrative exploration")
         return
-    ui.call("_on_story_continue")
-    ui.call("_on_begin_battle")
-    _force_victory(ui.get("engine"))
-    ui.call("_refresh")
-    var replay_story = ui.get("adventure")
-    if replay_story.gold_gp != 12 or not replay_story.last_reward["already_claimed"]:
-        _fail("Replay awarded duplicate gold or XP")
+    if not ui.get("story_choices_scroll").visible or ui.get("adventure").campaign.current_location != "wagon_clearing":
+        _fail("Narrative choices and wagon clearing did not appear")
+        return
+    if not ui.get("save_game_button").visible:
+        _fail("Exploration must expose Save Game")
+        return
+    ui.call("_on_exploration_choice", "to_town_road")
+    if ui.get("adventure").campaign.current_location != "town_road":
+        _fail("Narrative travel to town road failed")
+        return
+    ui.call("_on_exploration_choice", "return_wagon")
+    if ui.get("adventure").campaign.current_location != "wagon_clearing":
+        _fail("The clearing must remain returnable")
+        return
+    if ui.get("adventure").gold_gp != 12:
+        _fail("Narrative navigation duplicated or lost rewards")
         return
 
     print("PASS: story, deployment, victory, 50 XP each, 12 pooled gp, defeat/aftermath and one-time rewards")
