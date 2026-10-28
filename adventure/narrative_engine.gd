@@ -35,12 +35,12 @@ func current_scene() -> Dictionary:
     if not locations.has(id):
         return {}
     var scene: Dictionary = locations[id].duplicate(true)
+    if state.visited.has(id) and state.flags.get("revisited_" + id, false):
+        scene["description"] = scene.get("revisit_text", scene.get("description", ""))
     if id == "wagon_clearing":
         var hesk_text: String = hesk.description()
         if not hesk_text.is_empty():
             scene["description"] = str(scene.get("description", "")) + "\n\n" + hesk_text
-    if state.visited.has(id) and state.flags.get("revisited_" + id, false):
-        scene["description"] = scene.get("revisit_text", scene.get("description", ""))
     return scene
 
 
