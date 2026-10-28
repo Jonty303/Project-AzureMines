@@ -5,6 +5,7 @@ extends Control
 const CombatEngine = preload("res://combat/combat_engine.gd")
 const CombatBoard = preload("res://combat/combat_board.gd")
 const Level1Spells = preload("res://combat/level1_spells.gd")
+const CombatActionButton = preload("res://scenes/combat_action_button.gd")
 const BG := Color("#0e141b")
 const PANEL := Color("#121b23")
 const BORDER := Color("#4a5662")
@@ -31,7 +32,7 @@ var ability_picker: OptionButton
 var action_ids: Array[String] = []
 var weapon_ids: Array[String] = []
 var current_picker_actor := ""
-var action_mode := "attack"
+var action_mode := ""
 
 
 func _ready() -> void:
@@ -66,7 +67,7 @@ func _button_style(selected: bool = false) -> StyleBoxFlat:
 
 
 func _make_button(title: String, callback: Callable, parent: Node, minimum_width: int = 86) -> Button:
-    var button := Button.new()
+    var button := CombatActionButton.new()
     button.text = title
     button.custom_minimum_size = Vector2(minimum_width, 48)
     button.add_theme_stylebox_override("normal", _button_style())
@@ -196,13 +197,19 @@ func _restart() -> void:
         return
     board.engine = engine
     current_picker_actor = ""
-    action_mode = "attack"
+    action_mode = ""
     _run_enemy_turns()
     _refresh()
 
 
 func _set_mode(mode: String) -> void:
     if not engine.current_is_party():
+        return
+    if mode == "move" and not engine.can_move_current():
+        return
+    if mode == "attack" and engine.action_used:
+        return
+    if mode == "spell" and not engine.can_cast_any_current_spell():
         return
     action_mode = mode
     _refresh()
@@ -233,7 +240,7 @@ func _on_cell_clicked(cell: Vector2i) -> void:
         return
     var target_id: String = engine.target_at(cell)
     if target_id.is_empty():
-        if action_mode != "spell":
+        if action_mode == "move":
             engine.move_to(cell)
     elif action_mode == "spell":
         var spell_id: String = _selected_spell()
@@ -313,10 +320,18 @@ func _refresh_picker() -> void:
         ability_picker.select(0)
 
 
+func _set_crossed(button: Button, exhausted: bool) -> void:
+    if button is CombatActionButton:
+        button.crossed_out = exhausted and engine.current_is_party()
+
+
 func _refresh() -> void:
     if engine == null:
         return
     _refresh_picker()
+    board.action_mode = action_mode
+    board.selected_weapon = _selected_weapon()
+    board.selected_spell = _selected_spell()
     board.queue_redraw()
     var party_turn: bool = engine.current_is_party()
     var can_act: bool = party_turn and int(engine.current_actor().get("hp", 0)) > 0
@@ -349,9 +364,9 @@ func _refresh() -> void:
     dash_button.disabled = not engine.can_dash()
     dodge_button.disabled = not engine.can_dodge()
     end_turn_button.disabled = not party_turn
-    move_button.disabled = not can_act
+    move_button.disabled = not can_act or not engine.can_move_current()
     attack_button.disabled = not can_act or engine.action_used
-    spells_button.disabled = not can_act or action_ids.is_empty()
+    spells_button.disabled = not can_act or not engine.can_cast_any_current_spell()
     weapon_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
     ability_picker.disabled = not can_act or action_ids.is_empty()
     var spell_id: String = _selected_spell()
@@ -359,6 +374,14 @@ func _refresh() -> void:
     self_cast_button.disabled = not party_turn or spell.get("target", "") != "self" or (
         not engine.can_cast_spell(spell_id, engine.current_id())
     )
+    _set_crossed(move_button, engine.movement_remaining() <= 0)
+    _set_crossed(attack_button, engine.action_used)
+    _set_crossed(spells_button, engine.action_used and engine.bonus_action_used or (
+        not engine.action_used and not engine.bonus_action_used and action_ids.is_empty()
+    ))
+    _set_crossed(second_wind_button, engine.bonus_action_used)
+    _set_crossed(dash_button, engine.action_used)
+    _set_crossed(dodge_button, engine.action_used)
     for entry in [[move_button, "move"], [attack_button, "attack"], [spells_button, "spell"]]:
         var button: Button = entry[0]
         button.add_theme_stylebox_override("normal", _button_style(entry[1] == action_mode))
