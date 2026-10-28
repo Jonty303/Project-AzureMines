@@ -37,6 +37,10 @@ See [Paid Raiders, Moor Tower and Manor](campaign-arc-goblins-tower-manor-spoile
 
 **Previously open facts now settled:** the goblin lord's external funding and Vale's involvement are established by the setting author. Still undefined are the degree of Vale's knowledge, the society's identity and true objective, the significance of the mage's book to the agents, and the nature of what the miners uncovered.
 
+### Possible epilogue to the tower arc — a new keeper
+
+The rescued mage might eventually **choose to inhabit the high-moor tower** where the party recovered his spellbook. This optional, player-influenced outcome could turn a hostile location into a living magical workshop or refuge, providing occasional services and a recurring ally. It depends on his recovery, restored book, safety, consent and any claim to the property. He might instead settle in Harrowford or leave the Dales. Lord Vale's involvement makes title to the tower a potential political complication. Hollis's carpentry and town-upgrade economy could support repairs, but ownership and facilities should not materialise for free. See [Paid Raiders, Moor Tower and Manor](campaign-arc-goblins-tower-manor-spoilers.md).
+
 ## Reveal ladder — avoid premature exposition
 
 **I. A routine danger that isn't routine:** The four-goblin wagon ambush initially looks like common road crime. The goblin lord's raids are funded by society agents, but adventurers cannot know that yet. Observant players notice incomplete cargo records, unusual absence of teamsters, or signs that some disappearances are more systematic than normal raids. Hesk may be a consequential survivor, not an all-knowing exposition device.
