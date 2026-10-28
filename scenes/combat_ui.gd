@@ -25,6 +25,11 @@ var self_cast_button: Button
 var second_wind_button: Button
 var dash_button: Button
 var dodge_button: Button
+var disengage_button: Button
+var reaction_row: HBoxContainer
+var reaction_label: Label
+var reaction_accept: Button
+var reaction_decline: Button
 var move_button: Button
 var attack_button: Button
 var spells_button: Button
@@ -203,6 +208,7 @@ func _build_ui() -> void:
     second_wind_button = _make_button("Second Wind", _on_second_wind, actions, 105)
     dash_button = _make_button("Dash", _on_dash, actions, 64)
     dodge_button = _make_button("Dodge", _on_dodge, actions, 70)
+    disengage_button = _make_button("Disengage", _on_disengage, actions, 94)
     end_turn_button = _make_button("End Turn", _on_end_turn, actions, 95)
     end_turn_button.add_theme_stylebox_override("normal", _button_style(true))
 
@@ -220,6 +226,14 @@ func _build_ui() -> void:
     ability_picker.item_selected.connect(_on_spell_selected)
     selectors.add_child(ability_picker)
     self_cast_button = _make_button("Cast on Self", _on_cast_self, selectors, 98)
+
+    reaction_row = HBoxContainer.new()
+    reaction_row.add_theme_constant_override("separation", 8)
+    bar_content.add_child(reaction_row)
+    reaction_label = _make_label("Reaction available", reaction_row, 13)
+    reaction_accept = _make_button("React", func() -> void: _on_reaction(true), reaction_row, 90)
+    reaction_decline = _make_button("Decline", func() -> void: _on_reaction(false), reaction_row, 90)
+    reaction_row.visible = false
 
 
 func _restart() -> void:
@@ -270,7 +284,7 @@ func _selected_spell() -> String:
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
-    if not engine.current_is_party():
+    if not engine.pending_reaction.is_empty() or not engine.current_is_party():
         return
     var target_id: String = engine.target_at(cell)
     if target_id.is_empty():
@@ -304,6 +318,19 @@ func _on_dodge() -> void:
     _refresh()
 
 
+func _on_disengage() -> void:
+    if engine.current_is_party():
+        engine.use_disengage()
+        action_mode = "move"
+    _refresh()
+
+
+func _on_reaction(accept: bool) -> void:
+    if engine.resolve_reaction(accept):
+        _run_enemy_turns()
+    _refresh()
+
+
 func _on_cast_self() -> void:
     if engine.current_is_party():
         var spell_id: String = _selected_spell()
@@ -321,7 +348,7 @@ func _on_end_turn() -> void:
 
 func _run_enemy_turns() -> void:
     var safety := 25
-    while not engine.finished and not engine.current_is_party() and safety > 0:
+    while not engine.finished and not engine.current_is_party() and engine.pending_reaction.is_empty() and safety > 0:
         engine.take_ai_turn()
         safety -= 1
 
@@ -367,7 +394,14 @@ func _refresh() -> void:
     board.selected_weapon = _selected_weapon()
     board.selected_spell = _selected_spell()
     board.queue_redraw()
-    var party_turn: bool = engine.current_is_party()
+    var reaction_pending: bool = not engine.pending_reaction.is_empty()
+    reaction_row.visible = reaction_pending
+    if reaction_pending:
+        var prompt: Dictionary = engine.pending_reaction
+        reaction_label.text = "%s can react to %s" % [
+            engine.actors[prompt["reactor"]]["name"], engine.actors[prompt["target"]]["name"]
+        ]
+    var party_turn: bool = engine.current_is_party() and not reaction_pending
     var can_act: bool = party_turn and int(engine.current_actor().get("hp", 0)) > 0
     status_label.text = "VICTORY!" if engine.finished and engine.victor == "party" else (
         "DEFEAT!" if engine.finished else "Round %d — %s" % [
@@ -397,6 +431,7 @@ func _refresh() -> void:
     second_wind_button.disabled = not engine.can_use_second_wind()
     dash_button.disabled = not engine.can_dash()
     dodge_button.disabled = not engine.can_dodge()
+    disengage_button.disabled = not engine.can_disengage()
     end_turn_button.disabled = not party_turn
     move_button.disabled = not can_act or not engine.can_move_current()
     attack_button.disabled = not can_act or engine.action_used
@@ -416,6 +451,7 @@ func _refresh() -> void:
     _set_crossed(second_wind_button, engine.bonus_action_used)
     _set_crossed(dash_button, engine.action_used)
     _set_crossed(dodge_button, engine.action_used)
+    _set_crossed(disengage_button, engine.action_used)
     for entry in [[move_button, "move"], [attack_button, "attack"], [spells_button, "spell"]]:
         var button: Button = entry[0]
         button.add_theme_stylebox_override("normal", _button_style(entry[1] == action_mode))
