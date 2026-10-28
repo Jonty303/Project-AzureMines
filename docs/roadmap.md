@@ -10,7 +10,7 @@ Milestones are deliverable-driven, not scheduled deadlines.
 | 2 | Combat correctness | Opportunity attacks, cover, reactions, weapon mastery, death saves |
 | 3 | Four starting classes' spells and signature abilities | Core spell engine, Sneak Attack, Second Wind and Channel Divinity |
 | 4 | Level 1–5 progression for all five classes | Hunter added, class levels, new enemies and extensive tests |
-| 5 | Gold Box exploration and RPG | First-person grid, quests, dialogue, shops, equipment and saves |
+| 5 | Gold Box exploration, rewards and town economy | First-person grid, quests, dialogue, inventory/saves, sparse XP-and-gold rewards, shop services and occasional named magical stock |
 | 6 | Original small complete adventure | One content pack validates adventure / ruleset separation |
 | 7 | Bard expansion | Bard + College of Lore once RPG interactions exist |
 
@@ -25,3 +25,7 @@ Milestones are deliverable-driven, not scheduled deadlines.
 ## Scope guardrails
 
 No permanent character creation, levels beyond one, dungeon mode, full spell catalogue or generic adventure editor in this first playable. Implement only features demonstrated by the fixed party and encounter.
+
+## Loot and town economy
+
+See [Loot, Treasure and Town Economy v0.1](loot-and-economy.md). Routine victories primarily grant XP and coin, sometimes consumables. Ordinary discarded equipment is not collected as loot. Named magical items are scarce, from authored enemies, rare constrained generation or occasional persistent merchant stock. Gold sinks include town services and selected purchases. **Documentation only** until inventory/rewards/services are implemented.
