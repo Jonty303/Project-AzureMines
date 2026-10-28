@@ -1,6 +1,3 @@
-* text=auto
-*.gd text eol=lf
-*.tscn text eol=lf
-*.godot text eol=lf
-*.json text eol=lf
-*.md text eol=lf
+# Keep the original bytes for every file; disable Git's line-ending conversion.
+# This overrides core.autocrlf for repository paths.
+* -text
