@@ -116,8 +116,8 @@ Owning a secluded magical site could be politically uncomfortable. Vale might de
 
 | ID | Meaning |
 | --- | --- |
-| `goblin_lord_fate` | active / willing_to_negotiate / surrendered / captive / escaped / dead / deposed |
-| `goblin_lord_payments_suspected` | Has the party detected external financing of raids? |
+| `bugbear_overlord_fate` | active / confronted / captured / escaped / dead / deposed; **not willing_to_negotiate** |
+| `bugbear_payments_suspected` | Has the party detected society financing of the bugbear's raids? |
 | `society_goblin_payments_evidence` | Reliable evidence linking the raiders to outside patrons |
 | `caravan_mage_state` | captive / freed_in_hideout / recovering / safe_in_town / missing / dead |
 | `caravan_mage_spellbook_owner` | stable NPC owner reference, never a generic book |
