@@ -353,6 +353,29 @@ func target_at(cell: Vector2i) -> String:
     return ""
 
 
+func movement_remaining() -> int:
+    if finished or current_id().is_empty() or int(current_actor().get("hp", 0)) <= 0:
+        return 0
+    return maxi(0, int(current_actor().get("speed_feet", 30)) / 5 + dash_extra_squares - movement_used)
+
+
+func can_move_current() -> bool:
+    if not current_is_party() or movement_remaining() <= 0:
+        return false
+    var cells: Dictionary = get_reachable(current_id())
+    return cells.size() > 1
+
+
+func can_cast_any_current_spell() -> bool:
+    if not current_is_party() or int(current_actor().get("hp", 0)) <= 0:
+        return false
+    for spell_id in get_current_spells():
+        for target_id in actors.keys():
+            if can_cast_spell(spell_id, str(target_id)):
+                return true
+    return false
+
+
 func can_dash() -> bool:
     return not finished and current_is_party() and not action_used and int(current_actor().get("hp", 0)) > 0
 
