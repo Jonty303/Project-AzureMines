@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "id": "training_battle",
+  "name": "The Training Ground — First Combat",
+  "grid_size": [
+    12,
+    10
+  ],
+  "party_positions": {
+    "alden": [
+      2,
+      3
+    ],
+    "elyra": [
+      1,
+      5
+    ],
+    "brunna": [
+      2,
+      6
+    ],
+    "pip": [
+      1,
+      7
+    ]
+  },
+  "walls": [
+    [
+      5,
+      3
+    ],
+    [
+      5,
+      4
+    ],
+    [
+      5,
+      5
+    ],
+    [
+      6,
+      5
+    ],
+    [
+      9,
+      2
+    ]
+  ],
+  "difficult_terrain": [
+    [
+      4,
+      7
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      6,
+      7
+    ]
+  ],
+  "enemies": [
+    {
+      "id": "goblin_blade",
+      "name": "Goblin Blade",
+      "max_hp": 7,
+      "armor_class": 15,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        9,
+        3
+      ],
+      "attacks": [
+        {
+          "id": "scimitar",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "slashing",
+          "reach_feet": 5
+        },
+        {
+          "id": "shortbow",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320
+        }
+      ]
+    },
+    {
+      "id": "goblin_bow",
+      "name": "Goblin Archer",
+      "max_hp": 7,
+      "armor_class": 15,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        9,
+        7
+      ],
+      "attacks": [
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        },
+        {
+          "id": "shortbow",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320
+        }
+      ]
+    }
+  ],
+  "note": "Original tutorial goblins; combat supports HP-based knockouts, not PC death saves yet."
+}

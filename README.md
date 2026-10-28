@@ -1,47 +1,45 @@
 # Project Azure Mines
 
-A modular, Gold Box-inspired tactical fantasy RPG built with **Godot 4.5.2**.
+A modular, Gold Box-inspired tactical fantasy RPG using **Godot 4.5.2** and a streamlined house-ruled version of **SRD 5.2.1**.
 
-> Status: project bootstrap. This repository provides a runnable project shell and a validated sample adventure loader, **not yet a playable combat system**.
+> **Development status:** First playable combat prototype on a feature branch. The game is a work in progress and not yet a complete implementation of Classic 5E.
 
-## Getting started
+## Run the prototype
 
-1. Clone this repository.
-2. Import `project.godot` into Godot **4.5.2**.
-3. Run the project (F6/F5 depending on editor context). The main scene displays the sample adventure and its ruleset.
-4. To run the loader smoke test from a terminal with Godot installed:
-   ```sh
-   godot --headless --path . --script res://tests/test_module_loader.gd
-   ```
+1. Clone this repository and open `project.godot` in **Godot 4.5.2**.
+2. Press **F5** to open the 12 × 10 tutorial battlefield.
+3. Play as the four predefined characters: **Alden (Champion), Elyra (Evoker), Brunna (Priest), Pip (Thief)**.
+4. On a player turn, click a highlighted free tile to move or click an enemy to attack. Use **End Turn** to advance the initiative queue and let the two goblins respond.
+5. Use **Restart Battle** to repeat the seeded reference encounter.
 
-The launch screen also has a demonstration d20 roller. It is an example of an isolated rules utility, **not** the combat implementation.
+The separate original module-loader preview remains at `scenes/main.tscn`.
 
-## Game design (current decisions)
+### Headless tests
 
-- **Five fixed-progression classes:** Champion (Fighter + Champion), Priest (Cleric + Life Domain), Thief (Rogue + Thief), Evoker (Wizard + Evoker), Hunter (Ranger + Hunter).
-- **Four races:** Human, Dwarf, Elf (initially High Elf lineage), Halfling.
-- **Level target:** 1–5, four-character party initially; design for future growth.
-- No backgrounds, multiclassing, general feat selection or selectable subclasses in the first build.
-- **Classic 5E:** an explicitly adapted rules package inspired by SRD 5.2.1, distinct from the official rules.
-- A distinct engine layer, a ruleset layer and interchangeable adventure packages.
-- **Bard + College of Lore** is the first additional class on the roadmap, after the core RPG systems.
-
-See [architecture](docs/architecture.md), [character rules](docs/ruleset-design.md), [combat rules](docs/combat-rules.md), [data formats](docs/data-contracts.md) and [roadmap](docs/roadmap.md).
-
-## Repository layout
-
-```text
-core/          Game-agnostic services (loading, dice, eventually events/state)
-combat/        Future tactical rules and presentation
-characters/    Future character construction and progression
-exploration/   Future exploration / role-playing systems
-rulesets/      Replaceable rules packages and definitions
-adventures/    Content packages: maps, locations, encounters, quests
-scenes/        Godot presentation and entry scenes
-tests/         Headless test scripts
-docs/          Architecture and design decisions
+```sh
+godot --headless --path . --script res://tests/test_module_loader.gd
+godot --headless --path . --script res://tests/test_canonical_party.gd
+godot --headless --path . --script res://tests/test_combat_engine.gd
 ```
 
-## Licensing and content
+These tests are supplied for Godot **4.5.2**; local runtime verification is needed before calling the first playable build fully validated.
 
-The repository's original code and project documentation do **not** currently have a general public licence selected. See [licensing](docs/licensing.md). SRD 5.2.1 is available under CC BY 4.0, but its licence does not automatically license unrelated project code or third-party adventures. The starter adventure here is original placeholder content. No Forgotten Realms or Lost Mine of Phandelver adventure text or maps are included.
+## Intended combat scope
+
+Included: individual initiative, 5-foot square grid, eight-direction movement, rough terrain, blocked corners, turn action economy, melee/ranged attacks, simplistic cantrip attack, attack bonuses, AC, HP, basic line-of-sight, critical dice, goblin AI, combat log, win/loss and restart.
+
+**Not yet implemented:** spell slots and general spellcasting, Second Wind, Sneak Attack, Weapon Mastery effects, reactions, Opportunity Attacks, full cover and death saves. Consult [First playable combat](docs/first-playable-combat.md) for explicit limitations.
+
+## Characters and architecture
+
+- Four races: Human, Dwarf, Elf (High Elf for v0.1), Halfling.
+- Five fixed classes: Champion, Priest, Thief, Evoker and Hunter; Hunter is not in the initial four-member test party.
+- Fixed level-1 test party in `tests/fixtures/party/level_01_v1.json`. Never silently change that snapshot; make new versions for level-up milestones.
+- Code is separated into engine systems, `rulesets/classic_5e/` and `adventures/test_adventure/`.
+- The first post-core class on the roadmap is Bard (College of Lore).
+
+See [architecture](docs/architecture.md), [character rules](docs/ruleset-design.md), [combat rules](docs/combat-rules.md), [test party](docs/canonical-test-party.md), [data contracts](docs/data-contracts.md) and [roadmap](docs/roadmap.md).
+
+## Licensing
+
+Original code has no general public licence selected. SRD 5.2.1 rules content is CC BY 4.0 with attribution obligations; separate adventures/settings/artwork have independent rights. The example adventure is original placeholder content. See [licensing](docs/licensing.md).
