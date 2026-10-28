@@ -449,6 +449,8 @@ func attack(target_id: String, weapon_id: String = "") -> bool:
     var attack_name := str(weapon.get("id", "attack")).replace("_", " ")
     var disadvantage_label := " (Disadvantage)" if disadvantage else ""
     if not roll["hit"]:
+        if weapon.get("kind", "") == "ranged_weapon":
+            _emit_sound("ranged")
         _emit_sound("miss")
         _record("%s uses %s against %s: %d vs AC %d — MISS%s." % [
             source["name"], attack_name, target["name"], roll["total"], target["armor_class"], disadvantage_label
@@ -839,7 +841,8 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
         actors[caster_id] = caster
     var target: Dictionary = actors[target_id]
     var effect: String = str(spell["effect"])
-    _emit_sound("magic")
+    if effect != "heal":
+        _emit_sound("magic")
     var title: String = spell_id.replace("_", " ").capitalize()
     match effect:
         "bless":
