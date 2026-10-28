@@ -18,8 +18,15 @@ jobs:
           chmod +x Godot_v4.5.2-stable_linux.x86_64
       - name: Import Godot project
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --editor --quit
-      - name: Launch combat UI headlessly
-        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --quit-after 30
+      - name: Launch combat UI headlessly (fail on script errors)
+        shell: bash
+        run: |
+          set -o pipefail
+          ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --quit-after 30 2>&1 | tee startup.log
+          if grep -E -q 'SCRIPT ERROR|Parse Error|Failed to load script|(^| )ERROR:' startup.log; then
+            echo "Godot reported a script or runtime error during startup"
+            exit 1
+          fi
       - name: Module loader test
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_module_loader.gd
       - name: Canonical party test
@@ -28,3 +35,5 @@ jobs:
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_combat_engine.gd
       - name: Complete encounter playthrough test
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_combat_playthrough.gd
+      - name: Combat UI integration smoke test
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_combat_ui.gd
