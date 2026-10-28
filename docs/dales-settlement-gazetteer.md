@@ -20,6 +20,12 @@ Valley agriculture and the need for more farmland put additional pressure on the
 
 Settlements of the present frontier era have developed over only **a few hundred years**. Different peoples maintain an uneasy balance of trust and negotiated truce. Their older separate histories have not yet been established; this does not imply the hills, forests or subterranean places had no inhabitants before the current towns arose.
 
+### An unease in the mines — public knowledge
+
+The supply of mineral cargo is growing **sporadic** even before accounting for caravan attacks. Some shipments arrive late, underweight or not at all; a busy week may be followed by silence. Dwarven representatives insist their workings are sound and that there is **nothing wrong**. Traders in Harrowford hear that reassurance while staring at an increasingly empty weighhouse.
+
+The contradiction should be apparent to observant adventurers without explaining it to them. This is one distinct investigation track alongside caravan disappearances, goblin raids and disputes over land and wood. There may be a connection, but the party cannot establish it by assumption. **The underlying reason is reserved for the author-only campaign story bible**, not this public-facing gazetteer or the starting narrative.
+
 ### The Old Trade Road and the missing caravans
 
 Road travel is hazardous even in ordinary times. Bandits, goblins and other creatures trouble caravans. A typical merchant may manage a hired swordsman and a **minor mage**; the better-off can afford more guards and perhaps a **priest**. Violence is common enough that carriers budget for escorts, but ordinarily **somebody escapes or stumbles back to civilisation** after a raid.
