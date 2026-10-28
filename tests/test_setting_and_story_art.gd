@@ -114,7 +114,7 @@ func _run() -> void:
     if not story_text.contains("irregular loads") or not story_text.contains("workings are sound"):
         _fail("The opening needs a subtle public mine-supply clue")
         return
-    for forbidden in ["containment", "secret society", "uncovered something", "threatens to break free"]:
+    for forbidden in ["containment", "secret society", "uncovered something", "threatens to break free", "goblin lord", "spellbook", "moor tower", "osric vale", "dwarf trader", "torture"]:
         if story_text.contains(forbidden):
             _fail("Author-only campaign secret leaked into opening: " + forbidden)
             return
