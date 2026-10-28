@@ -154,7 +154,7 @@ func start(seed: int = 42024, with_deployment: bool = false) -> bool:
         actor["shield_bonus"] = 0
         actor["concentration"] = {}
         actor["blessed_by"] = ""
-        actor["art"] = {"combat_sprite": "assets/characters/sprites/goblin_front_64.png"}
+        actor["art"] = actor.get("art", {"combat_sprite": "assets/characters/sprites/goblin_front_64.png"})
         actor["sap_pending"] = false
         actor["vex_target"] = ""
         actors[id] = actor
