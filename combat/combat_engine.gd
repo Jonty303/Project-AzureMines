@@ -63,6 +63,8 @@ func start(seed: int = 42024) -> bool:
         actor["position"] = Vector2i(int(cell[0]), int(cell[1]))
         actor["hp"] = int(actor.get("starting_hp", actor.get("max_hp", 1)))
         actor["combat_state"] = "active"
+        actor["death_successes"] = 0
+        actor["death_failures"] = 0
         actor["dodging"] = false
         actor["max_hp"] = int(actor.get("max_hp", 1))
         var casting: Variant = actor.get("spellcasting")
@@ -81,6 +83,8 @@ func start(seed: int = 42024) -> bool:
         actor["team"] = "enemy"
         actor["hp"] = int(actor.get("max_hp", 1))
         actor["combat_state"] = "active"
+        actor["death_successes"] = 0
+        actor["death_failures"] = 0
         actor["dodging"] = false
         actor["art"] = {"combat_sprite": "assets/characters/sprites/goblin_front_64.png"}
         actor["sap_pending"] = false
@@ -201,6 +205,8 @@ func available_attack(target_id: String, weapon_id: String = "") -> Dictionary:
         return {}
     var source: Dictionary = actors[source_id]
     var target: Dictionary = actors[target_id]
+    if int(source["hp"]) <= 0:
+        return {}
     if source["team"] == target["team"] or int(target["hp"]) <= 0:
         return {}
     var distance := _distance(source["position"], target["position"])
@@ -299,7 +305,8 @@ func end_turn() -> void:
         if turn_index == 0:
             round_number += 1
             _record("--- Round %d ---" % round_number)
-        if int(actors[turn_order[turn_index]]["hp"]) > 0:
+        var next_actor: Dictionary = actors[turn_order[turn_index]]
+        if int(next_actor["hp"]) > 0 or next_actor.get("combat_state", "") == "unconscious":
             _begin_turn()
             return
 
@@ -347,7 +354,7 @@ func target_at(cell: Vector2i) -> String:
 
 
 func can_dash() -> bool:
-    return not finished and current_is_party() and not action_used
+    return not finished and current_is_party() and not action_used and int(current_actor().get("hp", 0)) > 0
 
 
 func use_dash() -> bool:
@@ -362,7 +369,7 @@ func use_dash() -> bool:
 
 
 func can_dodge() -> bool:
-    return not finished and current_is_party() and not action_used
+    return not finished and current_is_party() and not action_used and int(current_actor().get("hp", 0)) > 0
 
 
 func use_dodge() -> bool:
@@ -404,6 +411,39 @@ func _begin_turn() -> void:
         actor["dodging"] = false
         actors[current_id()] = actor
         _record("Turn: %s." % current_actor()["name"])
+        if actor.get("combat_state", "") == "unconscious":
+            _roll_death_save(current_id())
+
+
+
+func _roll_death_save(actor_id: String) -> void:
+    var actor: Dictionary = actors[actor_id]
+    if actor.get("combat_state", "") != "unconscious":
+        return
+    var natural: int = Dice.roll_d20(rng)
+    if natural == 20:
+        actor["hp"] = 1
+        actor["combat_state"] = "active"
+        actor["death_successes"] = 0
+        actor["death_failures"] = 0
+        _record("%s rolls a natural 20 on a Death Save and regains 1 HP." % actor["name"])
+    else:
+        if natural == 1:
+            actor["death_failures"] = int(actor["death_failures"]) + 2
+        elif natural >= 10:
+            actor["death_successes"] = int(actor["death_successes"]) + 1
+        else:
+            actor["death_failures"] = int(actor["death_failures"]) + 1
+        _record("%s Death Save %d: %d success(es), %d failure(s)." % [
+            actor["name"], natural, actor["death_successes"], actor["death_failures"]
+        ])
+        if int(actor["death_failures"]) >= 3:
+            actor["combat_state"] = "dead"
+            _record("%s has died." % actor["name"])
+        elif int(actor["death_successes"]) >= 3:
+            actor["combat_state"] = "stable"
+            _record("%s is stable but unconscious." % actor["name"])
+    actors[actor_id] = actor
 
 
 func _check_victory() -> void:
@@ -514,6 +554,8 @@ func can_cast_spell(spell_id: String, target_id: String) -> bool:
     if finished or current_id().is_empty() or not actors.has(target_id):
         return false
     var caster: Dictionary = current_actor()
+    if int(caster.get("hp", 0)) <= 0:
+        return false
     if not Level1Spells.known_spells(caster).has(spell_id):
         return false
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
@@ -528,7 +570,7 @@ func can_cast_spell(spell_id: String, target_id: String) -> bool:
     var target: Dictionary = actors[target_id]
     if spell["target"] == "enemy" and (caster["team"] == target["team"] or int(target["hp"]) <= 0):
         return false
-    if spell["target"] == "ally" and caster["team"] != target["team"]:
+    if spell["target"] == "ally" and (caster["team"] != target["team"] or target.get("combat_state", "") == "dead"):
         return false
     if spell["target"] == "self" and target_id != current_id():
         return false
@@ -568,8 +610,10 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
                 Dice.ability_modifier(int(caster["ability_scores"][str(caster["spellcasting"]["ability"])]))
             var gained: int = mini(maxi(0, healing), int(target["max_hp"]) - int(target["hp"]))
             target["hp"] = int(target["hp"]) + gained
-            if int(target["hp"]) > 0 and target.get("combat_state", "") == "unconscious":
+            if int(target["hp"]) > 0 and target.get("combat_state", "") in ["unconscious", "stable"]:
                 target["combat_state"] = "active"
+                target["death_successes"] = 0
+                target["death_failures"] = 0
             actors[target_id] = target
             _record("%s casts %s on %s for %d HP (%d/%d)." % [
                 caster["name"], title, target["name"], gained, target["hp"], target["max_hp"]
