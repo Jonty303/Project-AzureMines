@@ -11,6 +11,12 @@ const ENCOUNTER_FIXTURE := "res://adventures/test_adventure/encounters/training_
 var actors: Dictionary = {}
 var walls: Array[Vector2i] = []
 var difficult_terrain: Array[Vector2i] = []
+var obstacles: Array[Dictionary] = []
+var hazards: Array[Dictionary] = []
+var blocked_cells: Array[Vector2i] = []
+var sight_blockers: Array[Vector2i] = []
+var cover_cells: Array[Vector2i] = []
+var backdrop: Dictionary = {}
 var grid_size := Vector2i(12, 10)
 var turn_order: Array[String] = []
 var events: Array[Dictionary] = []
@@ -41,6 +47,12 @@ func start(seed: int = 42024) -> bool:
     actors.clear()
     walls.clear()
     difficult_terrain.clear()
+    obstacles.clear()
+    hazards.clear()
+    blocked_cells.clear()
+    sight_blockers.clear()
+    cover_cells.clear()
+    backdrop.clear()
     turn_order.clear()
     events.clear()
     pending_reaction.clear()
@@ -57,6 +69,28 @@ func start(seed: int = 42024) -> bool:
         walls.append(Vector2i(int(wall[0]), int(wall[1])))
     for rough in encounter.get("difficult_terrain", []):
         difficult_terrain.append(Vector2i(int(rough[0]), int(rough[1])))
+    backdrop = encounter.get("backdrop", {}).duplicate(true)
+    for template in encounter.get("obstacles", []):
+        var prop: Dictionary = template.duplicate(true)
+        var pos: Array = prop.get("position", [0, 0])
+        var extent: Array = prop.get("size", [1, 1])
+        prop["position"] = Vector2i(int(pos[0]), int(pos[1]))
+        prop["size"] = Vector2i(int(extent[0]), int(extent[1]))
+        obstacles.append(prop)
+        for dy in range(int(extent[1])):
+            for dx in range(int(extent[0])):
+                var cell: Vector2i = prop["position"] + Vector2i(dx, dy)
+                if bool(prop.get("blocks_movement", false)) and not blocked_cells.has(cell):
+                    blocked_cells.append(cell)
+                if bool(prop.get("blocks_sight", false)) and not sight_blockers.has(cell):
+                    sight_blockers.append(cell)
+                if prop.get("cover", "") == "half" and not cover_cells.has(cell):
+                    cover_cells.append(cell)
+    for template in encounter.get("hazards", []):
+        var hazard: Dictionary = template.duplicate(true)
+        var pos: Array = hazard.get("position", [0, 0])
+        hazard["position"] = Vector2i(int(pos[0]), int(pos[1]))
+        hazards.append(hazard)
 
     var party_positions: Dictionary = encounter.get("party_positions", {})
     for template in party["characters"]:
@@ -125,7 +159,7 @@ func start(seed: int = 42024) -> bool:
     )
     for item in rolls:
         turn_order.append(str(item["id"]))
-    _record("Encounter begins: four adventurers versus two goblins.")
+    _record("Encounter begins: four adventurers versus %d goblins at a wagon camp." % encounter["enemies"].size())
     _begin_turn()
     return true
 
@@ -256,6 +290,28 @@ func _advance_move() -> void:
             mover["name"], from_cell.x, from_cell.y, next_cell.x, next_cell.y
         ])
         _emit_sound("footstep")
+        _trigger_hazards(mover_id, next_cell, "enter")
+        if finished or int(actors[mover_id]["hp"]) <= 0:
+            pending_move.clear()
+            reaction_checked.clear()
+            return
+
+
+func _trigger_hazards(actor_id: String, cell: Vector2i, trigger: String) -> void:
+    if not actors.has(actor_id) or int(actors[actor_id]["hp"]) <= 0:
+        return
+    for hazard in hazards:
+        if hazard["position"] != cell or not hazard.get("trigger", []).has(trigger):
+            continue
+        var damage: int = RulesMath.roll_damage(str(hazard.get("damage", "1d4")), rng)
+        _record("%s is burned by the %s for %d fire damage (%s)." % [
+            actors[actor_id]["name"], str(hazard.get("kind", "hazard")), damage,
+            "entry" if trigger == "enter" else "start of turn"
+        ])
+        _emit_sound("magic")
+        _emit_sound("damage")
+        _deal_damage(actor_id, damage)
+        _check_victory()
 
 
 func _opportunity_reactor(mover_id: String, from_cell: Vector2i, next_cell: Vector2i) -> String:
@@ -293,7 +349,8 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
     reactor["reaction_used"] = true
     actors[reactor_id] = reactor
     var natural: int = Dice.roll_d20(rng)
-    var result: Dictionary = RulesMath.attack_hits(natural, int(weapon.get("to_hit", 0)) + _bless_bonus(reactor_id), effective_ac(target))
+    var result: Dictionary = RulesMath.attack_hits(natural, int(weapon.get("to_hit", 0)) + _bless_bonus(reactor_id),
+        effective_ac(target) + cover_bonus(reactor["position"], target["position"]))
     if not bool(result["hit"]):
         _emit_sound("miss")
         _record("%s Opportunity Attack against %s: %d — MISS." % [
@@ -444,7 +501,8 @@ func attack(target_id: String, weapon_id: String = "") -> bool:
     source["vex_target"] = ""
     actors[source_id] = source
     var roll: Dictionary = RulesMath.attack_hits(
-        natural, int(weapon.get("to_hit", 0)) + _bless_bonus(source_id), effective_ac(target)
+        natural, int(weapon.get("to_hit", 0)) + _bless_bonus(source_id),
+        effective_ac(target) + cover_bonus(source["position"], target["position"])
     )
     var attack_name := str(weapon.get("id", "attack")).replace("_", " ")
     var disadvantage_label := " (Disadvantage)" if disadvantage else ""
@@ -650,8 +708,11 @@ func _begin_turn() -> void:
         actor["shield_bonus"] = 0
         actors[current_id()] = actor
         _tick_concentration(current_id())
+        var was_unconscious: bool = actor.get("combat_state", "") == "unconscious"
+        if not was_unconscious and int(actor["hp"]) > 0:
+            _trigger_hazards(current_id(), actor["position"], "start_turn")
         _record("Turn: %s." % current_actor()["name"])
-        if actor.get("combat_state", "") == "unconscious":
+        if was_unconscious and not finished:
             _roll_death_save(current_id())
 
 
@@ -711,7 +772,7 @@ func _distance(a: Vector2i, b: Vector2i) -> int:
 func _is_open(actor_id: String, cell: Vector2i) -> bool:
     if cell.x < 0 or cell.y < 0 or cell.x >= grid_size.x or cell.y >= grid_size.y:
         return false
-    if cell in walls:
+    if cell in walls or cell in blocked_cells:
         return false
     var occupant := actor_at(cell)
     return occupant.is_empty() or occupant == actor_id
@@ -728,7 +789,7 @@ func _can_step(actor_id: String, start_cell: Vector2i, end_cell: Vector2i) -> bo
 
 
 func _line_clear(from_cell: Vector2i, to_cell: Vector2i) -> bool:
-    # Basic tile visibility: walls block a shot. Creature cover comes later.
+    # Wagon and solid walls block shots; small chests instead grant half cover.
     var steps := _distance(from_cell, to_cell)
     if steps <= 1:
         return true
@@ -738,9 +799,25 @@ func _line_clear(from_cell: Vector2i, to_cell: Vector2i) -> bool:
             roundi(lerpf(float(from_cell.x), float(to_cell.x), fraction)),
             roundi(lerpf(float(from_cell.y), float(to_cell.y), fraction))
         )
-        if cell in walls:
+        if cell in walls or cell in sight_blockers:
             return false
     return true
+
+
+func cover_bonus(from_cell: Vector2i, to_cell: Vector2i) -> int:
+    # Half cover from a chest between attacker and target; it never blocks LOS.
+    # Target standing adjacent to a chest alone is not sufficient: the chest
+    # must actually intersect the tile ray between the two characters.
+    var steps: int = _distance(from_cell, to_cell)
+    for i in range(1, steps):
+        var fraction: float = float(i) / float(steps)
+        var cell := Vector2i(
+            roundi(lerpf(float(from_cell.x), float(to_cell.x), fraction)),
+            roundi(lerpf(float(from_cell.y), float(to_cell.y), fraction))
+        )
+        if cell in cover_cells:
+            return 2
+    return 0
 
 
 
@@ -882,7 +959,8 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
         "attack_damage":
             var d20: int = Dice.roll_d20(rng)
             var attack_bonus: int = int(caster["spellcasting"]["spell_attack_bonus"])
-            var hit: Dictionary = RulesMath.attack_hits(d20, attack_bonus, int(target["armor_class"]))
+            var hit: Dictionary = RulesMath.attack_hits(d20, attack_bonus,
+                effective_ac(target) + cover_bonus(caster["position"], target["position"]))
             if hit["hit"]:
                 var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng, bool(hit["critical"]))
                 _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
