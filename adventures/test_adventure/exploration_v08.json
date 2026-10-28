@@ -392,7 +392,6 @@
           "dc": 12,
           "once": true,
           "requires_flag": "watchpost_spotted",
-          "unless_flag": "watchpost_crossed",
           "success": {
             "text": "You slip into a concealed position behind the two sentries. The goblins have not noticed you. If you choose to pass their watchpost, this position improves your chances. A direct watchpost battle will be added in the next combat milestone.",
             "effects": [
@@ -422,7 +421,11 @@
                 "text": "The goblin watchpost detected the party and raised the alarm."
               }
             ]
-          }
+          },
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_alarm_raised"
+          ]
         },
         {
           "id": "watchpost_sneak",
