@@ -568,14 +568,14 @@ func _refresh_story() -> void:
     board.selected_deployment_actor = ""
     board.queue_redraw()
 
-    story_eyebrow.text = str(info.get("eyebrow", "THE OLD TIMBER ROAD"))
+    story_eyebrow.text = str(info.get("eyebrow", "THE OLD TRADE ROAD"))
     story_title.text = str(info.get("title", "The Road"))
     var passages: PackedStringArray = []
     for para in info.get("paragraphs", []):
         passages.append(str(para))
     story_paragraphs.text = "\n\n".join(passages)
     story_continue_button.text = str(info.get("button", "Continue"))
-    status_label.text = "THE OLD TIMBER ROAD" if adventure.stage == "approach" else story_eyebrow.text
+    status_label.text = "THE OLD TRADE ROAD" if adventure.stage == "approach" else story_eyebrow.text
 
     survivor_panel.visible = adventure.stage == "victory" and engine.actors.has("goblin_blade")
     if survivor_panel.visible:
