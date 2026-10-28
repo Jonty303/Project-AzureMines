@@ -93,7 +93,7 @@ func _draw() -> void:
                 str(actor["name"]).substr(0, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
 
         if not active:
-            var glyph: String = "Z" if actor.get("combat_state", "") == "unconscious" else "X"
+            var glyph: String = "Z" if actor.get("combat_state", "") in ["unconscious", "stable"] else "X"
             var status_color: Color = PARTY_BLUE if glyph == "Z" else ENEMY_RED
             draw_string(get_theme_default_font(), dest.position + Vector2(50, 16),
                 glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, status_color)
