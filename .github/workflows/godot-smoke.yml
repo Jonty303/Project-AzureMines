@@ -48,3 +48,5 @@ jobs:
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_level1_features.gd
       - name: 64px combat sprite validation
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_sprite_assets.gd
+      - name: Downed assets and action bar regression test
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_action_bar_and_downed.gd
