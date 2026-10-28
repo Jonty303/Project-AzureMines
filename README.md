@@ -1,5 +1,9 @@
 # Project Azure Mines
 
+## The Dales — Old Trade Road and vanishing caravans
+
+Seabrook sits **west** of the Dales and is the coastal outlet for dwarven ore, precious metals and gemstones. The **Old Trade Road** connects the mines and inland markets with the western port; Harrowford is a northern market town. Wild moor, mountains, wooded valleys, limestone caves and waterfalls frame a resource-rich frontier where farmers, miners, timberworkers and woodland elves maintain an uneasy truce. Caravan raids are common, but **whole escorted convoys disappearing without survivors** are not. This mystery motivates the opening commission. See [the Dales gazetteer](docs/dales-settlement-gazetteer.md).
+
 ## Illustrated opening and Dales settlements — v0.7.2
 
 The opening now displays a **static illustration of the four adventurers around a nighttime campfire** in the main display area while the narrative is read; the combat grid appears again for party deployment and battle. **Tavian Marr**, a merchant in the small coastal city of **Seabrook**, sends the party to investigate caravan losses in the Dales and report to the Adventurers' Guild in **Harrowford**, a northern market town.
@@ -17,7 +21,7 @@ Hesk, Roadwatch is now a shield-bearing swordsman with a distinct sprite and the
 Exploration will use authored **choice-driven narrative locations** with revisitable scenes, skill/ability checks, branching dialogue, quest decisions, persistent effects and a discovered **hand-annotated graph-paper dungeon map**. The same scene engine will drive towns and NPC interactions. Tactical combat remains its own mode. See [Narrative Exploration and Cartography Contract v0.1](docs/narrative-exploration-contract.md). The design is committed; gameplay implementation is the next major milestone.
 
 
-## First playable opening — The Old Timber Road
+## First playable opening — The Old Trade Road
 
 The wagon ambush is now connected to a short original narrative: **A Wagon in the Trees → Party Deployment → Four-Goblin Battle → Victory / Defeat → Road Aftermath**. A victory displays **200 XP total (50 per adventurer)** and **12 gp** recovered for the shared party purse; there are **no mundane equipment drops**. Rewards can be claimed only once per encounter in a running game session. Persistent save/load is not yet implemented.
 
@@ -33,7 +37,7 @@ See [Party Deployment v0.6](docs/party-deployment-v06.md) and [the Wagon Camp en
 
 ## Current encounter — Goblin Wagon Camp
 
-The level-1 battle now features **two knife goblins and two shortbow goblins**, a six-square **covered wagon** blocking movement and line of sight, **two blocking chests** that grant half cover (+2 AC) across firing lanes, a **campfire** dealing 1d4 Fire damage on entry and at turn start, and a northern **forest backdrop**. Assets are separate original SVGs. See [the v0.5 campsite specification](docs/wagon-camp-v05.md).
+The level-1 battle now features **two melee goblins (including Hesk, with sword and shield) and two shortbow goblins**, a six-square **covered wagon** blocking movement and line of sight, **two blocking chests** that grant half cover (+2 AC) across firing lanes, a **campfire** dealing 1d4 Fire damage on entry and at turn start, and a northern **forest backdrop**. Assets are separate original SVGs. See [the v0.5 campsite specification](docs/wagon-camp-v05.md).
 
 
 ## Current development update: Combat v0.4
