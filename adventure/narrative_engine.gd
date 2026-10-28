@@ -2,13 +2,16 @@ extends RefCounted
 ## Authored choice graph: no executable content or arbitrary mutations in adventure JSON.
 const PATH := "res://adventures/test_adventure/exploration_v08.json"
 const Dice = preload("res://core/dice_roller.gd")
+const HeskInteraction = preload("res://adventure/hesk_interaction.gd")
 
 var locations: Dictionary = {}
 var state: RefCounted
+var hesk: RefCounted
 
 
 func _init(campaign: RefCounted) -> void:
     state = campaign
+    hesk = HeskInteraction.new(state)
     var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
     if not parsed is Dictionary or int(parsed.get("schema_version", 0)) != 1:
         push_error("Invalid narrative adventure data")
@@ -32,6 +35,10 @@ func current_scene() -> Dictionary:
     if not locations.has(id):
         return {}
     var scene: Dictionary = locations[id].duplicate(true)
+    if id == "wagon_clearing":
+        var hesk_text: String = hesk.description()
+        if not hesk_text.is_empty():
+            scene["description"] = str(scene.get("description", "")) + "\n\n" + hesk_text
     if state.visited.has(id) and state.flags.get("revisited_" + id, false):
         scene["description"] = scene.get("revisit_text", scene.get("description", ""))
     return scene
@@ -40,6 +47,8 @@ func current_scene() -> Dictionary:
 func available_choices() -> Array[Dictionary]:
     var scene: Dictionary = current_scene()
     var result: Array[Dictionary] = []
+    if str(state.current_location) == "wagon_clearing":
+        result.append_array(hesk.available_choices())
     for raw in scene.get("choices", []):
         var choice: Dictionary = raw
         if choice.has("requires_flag") and not bool(state.flags.get(str(choice["requires_flag"]), false)):
@@ -54,7 +63,9 @@ func available_choices() -> Array[Dictionary]:
     return result
 
 
-func choose(choice_id: String, party: Dictionary) -> Dictionary:
+func choose(choice_id: String, party: Dictionary, combat: RefCounted = null) -> Dictionary:
+    if choice_id.begins_with("hesk_"):
+        return hesk.choose(choice_id, party, combat)
     var choice: Dictionary = {}
     for candidate in available_choices():
         if str(candidate["id"]) == choice_id:
