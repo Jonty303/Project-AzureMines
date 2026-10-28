@@ -15,6 +15,9 @@ const TERRAIN_ATLAS := "assets/environment/dungeon_tiles_64.svg"
 const PROPS_ATLAS := "assets/environment/dungeon_props_64.png"
 
 var engine: CombatEngine
+var action_mode := ""
+var selected_weapon := ""
+var selected_spell := ""
 var _sprite_cache: Dictionary = {}
 
 
@@ -28,7 +31,22 @@ func _draw() -> void:
     if engine == null:
         return
     var current: String = engine.current_id()
-    var reachable: Dictionary = engine.get_reachable(current) if engine.current_is_party() else {}
+    var can_preview: bool = engine.current_is_party() and int(engine.current_actor().get("hp", 0)) > 0
+    var reachable: Dictionary = {}
+    if can_preview and action_mode == "move" and engine.movement_remaining() > 0:
+        reachable = engine.get_reachable(current)
+    var attack_cells: Dictionary = {}
+    if can_preview and action_mode == "attack" and not engine.action_used:
+        for id_variant in engine.actors.keys():
+            var target_id: String = str(id_variant)
+            if not engine.available_attack(target_id, selected_weapon).is_empty():
+                attack_cells[engine.actors[target_id]["position"]] = true
+    var spell_cells: Dictionary = {}
+    if can_preview and action_mode == "spell" and not selected_spell.is_empty():
+        for id_variant in engine.actors.keys():
+            var target_id: String = str(id_variant)
+            if engine.can_cast_spell(selected_spell, target_id):
+                spell_cells[engine.actors[target_id]["position"]] = true
     var terrain: Texture2D = _texture_for(TERRAIN_ATLAS)
     var props: Texture2D = _texture_for(PROPS_ATLAS)
 
@@ -49,7 +67,13 @@ func _draw() -> void:
             if cell in engine.difficult_terrain:
                 draw_rect(dest, Color("#8c6b35", 0.32))
             if reachable.has(cell) and cell != engine.current_actor()["position"]:
-                draw_rect(dest, Color("#399bd5", 0.19))
+                draw_rect(dest, Color("#399bd5", 0.22))
+            if attack_cells.has(cell):
+                draw_rect(dest, Color("#cb4c43", 0.25))
+                draw_rect(dest.grow(-2), Color("#f77869"), false, 2.0)
+            if spell_cells.has(cell):
+                draw_rect(dest, Color("#d7aa58", 0.24))
+                draw_rect(dest.grow(-2), GOLD, false, 2.0)
             draw_rect(dest, Color("#1c232b", 0.58), false, 1.0)
 
     if props != null:
