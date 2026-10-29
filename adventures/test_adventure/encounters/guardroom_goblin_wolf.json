@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "grid_size": [
+    12,
+    10
+  ],
+  "party_positions": {
+    "alden": [
+      2,
+      3
+    ],
+    "elyra": [
+      1,
+      5
+    ],
+    "brunna": [
+      2,
+      6
+    ],
+    "pip": [
+      1,
+      7
+    ]
+  },
+  "deployment_zone": {
+    "min": [
+      0,
+      3
+    ],
+    "max": [
+      3,
+      8
+    ]
+  },
+  "hazards": [],
+  "backdrop": {
+    "kind": "cave",
+    "rows": 0
+  },
+  "id": "cave_guardroom",
+  "name": "Cave Guardroom — Goblin and Wolf",
+  "intro": "A goblin and a large wolf guard a chamber off the main limestone passage.",
+  "rewards": {
+    "xp_total": 100,
+    "gold_gp": 0
+  },
+  "enemies": [
+    {
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "id": "guard_goblin",
+      "name": "Goblin Cave Guard",
+      "max_hp": 7,
+      "armor_class": 15,
+      "position": [
+        9,
+        3
+      ],
+      "role": "melee",
+      "attacks": [
+        {
+          "id": "scimitar",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "slashing",
+          "reach_feet": 5
+        }
+      ]
+    },
+    {
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 15
+      },
+      "id": "guard_wolf",
+      "name": "Large Cave Wolf",
+      "max_hp": 11,
+      "armor_class": 13,
+      "position": [
+        9,
+        6
+      ],
+      "role": "melee",
+      "attacks": [
+        {
+          "id": "bite",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "2d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ]
+    }
+  ],
+  "obstacles": [
+    {
+      "id": "wooden_table",
+      "kind": "table",
+      "position": [
+        5,
+        4
+      ],
+      "size": [
+        2,
+        2
+      ],
+      "blocks_movement": true,
+      "blocks_sight": false,
+      "cover": "half"
+    }
+  ],
+  "walls": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      5,
+      0
+    ],
+    [
+      6,
+      0
+    ],
+    [
+      7,
+      0
+    ],
+    [
+      8,
+      0
+    ],
+    [
+      9,
+      0
+    ],
+    [
+      10,
+      0
+    ],
+    [
+      11,
+      0
+    ]
+  ],
+  "difficult_terrain": [
+    [
+      4,
+      6
+    ],
+    [
+      6,
+      7
+    ],
+    [
+      7,
+      7
+    ]
+  ]
+}
