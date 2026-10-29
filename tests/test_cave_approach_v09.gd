@@ -131,9 +131,14 @@ func _run() -> void:
     if session.campaign.current_location != "cave_approach":
         _fail("Did not enter wooded cave approach")
         return
-    if not screen.get("local_cave_map").visible or screen.get("overland_map").visible:
-        _fail("Local cave map was not displayed on exterior approach")
+    if not screen.get("story_image").visible:
+        _fail("New cave exterior illustration was not rendered")
         return
+    screen.call("_on_map_toggle")
+    if not screen.get("local_cave_map").visible or screen.get("overland_map").visible:
+        _fail("Map toggle did not display local cave chart")
+        return
+    screen.call("_on_map_toggle")
     if session.campaign.flags.get("watchpost_spotted", false) or session.campaign.knows_location("watchpost_tree"):
         _fail("Approaching cave revealed hidden sentry position")
         return
