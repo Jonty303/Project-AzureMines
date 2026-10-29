@@ -2,7 +2,7 @@
 
 ## Goblin Hideout v0.9.1 — The branching cave and three tactical battles
 
-The goblin hideout has grown into a **playable, revisitable limestone cave**. Follow the ravine into the wooded valley, confront the **two lookouts at the watchpost** in tactical combat, enter the branching main passage and fight **a goblin and large wolf** in the guardroom. The rubbish tip includes a small original **Midden Grub**, an optional third fight, and a **hole in the floor** where goblins discard waste. Its destination deliberately remains a mystery.
+The goblin hideout has grown into a **playable, revisitable limestone cave**. Follow the ravine into the wooded valley, **hail the hidden two-goblin watchpost and try Persuasion or Deception for guarded entry**, sneak past, or confront the lookouts in tactical combat, then enter the branching main passage and fight **a goblin and large wolf** in the guardroom. The rubbish tip includes a small original **Midden Grub**, an optional third fight, and a **hole in the floor** where goblins discard waste. Its destination deliberately remains a mystery.
 
 Explore the **six-goblin communal cave**, speak with the displaced former chief and discuss possibly helping him depose the abusive overlord. Scout a **three-goblin-guarded underground waterfall** and discover the separate tunnel towards the bugbear's chamber. A dangerous **bugbear with two goblin guards and a wolf** still holds a chained mage; the player may discover him, but **the boss encounter and actual prisoner rescue have not yet been implemented**.
 
