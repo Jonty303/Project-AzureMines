@@ -89,7 +89,7 @@ func award_once(encounter_id: String, total_xp: int, coin: int) -> Dictionary:
         xp_by_character[id] = int(xp_by_character[id]) + each
     gold_gp += coin
     completed_encounters[encounter_id] = true
-    record_event("victory_" + encounter_id, "The party overcame the ambush on the Old Trade Road.")
+    record_event("victory_" + encounter_id, "The party completed encounter: %s." % encounter_id)
     return {"already_claimed": false, "xp_total": total_xp, "xp_each": each,
         "gold_gp": coin, "consumables": [], "named_items": []}
 
@@ -105,7 +105,8 @@ func capture_party(actors: Dictionary) -> void:
             "spell_slots_remaining": int(actor.get("spell_slots_remaining", 0)),
             "death_successes": int(actor.get("death_successes", 0)),
             "death_failures": int(actor.get("death_failures", 0)),
-            "second_wind_used": bool(actor.get("second_wind_used", false)),
+            "second_wind_remaining": int(actor.get("second_wind_remaining", 0)),
+            "mage_armor_active": bool(actor.get("mage_armor_active", false)),
             "hit_dice_remaining": int(actor.get("hit_dice_remaining", 0)),
             "reaction_used": bool(actor.get("reaction_used", false)),
             "class_resources": actor.get("class_resources", {}).duplicate(true),
@@ -119,7 +120,7 @@ func restore_party(actors: Dictionary) -> void:
             continue
         var actor: Dictionary = actors[id]
         var saved: Dictionary = party_snapshots[id]
-        for property in ["hp", "combat_state", "spell_slots_remaining", "death_successes", "death_failures", "second_wind_used", "hit_dice_remaining", "reaction_used", "class_resources", "conditions"]:
+        for property in ["hp", "combat_state", "spell_slots_remaining", "death_successes", "death_failures", "second_wind_remaining", "mage_armor_active", "hit_dice_remaining", "reaction_used", "class_resources", "conditions"]:
             if saved.has(property):
                 actor[property] = saved[property]
         actors[id] = actor
