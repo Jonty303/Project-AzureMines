@@ -8,7 +8,7 @@ From the existing overgrown ravine and wooded watchpost, the party can enter a l
 
 | Location | Implemented interaction |
 | --- | --- |
-| Wooded cave approach | Locate two hidden sentries, slip past, approach openly or **attack the two goblin lookouts in tactical combat**. A successful outflank can impose the 2024 SRD Surprise initiative penalty on the unwarned enemies. |
+| Wooded cave approach | Locate two hidden sentries, **hail them and negotiate guarded passage (Persuasion DC 13 or a Deception DC 15 bluff)**, slip past, approach openly or **attack both lookouts in tactical combat**. A successful outflank can impose the 2024 SRD Surprise initiative penalty on unwarned enemies. |
 | Cave entrance and first passage | Investigate and travel into the branching corridor; retreat at any time. |
 | Main corridor | Branches toward the rubbish tip, guardroom, shared common room, waterfall and commander's outer passage. Unvisited rooms are not displayed on the local map. |
 | Rubbish tip | Meet an optional **Midden Grub**; distract it with scraps or choose a low-threat fight. Inspect the **hole through the floor** where rubbish is thrown, and record an unknown shaft on the map. **Its depth and destination are not authored.** |
