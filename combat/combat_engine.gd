@@ -815,6 +815,20 @@ func end_turn() -> void:
             return
 
 
+func _ai_weapon_id(actor: Dictionary, distance: int) -> String:
+    var melee_id := ""
+    var ranged_id := ""
+    for weapon_variant in actor.get("attacks", []):
+        var weapon: Dictionary = weapon_variant
+        if str(weapon.get("kind", "")) == "melee_weapon" and melee_id.is_empty():
+            melee_id = str(weapon.get("id", ""))
+        if str(weapon.get("kind", "")) == "ranged_weapon" and ranged_id.is_empty():
+            ranged_id = str(weapon.get("id", ""))
+    if str(actor.get("role", "melee")) == "ranged" and distance > 1 and not ranged_id.is_empty():
+        return ranged_id
+    return melee_id if not melee_id.is_empty() else ranged_id
+
+
 func take_ai_turn() -> void:
     if deployment_active or finished or current_is_party() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
@@ -838,9 +852,7 @@ func take_ai_turn() -> void:
     var best_distance := 9999
     for id in enemy_ids:
         var distance: int = _distance(source["position"], actors[id]["position"])
-        var weapon_id: String = "shortbow" if role == "ranged" and distance > 1 else "knife"
-        if role == "ranged" and distance <= 1:
-            weapon_id = "dagger"
+        var weapon_id: String = _ai_weapon_id(source, distance)
         if not available_attack(id, weapon_id).is_empty() and distance < best_distance:
             best_distance = distance
             chosen_id = id
@@ -878,9 +890,7 @@ func take_ai_turn() -> void:
             for id in enemy_ids:
                 var target: Dictionary = actors[id]
                 var distance: int = _distance(actors[actor_id]["position"], target["position"])
-                var weapon_id: String = "shortbow" if role == "ranged" and distance > 1 else "knife"
-                if role == "ranged" and distance <= 1:
-                    weapon_id = "dagger"
+                var weapon_id: String = _ai_weapon_id(actors[actor_id], distance)
                 if not available_attack(id, weapon_id).is_empty():
                     attack(id, weapon_id)
                     break
