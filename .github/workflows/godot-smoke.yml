@@ -78,3 +78,5 @@ jobs:
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_cave_approach_v09.gd
       - name: v0.9.1 three cave tactical fights and full environment
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_cave_multibattle_v091.gd
+      - name: Goblin watchpost parley, Hesk reputation and noncombat entry
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_watchpost_parley.gd
