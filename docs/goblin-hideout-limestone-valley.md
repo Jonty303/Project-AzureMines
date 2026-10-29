@@ -54,7 +54,7 @@ On a discovered dungeon map, draw the upper floor as linked annotated places. Re
 
 The **two goblins in the trees** are watching the cave approach and intend to **ambush intruders or alert the others**.
 
-- If the party **spots the watchpost first**, they can plan a counter-ambush, bypass it, bluff the sentries, or attempt a quiet capture.
+- If the party **spots the watchpost first**, they can plan a counter-ambush, bypass it, **hail the sentries and try to talk their way in**, bluff them, or attempt a quiet capture. They can also call out peacefully without spotting the platform first; the watchpost becomes visible when the guards answer.
 - If the watchers **spot the party first**, the goblins may spring an ambush or raise the alarm. The party should receive believable observational clues, not a retroactive unseen script.
 - Hesk's earlier **release** might already have put the cave on alert before the party arrives. A friendly reception from some goblins and an increased security posture **must be separate flags**.
 - The alarm changes interior behaviour, guard readiness, available dialogue and possible reinforcements. It should **not** magically teleport all fourteen goblins into one level-one fight.
