@@ -10,6 +10,13 @@ var exploration: RefCounted
 var story: Dictionary = {}
 var stage := ""
 var last_reward: Dictionary = {}
+var dungeon_encounter_id := ""
+const DUNGEON_ENCOUNTERS := {
+    "cave_watchpost": {"path": "res://adventures/test_adventure/encounters/watchpost_two_goblins.json", "xp": 100, "gold": 0},
+    "cave_guardroom": {"path": "res://adventures/test_adventure/encounters/guardroom_goblin_wolf.json", "xp": 100, "gold": 0},
+    "cave_midden_grub": {"path": "res://adventures/test_adventure/encounters/rubbish_midden_grub.json", "xp": 20, "gold": 0}
+}
+
 var gold_gp: int:
     get:
         return int(campaign.gold_gp)
@@ -101,6 +108,59 @@ func choose_exploration(choice_id: String, party: Dictionary, combat: RefCounted
     if stage != "exploration" or exploration == null:
         return {"ok": false, "text": "Exploration has not begun."}
     return exploration.choose(choice_id, party, combat)
+
+
+func begin_dungeon_battle(encounter_id: String) -> bool:
+    if stage != "exploration" or not DUNGEON_ENCOUNTERS.has(encounter_id):
+        return false
+    if campaign.completed_encounters.has(encounter_id):
+        return false
+    var place: String = campaign.current_location
+    if encounter_id == "cave_watchpost" and place != "cave_approach":
+        return false
+    if encounter_id == "cave_guardroom" and place != "cave_guardroom":
+        return false
+    if encounter_id == "cave_midden_grub" and place != "cave_rubbish":
+        return false
+    dungeon_encounter_id = encounter_id
+    stage = "dungeon_battle"
+    return true
+
+
+func dungeon_fixture_path() -> String:
+    if stage != "dungeon_battle" or not DUNGEON_ENCOUNTERS.has(dungeon_encounter_id):
+        return ""
+    return str(DUNGEON_ENCOUNTERS[dungeon_encounter_id]["path"])
+
+
+func conclude_dungeon_battle(victor: String, actors: Dictionary) -> Dictionary:
+    if stage != "dungeon_battle" or not DUNGEON_ENCOUNTERS.has(dungeon_encounter_id):
+        return {"ok": false}
+    campaign.capture_party(actors)
+    if victor != "party":
+        campaign.record_event("defeat_" + dungeon_encounter_id,
+            "The party was defeated in %s." % dungeon_encounter_id)
+        stage = "defeat"
+        return {"ok": true, "victory": false, "text": "The adventurers were defeated."}
+    var id: String = dungeon_encounter_id
+    var config: Dictionary = DUNGEON_ENCOUNTERS[id]
+    var reward: Dictionary = campaign.award_once(id, int(config["xp"]), int(config["gold"]))
+    match id:
+        "cave_watchpost":
+            campaign.flags["watchpost_resolved"] = true
+            campaign.flags["watchpost_crossed"] = true
+            campaign.flags["watchpost_spotted"] = true
+            campaign.reveal_route("watchpost_tree")
+        "cave_guardroom":
+            campaign.flags["guardroom_resolved"] = true
+        "cave_midden_grub":
+            campaign.flags["midden_grub_resolved"] = true
+    campaign.record_event("encounter_cleared_" + id,
+        "The party defeated the defenders of %s." % id)
+    stage = "exploration"
+    dungeon_encounter_id = ""
+    return {"ok": true, "victory": true, "xp": int(reward.get("xp_total", 0)),
+        "text": "The fight is over. The party receives %d XP total. The cave remembers this encounter." % int(reward.get("xp_total", 0))}
 
 
 func save_game(actors: Dictionary, path: String = CampaignState.DEFAULT_SAVE) -> bool:
