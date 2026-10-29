@@ -13,6 +13,8 @@ const FORMATIONS := {
     "diamond": {"alden": [3, 5], "brunna": [2, 4], "elyra": [2, 6], "pip": [1, 5]}
 }
 
+var encounter_id := "training_battle"
+var encounter_name := "Wagon Camp — The First Ambush"
 var actors: Dictionary = {}
 var walls: Array[Vector2i] = []
 var difficult_terrain: Array[Vector2i] = []
@@ -44,14 +46,21 @@ var victor := ""
 var rng := RandomNumberGenerator.new()
 
 
-func start(seed: int = 42024, with_deployment: bool = false) -> bool:
+func start(seed: int = 42024, with_deployment: bool = false, encounter_path: String = ENCOUNTER_FIXTURE) -> bool:
+    # Only packaged encounter fixtures are accepted; saves cannot inject arbitrary paths.
+    if not encounter_path.begins_with("res://adventures/test_adventure/encounters/") or not encounter_path.ends_with(".json"):
+        return false
     var party: Dictionary = _read_json(PARTY_FIXTURE)
-    var encounter: Dictionary = _read_json(ENCOUNTER_FIXTURE)
+    var encounter: Dictionary = _read_json(encounter_path)
     if party.is_empty() or encounter.is_empty():
         return false
     if not party.has("characters") or not encounter.has("enemies"):
         return false
 
+    encounter_id = str(encounter.get("id", ""))
+    encounter_name = str(encounter.get("name", encounter_id))
+    if encounter_id.is_empty():
+        return false
     actors.clear()
     walls.clear()
     difficult_terrain.clear()
@@ -188,7 +197,7 @@ func _roll_initiative_and_start() -> void:
     )
     for item in rolls:
         turn_order.append(str(item["id"]))
-    _record("Encounter begins: four adventurers versus four goblins at the wagon camp.")
+    _record("Encounter begins: %s." % encounter_name)
     _begin_turn()
 
 
