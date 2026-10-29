@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Azure Mines · Adventure Designer</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="model.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+  <header><div><small>PROJECT AZURE MINES / AUTHOR TOOLS</small><h1>Adventure Designer</h1></div>
+    <nav aria-label="File actions"><button id="new">New region</button><button id="load">Load JSON</button>
+      <button id="save" class="primary">Save JSON</button><input id="file" type="file" accept=".json,application/json" hidden></nav>
+  </header>
+  <p class="notice">Author-only workspace · Exports include hidden locations and author notes. This is not a player map.</p>
+  <main>
+    <aside>
+      <h2>Region</h2>
+      <form id="region-form">
+        <label>Region ID<input name="id" required pattern="[a-z0-9_]+"></label>
+        <label>Region name<input name="name" required></label>
+        <label>Starting location<select name="starting_location"></select></label>
+        <label>Author notes<textarea name="author_notes" rows="3"></textarea></label>
+        <button>Apply region</button>
+      </form>
+      <h2>Locations <button id="add-location">+ Add</button></h2>
+      <div id="locations" class="list" aria-label="Locations"></div>
+      <h2>Routes <button id="add-route">+ Connect</button></h2>
+      <div id="routes" class="list" aria-label="Routes"></div>
+    </aside>
+    <section class="workspace" aria-label="Overland graph">
+      <div class="graph-heading"><h2 id="region-title"></h2><span id="dirty"></span></div>
+      <p>Drag locations to arrange. Select a location or route to edit. Arrows show one-way travel; dashed lines mark hidden routes.</p>
+      <svg id="graph" viewBox="0 0 1200 800" role="img" aria-label="Location graph; use the lists to select and edit with a keyboard"></svg>
+      <h2>Validation</h2><div id="validation"></div>
+      <p id="status" role="status" aria-live="polite">Load samples/dales_road.json to explore the sample region, or add your first location.</p>
+    </section>
+    <aside><h2 id="editor-title">Inspector</h2><p id="hint">Select an item, add a location, or connect two locations.</p>
+      <form id="item-form" hidden>
+        <label>ID<input name="id" required pattern="[a-z0-9_]+"></label>
+        <label>Name<input name="name" required></label>
+        <div data-fields="locations">
+          <label>Kind<select name="kind"><option>settlement</option><option>wilderness</option><option>dungeon</option><option>interior</option></select></label>
+          <div class="coordinates"><label>X<input name="x" type="number" min="80" max="1120" step="any"></label><label>Y<input name="y" type="number" min="50" max="750" step="any"></label></div>
+        </div>
+        <div data-fields="routes">
+          <label>From<select name="from"></select></label><label>To<select name="to"></select></label>
+          <label class="check"><input name="bidirectional" type="checkbox">Travel both ways</label>
+        </div>
+        <label>Discovery<select name="discovery"><option value="known">Known</option><option value="hidden">Hidden until discovered</option></select></label>
+        <label>Description (separate from author notes)<textarea name="description" rows="4"></textarea></label>
+        <label>Author notes<textarea name="author_notes" rows="4"></textarea></label>
+        <button class="primary">Apply item</button><button id="delete" type="button" class="danger">Delete</button>
+      </form>
+    </aside>
+  </main>
+</body>
+</html>

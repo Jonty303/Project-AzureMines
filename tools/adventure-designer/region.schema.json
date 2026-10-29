@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Azure Mines authoring region v1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "author_notes": {
+      "type": "string"
+    },
+    "starting_location": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "kind": {
+            "enum": [
+              "settlement",
+              "wilderness",
+              "dungeon",
+              "interior"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "author_notes": {
+            "type": "string"
+          },
+          "discovery": {
+            "enum": [
+              "known",
+              "hidden"
+            ]
+          },
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number",
+                "minimum": 80,
+                "maximum": 1120
+              },
+              "y": {
+                "type": "number",
+                "minimum": 50,
+                "maximum": 750
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "description",
+          "author_notes",
+          "discovery",
+          "position"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "bidirectional": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "author_notes": {
+            "type": "string"
+          },
+          "discovery": {
+            "enum": [
+              "known",
+              "hidden"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "from",
+          "to",
+          "bidirectional",
+          "description",
+          "author_notes",
+          "discovery"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "author_notes",
+    "starting_location",
+    "locations",
+    "routes"
+  ],
+  "additionalProperties": false
+}

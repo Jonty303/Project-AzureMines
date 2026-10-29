@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "id": "dales_road",
+  "name": "The Dales · Old Trade Road",
+  "author_notes": "AUTHOR-ONLY sample based on docs/world-bible.md v0.2, sections 1, 2 and 6. Positions and route segmentation are schematic authoring layout, not canonical distances or exact bearings. No travel durations are asserted. Hidden content must not be exposed to players.",
+  "starting_location": "seabrook",
+  "locations": [
+    {
+      "id": "seabrook",
+      "name": "Seabrook",
+      "kind": "settlement",
+      "description": "A small multicultural harbour city west of the Dales.",
+      "author_notes": "Tavian Marr commissions the missing-caravan investigation here.",
+      "discovery": "known",
+      "position": {
+        "x": 130,
+        "y": 470
+      }
+    },
+    {
+      "id": "wagon_clearing",
+      "name": "Wagon clearing",
+      "kind": "wilderness",
+      "description": "A covered wagon and scattered cargo beside the Old Trade Road.",
+      "author_notes": "Opening goblin encounter site. Combat and investigation are not implemented by this editor.",
+      "discovery": "known",
+      "position": {
+        "x": 430,
+        "y": 470
+      }
+    },
+    {
+      "id": "harrowford",
+      "name": "Harrowford",
+      "kind": "settlement",
+      "description": "A market town on the northern edge of the Dales.",
+      "author_notes": "The contract requires a report to the Adventurers' Guild.",
+      "discovery": "known",
+      "position": {
+        "x": 840,
+        "y": 180
+      }
+    },
+    {
+      "id": "overgrown_ravine",
+      "name": "Overgrown ravine",
+      "kind": "wilderness",
+      "description": "An overgrown ravine leads off the road into a wooded limestone valley.",
+      "author_notes": "Tracking, Hesk or Mara Venn can reveal the trail. These are design notes, not executable conditions.",
+      "discovery": "hidden",
+      "position": {
+        "x": 670,
+        "y": 580
+      }
+    },
+    {
+      "id": "cave_approach",
+      "name": "Wooded cave approach",
+      "kind": "dungeon",
+      "description": "A wooded valley beneath a limestone cliff.",
+      "author_notes": "Goblin hideout approach. Interior geometry is deliberately not specified.",
+      "discovery": "hidden",
+      "position": {
+        "x": 1000,
+        "y": 650
+      }
+    }
+  ],
+  "routes": [
+    {
+      "id": "coastal_road",
+      "name": "Old Trade Road: inland",
+      "to": "wagon_clearing",
+      "bidirectional": true,
+      "description": "",
+      "author_notes": "Opening travel is eastward from Seabrook.",
+      "discovery": "known",
+      "from": "seabrook"
+    },
+    {
+      "id": "road_to_harrowford",
+      "name": "Old Trade Road: Harrowford",
+      "to": "harrowford",
+      "bidirectional": true,
+      "description": "",
+      "author_notes": "Party may continue to town and return.",
+      "discovery": "known",
+      "from": "wagon_clearing"
+    },
+    {
+      "id": "ravine_trail",
+      "name": "Overgrown trail",
+      "to": "overgrown_ravine",
+      "bidirectional": true,
+      "description": "",
+      "author_notes": "Alternate leads from Hesk and Mara Venn avoid a tracking dead end.",
+      "discovery": "hidden",
+      "from": "wagon_clearing"
+    },
+    {
+      "id": "valley_approach",
+      "name": "Wooded valley",
+      "to": "cave_approach",
+      "bidirectional": true,
+      "description": "",
+      "author_notes": "Access to the limestone hideout; no exact distances established.",
+      "discovery": "hidden",
+      "from": "overgrown_ravine"
+    }
+  ]
+}
