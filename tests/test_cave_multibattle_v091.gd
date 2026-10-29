@@ -76,6 +76,7 @@ func _run() -> void:
 
     session.campaign.mark_visited("cave_approach")
     session.campaign.flags["watchpost_spotted"] = true
+    session.campaign.flags["watchpost_outflanked"] = true
     session.campaign.reveal_route("watchpost_tree")
     ui.call("_refresh")
     var intro_combat: RefCounted = ui.get("engine")
@@ -92,6 +93,10 @@ func _run() -> void:
         return
     if first.actors.size() != 6 or first.actors["alden"]["hp"] != 7 or first.actors["brunna"]["spell_slots_remaining"] != 1:
         _fail("Entering watchpost battle reset wounded heroes or spell slots")
+        return
+    if first.initiative_disadvantaged_team != "enemy" or not first.events.any(func(evt: Dictionary) -> bool:
+            return str(evt.get("text", "")).contains("Surprised, Disadvantage")):
+        _fail("Outflanked sentries did not receive 2024 Surprise initiative Disadvantage")
         return
     if not _winning_combat(ui, ["watch_scout", "watch_signal"], 100):
         return
