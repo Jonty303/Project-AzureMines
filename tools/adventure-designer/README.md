@@ -8,7 +8,7 @@ Keep index.html, style.css, model.js and app.js together.
 ## First session
 
 1. Choose **Load JSON** and select `samples/dales_road.json` from this directory.
-2. Select a location in the left list or click its node. Edit its name, ID, kind,
+2. Select a location in the left list or click its node. Edit its name, ID, location type,
    description, discovery state or author notes in the inspector; choose **Apply item**.
 3. Drag nodes to arrange the graph. X/Y fields provide a keyboard alternative.
 4. Choose **+ Add** to create a location. Select a source location, then **+ Connect**
@@ -48,10 +48,18 @@ a location updates its route endpoints and starting-location reference atomicall
 
 Positions are editor layout coordinates in a 1200 × 800 view, with X 80–1120 and
 Y 50–750 to keep node cards inside the view. They are **not world coordinates,
-distances or travel time**. Location kinds allow reuse for interior graphs later;
+distances or travel time**. Location types allow reuse for interior graphs later;
 there is no dungeon tile/grid schema in v1. Descriptions are separate from author
 notes, but exports include **all** fields and secrets. Discovery is design metadata,
 not implemented game logic, and the editor deliberately shows every location.
+
+**Location type** is stored as `kind` in JSON for compatibility with existing files.
+Its values are descriptive categories only: `settlement` for towns and inhabited
+places, `wilderness` for outdoor areas, `dungeon` for adventure sites such as caves
+or ruins, and `interior` for rooms or indoor areas. These are authoring conventions,
+not enforced gameplay meanings. The editor validates and saves the chosen value;
+it does not change travel, encounters, rendering or game behaviour based on it.
+New locations default to `wilderness`.
 
 Structural errors, duplicate IDs, dangling references, self routes and duplicate
 directed connections block import/apply/save. Bidirectional routes occupy both
