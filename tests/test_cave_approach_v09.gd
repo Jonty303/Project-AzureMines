@@ -168,10 +168,20 @@ func _run() -> void:
     if session.campaign.visited.has("cave_waterfall") or session.campaign.knows_location("cave_bugbear"):
         _fail("Unauthored deeper cave rooms were spoiled")
         return
-    screen.call("_on_exploration_choice", "mark_deeper_passages")
+    screen.call("_on_exploration_choice", "deeper_corridor")
+    if session.campaign.current_location != "cave_corridor":
+        _fail("The cave's main passage is no longer reachable")
+        return
+    screen.call("_on_exploration_choice", "to_rubbish")
+    screen.call("_on_exploration_choice", "rubbish_hole")
     if not session.campaign.clues.any(func(c: Dictionary) -> bool:
-            return c.get("id", "") == "unexplored_hideout"):
-        _fail("Corridor exploration did not record a clue")
+            return c.get("id", "") == "rubbish_shaft"):
+        _fail("The uncharted refuse shaft was not recorded as a clue")
+        return
+    screen.call("_on_exploration_choice", "rubbish_back")
+    screen.call("_on_exploration_choice", "back_threshold")
+    if session.campaign.current_location != "cave_threshold":
+        _fail("The party could not return to the first passage")
         return
     screen.call("_on_save_game")
     if not FileAccess.file_exists("user://azure_mines_slot1.json"):
@@ -190,8 +200,8 @@ func _run() -> void:
     if reload.campaign.knows_location("watchpost_tree"):
         _fail("Unspotted watchpost appeared after reload")
         return
-    if reload.exploration.choose("mark_deeper_passages", game.actors).get("ok", true):
-        _fail("Save/load permitted a repeat corridor clue")
+    if not reload.campaign.flags.get("rubbish_shaft_noticed", false):
+        _fail("Save/load lost the mystery shaft discovered in the rubbish tip")
         return
     if not reload.exploration.choose("exit_to_entrance", game.actors).get("ok", false):
         _fail("Cave travel was broken after load")
