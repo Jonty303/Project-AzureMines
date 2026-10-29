@@ -526,6 +526,20 @@
           "target": "cave_entrance"
         },
         {
+          "id": "watchpost_attack",
+          "label": "Attack the two lookouts on the tree platform",
+          "type": "battle",
+          "encounter_id": "cave_watchpost",
+          "requires_any_flags": [
+            "watchpost_spotted",
+            "watchpost_alarm_raised"
+          ],
+          "unless_flags": [
+            "watchpost_resolved",
+            "watchpost_bypassed"
+          ]
+        },
+        {
           "id": "back_to_ravine",
           "label": "Withdraw to the ravine",
           "type": "travel",
@@ -586,7 +600,7 @@
         },
         {
           "id": "enter_first_passage",
-          "label": "Enter the limestone corridor",
+          "label": "Enter the long limestone corridor",
           "type": "travel",
           "target": "cave_threshold"
         },
@@ -606,34 +620,356 @@
         641,
         521
       ],
-      "description": "The first stretch of corridor runs deep into the limestone. Light from outside dwindles behind you. A faint breeze carries damp air and old woodsmoke. Farther in, passages divide; those deeper rooms are not explorable in this build.",
-      "revisit_text": "The first underground passage still runs towards deeper chambers. There are no encounters in the completed entrance section.",
+      "description": "The narrow entrance gives way to a long twisting corridor in pale limestone. The air smells of refuse, smoke and damp fur. Passages branch into shadow on either side; from deeper underground comes the thunder of falling water. The larger rooms are beyond this first bend.",
+      "revisit_text": "The limestone corridor slopes towards the roaring waterfall. Side passages lead to the rubbish tip, guardroom and communal caves.",
       "choices": [
         {
-          "id": "mark_deeper_passages",
-          "label": "Record the direction of the deeper passage",
-          "type": "effects",
-          "once": true,
-          "effects": [
-            {
-              "type": "clue",
-              "id": "unexplored_hideout",
-              "text": "The goblin cave continues deeper into limestone passages beyond the explored entrance.",
-              "certainty": "confirmed"
-            },
-            {
-              "type": "event",
-              "id": "threshold_mapped",
-              "text": "The party mapped the first stretch of the goblin cave corridor."
-            }
-          ],
-          "result": "You mark the corridor's direction on your local dungeon chart. The deeper guardrooms and waterfall are for a later expedition."
+          "id": "deeper_corridor",
+          "label": "Advance to the branching main corridor",
+          "type": "travel",
+          "target": "cave_corridor"
         },
         {
           "id": "exit_to_entrance",
           "label": "Return to the cave mouth",
           "type": "travel",
           "target": "cave_entrance"
+        }
+      ]
+    },
+    {
+      "id": "cave_corridor",
+      "title": "The Main Limestone Passage",
+      "subtitle": "GOBLIN HIDEOUT • PASSAGE",
+      "map_pos": [
+        700,
+        510
+      ],
+      "description": "A long rough passage runs towards the thunder of underground water. Rotting scraps stink from a hole in the left wall. To the right, rough timber fittings mark a guardroom; farther along, an open area smells of cooking. A guarded waterfall lies deeper within the rock, and a narrower bend leads towards the chieftain's private chambers.",
+      "choices": [
+        {
+          "id": "to_rubbish",
+          "label": "Follow the reeking side passage to the rubbish tip",
+          "type": "travel",
+          "target": "cave_rubbish"
+        },
+        {
+          "id": "to_guardroom",
+          "label": "Approach the goblin guardroom",
+          "type": "travel",
+          "target": "cave_guardroom"
+        },
+        {
+          "id": "to_common",
+          "label": "Approach the goblin eating and sleeping chamber",
+          "type": "travel",
+          "target": "cave_common"
+        },
+        {
+          "id": "to_waterfall",
+          "label": "Follow the roar of the underground waterfall",
+          "type": "travel",
+          "target": "cave_waterfall"
+        },
+        {
+          "id": "to_bugbear_outer",
+          "label": "Scout the passage leading towards the commander's chamber",
+          "type": "travel",
+          "target": "cave_bugbear_outer"
+        },
+        {
+          "id": "back_threshold",
+          "label": "Return towards the cave entrance",
+          "type": "travel",
+          "target": "cave_threshold"
+        }
+      ]
+    },
+    {
+      "id": "cave_rubbish",
+      "title": "The Rubbish Tip",
+      "subtitle": "GOBLIN HIDEOUT • REFUSE",
+      "map_pos": [
+        450,
+        320
+      ],
+      "description": "Broken dishes, moldy sacks, food scraps and gnawed bones heap around the room. Most of the refuse has been tipped through a ragged hole in the limestone floor. A squat pale shape stirs among the discarded food: a plated cave scavenger. It seems more interested in eating than in the party.",
+      "choices": [
+        {
+          "id": "midden_notice",
+          "label": "Observe the pale scavenger without approaching",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "midden_scavenger",
+              "text": "A pale plated scavenger feeds amid the rubbish and appears defensive rather than predatory."
+            }
+          ],
+          "result": "The creature paws through damp peels and gnawed bones, keeping its blunt mandibles low. It does not charge."
+        },
+        {
+          "id": "midden_feed",
+          "label": "Throw edible rubbish to distract the scavenger",
+          "type": "effects",
+          "once": true,
+          "unless_flag": "midden_grub_resolved",
+          "effects": [
+            {
+              "type": "flag",
+              "key": "midden_grub_avoided",
+              "value": true
+            },
+            {
+              "type": "event",
+              "id": "midden_grub_fed",
+              "text": "The party distracted the rubbish-tip scavenger with scraps instead of fighting."
+            }
+          ],
+          "result": "The grub drags a lump of discarded food into a corner. It remains alive and uninterested in your search."
+        },
+        {
+          "id": "midden_fight",
+          "label": "Fight the Midden Grub (optional combat)",
+          "type": "battle",
+          "encounter_id": "cave_midden_grub",
+          "unless_flags": [
+            "midden_grub_resolved",
+            "midden_grub_avoided"
+          ]
+        },
+        {
+          "id": "rubbish_hole",
+          "label": "Inspect the hole where goblins throw their rubbish",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "flag",
+              "key": "rubbish_shaft_noticed",
+              "value": true
+            },
+            {
+              "type": "clue",
+              "id": "rubbish_shaft",
+              "text": "The goblins discard most of their rubbish through a hole in the cave floor; its depth and destination are unknown."
+            },
+            {
+              "type": "event",
+              "id": "shaft_inspected",
+              "text": "The party inspected the refuse shaft but did not descend."
+            }
+          ],
+          "result": "The hole opens into darkness. Falling scraps make faint, irregular echoes far below. You mark it on your map, but have no safe descent or knowledge of where it leads."
+        },
+        {
+          "id": "rubbish_back",
+          "label": "Return to the main passage",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ]
+    },
+    {
+      "id": "cave_guardroom",
+      "title": "The Guardroom",
+      "subtitle": "GOBLIN HIDEOUT • GUARDED",
+      "map_pos": [
+        560,
+        395
+      ],
+      "description": "A rough timber table, hanging furs and an old iron lantern furnish this small chamber. A goblin guard watches the entrance while a large wolf raises its head and growls. They block the deeper end of the chamber.",
+      "choices": [
+        {
+          "id": "guardroom_battle",
+          "label": "Confront the goblin guard and his wolf",
+          "type": "battle",
+          "encounter_id": "cave_guardroom",
+          "unless_flag": "guardroom_resolved"
+        },
+        {
+          "id": "guardroom_defeat_note",
+          "label": "Search the abandoned guardroom for signs of raiding",
+          "type": "effects",
+          "once": true,
+          "requires_flag": "guardroom_resolved",
+          "effects": [
+            {
+              "type": "clue",
+              "id": "goblin_guardroom_records",
+              "text": "The goblins have been guarding stolen caravan goods in the cave."
+            },
+            {
+              "type": "event",
+              "id": "guardroom_searched",
+              "text": "The party searched the guardroom after its defenders were defeated."
+            }
+          ],
+          "result": "You find stained merchants' wrappings and evidence of a recently raided caravan. No captive is held here."
+        },
+        {
+          "id": "guardroom_leave",
+          "label": "Withdraw into the main passage",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ]
+    },
+    {
+      "id": "cave_common",
+      "title": "The Goblin Common Cave",
+      "subtitle": "GOBLIN HIDEOUT • COOKING AND SLEEPING",
+      "map_pos": [
+        648,
+        278
+      ],
+      "description": "Six goblins share this smoky chamber, where cooking pots and thin bedding compete for space. One older goblin sits apart, listening to the others complain in low voices. They look wary rather than eager to fight. Their former place in the tribe is not obvious from appearance alone.",
+      "choices": [
+        {
+          "id": "chief_open_talk",
+          "label": "Ask to speak with the older goblin",
+          "type": "effects",
+          "once": true,
+          "unless_flag": "chief_spoken",
+          "effects": [
+            {
+              "type": "flag",
+              "key": "chief_spoken",
+              "value": true
+            },
+            {
+              "type": "event",
+              "id": "chief_conversation",
+              "text": "The party spoke to an older goblin in the communal cave."
+            }
+          ],
+          "result": "'I led us once,' the goblin mutters. 'Now the big brute takes the food and sends our children hungry. Don't draw your blades in here.'"
+        },
+        {
+          "id": "chief_about_bugbear",
+          "label": "Ask why the former chief lost his authority",
+          "type": "effects",
+          "once": true,
+          "requires_flag": "chief_spoken",
+          "effects": [
+            {
+              "type": "clue",
+              "id": "former_chief_bugbear",
+              "text": "The goblins' former chief says an outsider seized command and mistreats the tribe."
+            },
+            {
+              "type": "event",
+              "id": "former_chief_account",
+              "text": "The former chief described the outsider's harsh rule."
+            }
+          ],
+          "result": "'He came with orders and enough muscle to make us obey. Most of us would see him gone. But not if our families pay for it.'"
+        },
+        {
+          "id": "chief_discuss_help",
+          "label": "Suggest helping the goblins remove the overlord",
+          "type": "effects",
+          "once": true,
+          "requires_flag": "chief_spoken",
+          "effects": [
+            {
+              "type": "flag",
+              "key": "chief_uprising_discussed",
+              "value": true
+            },
+            {
+              "type": "event",
+              "id": "chief_uprising_proposal",
+              "text": "The party proposed helping the former chief resist the overlord."
+            }
+          ],
+          "result": "The old chief looks to the sleeping children and wounded. 'If we can do it without bringing down his guards on our homes, there may be a way. Find a way to weaken him first.' This is a possible future alliance, not yet a completed uprising."
+        },
+        {
+          "id": "common_return",
+          "label": "Leave the goblins in peace and return to the corridor",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ]
+    },
+    {
+      "id": "cave_waterfall",
+      "title": "The Underground Waterfall",
+      "subtitle": "GOBLIN HIDEOUT • LOWER CHAMBER",
+      "map_pos": [
+        757,
+        243
+      ],
+      "description": "White water drops from an unseen ledge into a black pool, its spray silvering the rough limestone. Three goblin guards maintain a watch close to a dark tunnel on the far side. The path beyond them appears to lead towards the commander's private chamber.",
+      "choices": [
+        {
+          "id": "waterfall_guards",
+          "label": "Observe the guards and the tunnel from cover",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "waterfall_private_tunnel",
+              "text": "Three goblins defend the underground waterfall; a separate tunnel links it to the commander's side of the cave."
+            },
+            {
+              "type": "flag",
+              "key": "waterfall_tunnel_noted",
+              "value": true
+            }
+          ],
+          "result": "The three sentries watch the ledges and their tunnel carefully. There is another route towards the overlord, but the tunnel is not safely passable until its guards are dealt with in a later encounter."
+        },
+        {
+          "id": "waterfall_return",
+          "label": "Return to the main corridor",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ]
+    },
+    {
+      "id": "cave_bugbear_outer",
+      "title": "Outside the Commander's Chamber",
+      "subtitle": "GOBLIN HIDEOUT • PRIVATE PASSAGE",
+      "map_pos": [
+        768,
+        370
+      ],
+      "description": "From behind a jagged stone outcrop you glimpse a broad-shouldered bugbear occupying the private cave. Two goblin guards stand near him and another large wolf sprawls in the torchlight. A weakened, chained human mage sits in one corner. The bugbear gives sharp, contemptuous orders to his goblins, and the guards watch the approach closely.",
+      "choices": [
+        {
+          "id": "bugbear_observe",
+          "label": "Study the chamber and its prisoner without revealing yourself",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "mage_held_by_bugbear",
+              "text": "A malnourished mage remains chained in the chamber of the bugbear who rules the goblins."
+            },
+            {
+              "type": "clue",
+              "id": "bugbear_guard_count",
+              "text": "The bugbear has two goblin guards and a second wolf with him."
+            },
+            {
+              "type": "event",
+              "id": "boss_chamber_scouted",
+              "text": "The party scouted the occupied bugbear chamber but did not enter it."
+            }
+          ],
+          "result": "The mage is alive but weak. The bugbear has two guards and a wolf at his side. Charging in unsupported would be dangerous; this chamber will become a tactical encounter in the next milestone."
+        },
+        {
+          "id": "bugbear_back",
+          "label": "Withdraw quietly to the main corridor",
+          "type": "travel",
+          "target": "cave_corridor"
         }
       ]
     }
