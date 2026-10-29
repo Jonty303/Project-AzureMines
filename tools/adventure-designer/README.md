@@ -116,7 +116,8 @@ reload, invalid import preservation and safe rendering of markup-like text.
 
 - No Godot/runtime importer, game save integration, or changes to the gameplay branch.
 - No narrative decision-tree/check editor, executable conditions, encounters or quests.
-- No dungeon grid/tile editor, background map image, pan/zoom, undo/redo or collaboration.
+- Dungeon layouts are authored in the separate [Dungeon Designer](../dungeon-designer/README.md).
+  This overland tool has no background map image, pan/zoom, undo/redo or collaboration.
 - Fixed-size schematic canvas; suitable for small regions, not thousands of locations.
 - No player-safe export or discovery simulation. Author files must remain author-only.
 - No automatic migration from other versions or feature-branch exploration formats.

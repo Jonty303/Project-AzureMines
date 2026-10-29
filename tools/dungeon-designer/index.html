@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Azure Mines · Dungeon Designer</title><link rel="stylesheet" href="style.css">
+  <script defer src="../adventure-designer/model.js"></script>
+  <script defer src="model.js"></script><script defer src="samples.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+  <header><div><small>PROJECT AZURE MINES / AUTHOR TOOLS</small><h1>Dungeon Designer</h1></div>
+    <nav aria-label="File actions"><button id="new">New</button><button id="practice">Practice map</button>
+      <button id="hideout">Goblin starter</button><button id="load">Load JSON</button><button id="save" class="primary">Save JSON</button></nav>
+  </header>
+  <p class="notice">Author-only workspace · Layouts, notes and secrets are exported together. Game integration is not included.</p>
+  <main>
+    <aside class="library">
+      <button id="map-details">Dungeon details</button>
+      <h2>Named areas <button id="add-area">+ Add</button></h2>
+      <p class="hint">Select an area to edit its details. Choose a paint area above the grid to assign cells.</p>
+      <div id="areas" class="list"></div>
+      <h2>Design markers</h2><div id="markers" class="list"></div>
+      <h2>Overland reference</h2><button id="reference-load">Load region JSON</button>
+      <p id="reference-status" class="hint">Optional: load an overland export to check exit destinations. The reference file is never changed.</p>
+      <label>Destination location<select id="reference-location"><option value="">No region loaded</option></select></label>
+      <button id="use-reference" disabled>Use for selected link</button>
+      <p class="hint">Stairs and passages can also reference a dungeon ID and area ID in the inspector.</p>
+    </aside>
+    <section class="workspace" aria-label="Dungeon layout">
+      <div class="heading"><h2 id="title"></h2><span id="dirty"></span></div>
+      <div class="toolbar">
+        <label>Drawing tool<select id="tool"><option value="select">Select</option><option value="room">Room rectangle</option><option value="floor">Floor brush</option><option value="corridor">Corridor brush</option><option value="door">Door</option><option value="assign">Assign area</option><option value="erase">Erase</option><option value="marker">Place marker</option></select></label>
+        <label>Paint area<select id="paint-area"><option value="">Unassigned</option></select></label>
+        <label>Marker type<select id="marker-type"></select></label>
+        <label>Zoom<select id="zoom"><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
+      </div>
+      <div class="history"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button><span id="cursor">Cell 0, 0</span></div>
+      <p id="tool-help" class="hint"></p>
+      <div id="viewport"><svg id="grid" tabindex="0" role="application" aria-label="Dungeon drawing grid. Arrow keys move the cursor; Enter applies the selected tool. Escape cancels a rectangle or stroke."></svg></div>
+      <p class="legend">Dark: solid / undrawn · Coloured: floor areas · Grey: corridor · Gold: door · Letter badges: markers</p>
+      <p id="status" role="status" aria-live="polite">Try Practice map, or start with a named area and draw a room.</p>
+      <details open><summary id="validation-summary">Validation</summary><div id="validation"></div></details>
+    </section>
+    <aside class="inspector"><h2 id="inspector-title">Dungeon details</h2><form id="details"></form></aside>
+  </main>
+  <input id="file" type="file" accept=".json,application/json" hidden>
+  <input id="reference-file" type="file" accept=".json,application/json" hidden>
+</body>
+</html>

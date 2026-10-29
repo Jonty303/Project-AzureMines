@@ -1,0 +1,627 @@
+{
+  "schema_version": 1,
+  "document_type": "dungeon",
+  "id": "practice_dungeon",
+  "name": "Practice dungeon — not campaign canon",
+  "author_notes": "A disposable drawing exercise. This layout is not the goblin hideout or any canonical Azure Mines location.",
+  "width": 24,
+  "height": 18,
+  "areas": [
+    {
+      "id": "entry",
+      "name": "Entry room",
+      "description": "",
+      "author_notes": "Practice area only."
+    },
+    {
+      "id": "hall",
+      "name": "Practice hall",
+      "description": "",
+      "author_notes": "Practice area only."
+    },
+    {
+      "id": "side_room",
+      "name": "Side room",
+      "description": "",
+      "author_notes": "Practice area only."
+    }
+  ],
+  "cells": [
+    {
+      "x": 13,
+      "y": 1,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 14,
+      "y": 1,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 15,
+      "y": 1,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 16,
+      "y": 1,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 17,
+      "y": 1,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 13,
+      "y": 2,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 14,
+      "y": 2,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 15,
+      "y": 2,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 16,
+      "y": 2,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 17,
+      "y": 2,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 13,
+      "y": 3,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 14,
+      "y": 3,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 15,
+      "y": 3,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 16,
+      "y": 3,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 17,
+      "y": 3,
+      "tile": "floor",
+      "area_id": "side_room"
+    },
+    {
+      "x": 15,
+      "y": 4,
+      "tile": "door",
+      "area_id": ""
+    },
+    {
+      "x": 12,
+      "y": 5,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 13,
+      "y": 5,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 14,
+      "y": 5,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 15,
+      "y": 5,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 16,
+      "y": 5,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 17,
+      "y": 5,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 18,
+      "y": 5,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 2,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 3,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 4,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 5,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 6,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 12,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 13,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 14,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 15,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 16,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 17,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 18,
+      "y": 6,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 2,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 3,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 4,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 5,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 6,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 12,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 13,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 14,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 15,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 16,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 17,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 18,
+      "y": 7,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 2,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 3,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 4,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 5,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 6,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 7,
+      "y": 8,
+      "tile": "corridor",
+      "area_id": ""
+    },
+    {
+      "x": 8,
+      "y": 8,
+      "tile": "corridor",
+      "area_id": ""
+    },
+    {
+      "x": 9,
+      "y": 8,
+      "tile": "corridor",
+      "area_id": ""
+    },
+    {
+      "x": 10,
+      "y": 8,
+      "tile": "corridor",
+      "area_id": ""
+    },
+    {
+      "x": 11,
+      "y": 8,
+      "tile": "corridor",
+      "area_id": ""
+    },
+    {
+      "x": 12,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 13,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 14,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 15,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 16,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 17,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 18,
+      "y": 8,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 2,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 3,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 4,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 5,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 6,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 12,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 13,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 14,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 15,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 16,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 17,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 18,
+      "y": 9,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 2,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 3,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 4,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 5,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 6,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "entry"
+    },
+    {
+      "x": 12,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 13,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 14,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 15,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 16,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 17,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 18,
+      "y": 10,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 12,
+      "y": 11,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 13,
+      "y": 11,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 14,
+      "y": 11,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 15,
+      "y": 11,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 16,
+      "y": 11,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 17,
+      "y": 11,
+      "tile": "floor",
+      "area_id": "hall"
+    },
+    {
+      "x": 18,
+      "y": 11,
+      "tile": "floor",
+      "area_id": "hall"
+    }
+  ],
+  "markers": [
+    {
+      "id": "entry_marker",
+      "name": "Practice entrance",
+      "type": "entrance",
+      "x": 2,
+      "y": 8,
+      "description": "",
+      "author_notes": "Local return link demonstrates destination IDs.",
+      "reference": "",
+      "target_document": "practice_dungeon",
+      "target_location": "entry"
+    },
+    {
+      "id": "practice_conversation",
+      "name": "Conversation placeholder",
+      "type": "conversation",
+      "x": 15,
+      "y": 8,
+      "description": "",
+      "author_notes": "Reference is a placeholder, not a supplied Ink story.",
+      "reference": "practice.ink#hello",
+      "target_document": "",
+      "target_location": ""
+    }
+  ]
+}

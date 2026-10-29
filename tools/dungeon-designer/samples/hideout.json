@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "document_type": "dungeon",
+  "id": "goblin_hideout_draft",
+  "name": "Goblin hideout — layout to author",
+  "author_notes": "AUTHOR-ONLY starter from docs/world-bible.md v0.2. No geometry or connections supplied: the 29 October hand-drawn map is not in this repository. Draw the agreed layout yourself. Names below are area labels, not newly named NPCs. The former rubbish area is now the family area; shaft and Midden Grub placement remain unresolved.",
+  "width": 32,
+  "height": 24,
+  "areas": [
+    {
+      "id": "entrance",
+      "name": "Cave entrance",
+      "description": "",
+      "author_notes": "Place an entrance and link it to dales_road / cave_approach after drawing."
+    },
+    {
+      "id": "patrol_corridor",
+      "name": "Patrol corridor",
+      "description": "",
+      "author_notes": "New non-loyal goblin patrol; a social bypass is possible. Exact connections remain to be authored."
+    },
+    {
+      "id": "family_area",
+      "name": "Goblin family area",
+      "description": "",
+      "author_notes": "Women and children are non-combatants. Two bugbear-aligned loyalists are combatants. This replaces the former rubbish-tip area."
+    },
+    {
+      "id": "common_cave",
+      "name": "Common cave",
+      "description": "",
+      "author_notes": "Shared kitchen / sleeping area; displaced former chief lives among ordinary goblins."
+    },
+    {
+      "id": "bugbear_chamber",
+      "name": "Bugbear chamber",
+      "description": "",
+      "author_notes": "Bugbear overlord; captive human mage needs rescue and care. No personal names invented."
+    }
+  ],
+  "cells": [],
+  "markers": []
+}
