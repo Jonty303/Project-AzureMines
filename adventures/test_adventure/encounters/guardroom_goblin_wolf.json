@@ -93,7 +93,10 @@
           "damage_type": "piercing",
           "reach_feet": 5
         }
-      ]
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/cave_wolf_64.svg"
+      }
     }
   ],
   "obstacles": [
