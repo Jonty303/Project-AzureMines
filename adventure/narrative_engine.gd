@@ -37,12 +37,18 @@ func current_scene() -> Dictionary:
     var scene: Dictionary = locations[id].duplicate(true)
     if state.visited.has(id) and state.flags.get("revisited_" + id, false):
         scene["description"] = scene.get("revisit_text", scene.get("description", ""))
-    if id == "cave_approach" or id == "cave_entrance" or id == "cave_threshold":
+    if id in ["cave_approach", "cave_entrance", "cave_threshold", "cave_corridor", "cave_guardroom", "cave_rubbish", "cave_common", "cave_waterfall", "cave_bugbear_outer"]:
         var notices: PackedStringArray = []
         if state.flags.get("watchpost_alarm_raised", false):
             notices.append("The lookouts have sounded the alarm. Voices carry between the trees and the cave.")
         elif str(state.flags.get("goblin_lair_readiness", "")) == "alerted":
             notices.append("There are signs of heightened vigilance. Someone may have warned the cave before you arrived.")
+        if id == "cave_guardroom" and state.flags.get("guardroom_resolved", false):
+            notices.append("The goblin guard and wolf no longer hold this room.")
+        if id == "cave_rubbish" and state.flags.get("midden_grub_resolved", false):
+            notices.append("The dead scavenger lies motionless amid the refuse.")
+        if id == "cave_approach" and state.flags.get("watchpost_resolved", false):
+            notices.append("The two watchpost sentries were defeated; their platform stands empty.")
         if id == "cave_approach" and state.flags.get("watchpost_spotted", false):
             notices.append("Now that you know where to look, you can make out two goblins at a concealed platform in the branches.")
         if id == "cave_approach" and state.flags.get("watchpost_outflanked", false):
@@ -65,6 +71,14 @@ func available_choices() -> Array[Dictionary]:
         var choice: Dictionary = raw
         if choice.has("requires_flag") and not bool(state.flags.get(str(choice["requires_flag"]), false)):
             continue
+        if choice.has("requires_any_flags"):
+            var meets_any := false
+            for flag_id in choice["requires_any_flags"]:
+                if bool(state.flags.get(str(flag_id), false)):
+                    meets_any = true
+                    break
+            if not meets_any:
+                continue
         if choice.has("unless_flag") and bool(state.flags.get(str(choice["unless_flag"]), false)):
             continue
         var forbidden: bool = false
@@ -94,6 +108,14 @@ func choose(choice_id: String, party: Dictionary, combat: RefCounted = null) -> 
         return {"ok": false, "text": "That option is not available."}
     var kind: String = str(choice.get("type", ""))
     var identifier: String = str(choice["id"])
+    if kind == "battle":
+        # Tactical content is selected by a fixed whitelist outside adventure data.
+        var encounter_id: String = str(choice.get("encounter_id", ""))
+        if encounter_id not in ["cave_watchpost", "cave_guardroom", "cave_midden_grub"]:
+            return {"ok": false, "text": "Unknown tactical encounter."}
+        if state.completed_encounters.has(encounter_id):
+            return {"ok": false, "text": "The encounter is already resolved."}
+        return {"ok": true, "battle": encounter_id, "text": "The party moves into position for battle."}
     if kind == "travel":
         var destination: String = str(choice.get("target", ""))
         if not locations.has(destination):
