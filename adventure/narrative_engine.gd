@@ -49,8 +49,12 @@ func current_scene() -> Dictionary:
             notices.append("The dead scavenger lies motionless amid the refuse.")
         if id == "cave_approach" and state.flags.get("watchpost_resolved", false):
             notices.append("The two watchpost sentries were defeated; their platform stands empty.")
-        if id == "cave_approach" and state.flags.get("watchpost_spotted", false):
+        if id == "cave_approach" and state.flags.get("watchpost_spotted", false) and not state.flags.get("watchpost_resolved", false):
             notices.append("Now that you know where to look, you can make out two goblins at a concealed platform in the branches.")
+        if id == "cave_approach" and state.flags.get("watchpost_parley_open", false) and not state.flags.get("watchpost_crossed", false) and not state.flags.get("watchpost_parley_failed", false):
+            notices.append("Two watchpost sentries hold you at bowpoint, waiting for an explanation. They have not yet raised an alarm.")
+        if state.flags.get("watchpost_admitted_under_guard", false) and id in ["cave_approach", "cave_entrance", "cave_threshold"]:
+            notices.append("The tree sentries allowed you through under watch. Their permission is not a promise of safety deeper inside.")
         if id == "cave_approach" and state.flags.get("watchpost_outflanked", false):
             notices.append("You have scouted a concealed approach behind the tree watchpost.")
         if not notices.is_empty():
@@ -163,6 +167,9 @@ func choose(choice_id: String, party: Dictionary, combat: RefCounted = null) -> 
         var die: int = die1
         var die2: int = 0
         var advantage: bool = choice.has("advantage_if_flag") and bool(state.flags.get(str(choice["advantage_if_flag"]), false))
+        if advantage and choice.has("advantage_if_flag_equals"):
+            var condition: Dictionary = choice["advantage_if_flag_equals"]
+            advantage = state.flags.get(str(condition.get("key", ""))) == condition.get("value")
         if advantage:
             die2 = Dice.roll_d20(state.check_rng)
             die = maxi(die1, die2)
@@ -177,7 +184,7 @@ func choose(choice_id: String, party: Dictionary, combat: RefCounted = null) -> 
         var heading: String = "%s: %s (%s) %d + %d = %d vs DC %d%s — %s." % [
             str(party[best_id].get("name", best_id)), ability.capitalize(),
             skill.capitalize(), die, best_bonus, total, dc,
-            " (advantage %d/%d from outflanking)" % [die1, die2] if advantage else "",
+            " (advantage %d/%d: %s)" % [die1, die2, str(choice.get("advantage_reason", "favourable position"))] if advantage else "",
             "SUCCESS" if won else "FAILURE"
         ]
         state.record_event("check_" + identifier, heading)
