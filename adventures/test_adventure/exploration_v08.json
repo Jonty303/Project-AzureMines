@@ -381,7 +381,13 @@
                 "text": "The party searched for lookouts at the cave but could not confirm their position."
               }
             ]
-          }
+          },
+          "unless_flags": [
+            "watchpost_spotted",
+            "watchpost_crossed",
+            "watchpost_resolved",
+            "watchpost_parley_open"
+          ]
         },
         {
           "id": "watchpost_hail",
