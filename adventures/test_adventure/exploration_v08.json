@@ -384,6 +384,170 @@
           }
         },
         {
+          "id": "watchpost_hail",
+          "label": "Call out peacefully and ask the lookouts to speak",
+          "type": "effects",
+          "once": true,
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_resolved",
+            "watchpost_parley_open"
+          ],
+          "effects": [
+            {
+              "type": "flag",
+              "key": "watchpost_parley_open",
+              "value": true
+            },
+            {
+              "type": "flag",
+              "key": "watchpost_spotted",
+              "value": true
+            },
+            {
+              "type": "reveal_route",
+              "id": "watchpost_tree"
+            },
+            {
+              "type": "event",
+              "id": "watchpost_parley_hail",
+              "text": "The party hailed the hidden sentries and asked permission to enter without fighting."
+            }
+          ],
+          "result": "A branch rattles. Two goblins lean over a concealed wooden platform, bows in hand. 'Stop there! What do you want?' one calls. They have seen you, but they have not sounded the alarm. You can give them an honest reason to hear you out—or try a bluff."
+        },
+        {
+          "type": "check",
+          "ability": "charisma",
+          "once": true,
+          "requires_flag": "watchpost_parley_open",
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_resolved",
+            "watchpost_parley_failed"
+          ],
+          "id": "watchpost_persuade",
+          "label": "Ask for peaceful passage to speak with the goblins (Persuasion DC 13)",
+          "skill": "persuasion",
+          "dc": 13,
+          "advantage_if_flag": "hesk_promised_family",
+          "advantage_if_flag_equals": {
+            "key": "hesk_fate",
+            "value": "released"
+          },
+          "advantage_reason": "Hesk vouched for your promise to protect goblin families",
+          "success": {
+            "text": "The lookouts exchange uneasy glances. 'Keep your weapons down. You can go in and speak, but we're watching you.' They step aside without a battle alarm. The goblins deeper inside have not agreed to anything, and their commander is another matter.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_crossed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_admitted_under_guard",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_entry_method",
+                "value": "peaceful_request"
+              },
+              {
+                "type": "event",
+                "id": "watchpost_peaceful_admission",
+                "text": "The goblin sentries admitted the party cautiously after a peaceful appeal, without raising a battle alarm."
+              }
+            ]
+          },
+          "failure": {
+            "text": "'We don't believe you!' the sentry snaps. A warning call echoes towards the cave. They'll hear no more of this approach, although you can withdraw or confront them.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_parley_failed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_alarm_raised",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_parley_rejected",
+                "text": "The watchpost rejected the party's request for peaceful passage and raised the cave alarm."
+              }
+            ]
+          }
+        },
+        {
+          "type": "check",
+          "ability": "charisma",
+          "once": true,
+          "requires_flag": "watchpost_parley_open",
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_resolved",
+            "watchpost_parley_failed"
+          ],
+          "id": "watchpost_bluff",
+          "label": "Claim the chief is expecting an important message (Deception DC 15)",
+          "skill": "deception",
+          "dc": 15,
+          "success": {
+            "text": "'A message for the chief?' One goblin mutters to the other, then points a spear at the cave. 'Go on, then. No tricks.' They grudgingly let you through. They may challenge your story later.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_crossed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_admitted_under_guard",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_entry_method",
+                "value": "bluff"
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_bluff_unverified",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_bluff_admission",
+                "text": "The party convinced the goblin sentries they carried an important message; the deception remains unverified."
+              }
+            ]
+          },
+          "failure": {
+            "text": "'Then you'll know his name,' the sentry demands. The bluff doesn't hold. The second goblin shouts a warning inside, and the lookouts keep their bows trained on you.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_parley_failed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_alarm_raised",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_bluff_failed",
+                "text": "The goblin lookouts caught the party's bluff and sounded an alarm."
+              }
+            ]
+          }
+        },
+        {
           "id": "watchpost_outflank",
           "label": "Circle behind the discovered watchpost (Stealth DC 12)",
           "type": "check",
@@ -424,7 +588,9 @@
           },
           "unless_flags": [
             "watchpost_crossed",
-            "watchpost_alarm_raised"
+            "watchpost_alarm_raised",
+            "watchpost_parley_open",
+            "watchpost_resolved"
           ]
         },
         {
@@ -435,7 +601,6 @@
           "skill": "stealth",
           "dc": 13,
           "once": true,
-          "unless_flag": "watchpost_crossed",
           "advantage_if_flag": "watchpost_outflanked",
           "success": {
             "text": "The party slips between the trunks and reaches the cave mouth without drawing the sentries' notice. The guards remain at their post; they have not been defeated.",
@@ -476,7 +641,12 @@
                 "text": "The party reached the cave entrance but the tree lookouts sounded an alarm."
               }
             ]
-          }
+          },
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_parley_open",
+            "watchpost_resolved"
+          ]
         },
         {
           "id": "watchpost_open",
