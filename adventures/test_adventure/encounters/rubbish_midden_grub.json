@@ -41,7 +41,7 @@
   "name": "Rubbish Tip — Midden Grub",
   "intro": "A small plated scavenger wriggles from the midden. The deeper shaft is not a traversable combat tile.",
   "rewards": {
-    "xp_total": 25,
+    "xp_total": 20,
     "gold_gp": 0
   },
   "enemies": [
