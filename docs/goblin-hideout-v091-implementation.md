@@ -2,6 +2,21 @@
 
 **Status:** implemented in Godot 4.5.2 on `feature/downed-sprites-action-bar`; desktop usability and encounter balance still need manual playtesting. This is a substantial follow-on to v0.9.0, not a declaration that the entire dungeon arc or captive rescue is complete.
 
+## Goblin watchpost — noncombat entry via conversation
+
+From the **wooded cave approach**, the party can now call out peacefully, including before they know the lookouts' exact location. **Two sentries answer from their tree platform**, making the hidden watchpost a legitimate discovery without automatically raising an alarm. Once the conversation begins, the party may:
+
+- **Ask permission to speak with the goblins** — Charisma (Persuasion) **DC 13**. A credible earlier promise to protect goblin families grants **Advantage only if Hesk was subsequently released**, since his account may have preceded the party.
+- **Bluff that the chief expects an important message** — Charisma (Deception) **DC 15**, recording that the deception remains unverified and may have consequences when the party meets the cave occupants.
+
+On a **successful check**, the sentries allow the party through **under watch**: `watchpost_crossed` and `watchpost_admitted_under_guard` become true, and the route to the cave entrance opens. The sentries are still alive and cautious, and **success does not make the goblins allies, defeat the bugbear, or reset an alarm previously carried by Hesk**.
+
+On **failure**, the lookouts reject the request and raise the alarm. The attempt is saved; the party cannot roll again using another dialogue option to fish for success. Retreat and a tactical fight remain possible, and an openly forced approach is still available. Beginning an open conversation prevents treating the same sentries as unaware for later sneaking or outflanking. The visible journal, map and location narrative reflect the choice and its consequences.
+
+The watchpost encounter is a meeting with **goblin guards**, not a chance to negotiate with the unreceptive **bugbear overlord**. It supplies a noncombat path into the first part of the cave while leaving the deeper common-room negotiations, elite loyalties and actual boss confrontation for later milestones.
+
+The choices and outcomes are authored in `adventures/test_adventure/exploration_v08.json`, resolved in the shared narrative engine and persisted through `CampaignState`. `tests/test_watchpost_parley.gd` covers persuasion/bluff successes and failures, Hesk reputation, check persistence, guarded passage, and UI updates.
+
 ## Playable cave environment
 
 From the existing overgrown ravine and wooded watchpost, the party can enter a long limestone corridor and choose among these locations:
