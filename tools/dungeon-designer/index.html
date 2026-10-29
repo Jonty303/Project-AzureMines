@@ -4,10 +4,10 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Azure Mines · Dungeon Designer</title><link rel="stylesheet" href="style.css">
   <script defer src="../adventure-designer/model.js"></script>
-  <script defer src="model.js"></script><script defer src="samples.js"></script><script defer src="app.js"></script>
+  <script defer src="model.js"></script><script defer src="symbols.js"></script><script defer src="samples.js"></script><script defer src="app.js"></script>
 </head>
 <body>
-  <header><div><small>PROJECT AZURE MINES / AUTHOR TOOLS</small><h1>Dungeon Designer</h1></div>
+  <header><div><small>PROJECT AZURE MINES / AUTHOR TOOLS · VERSION 3</small><h1>Dungeon Designer</h1></div>
     <nav aria-label="File actions"><button id="new">New</button><button id="practice">Practice map</button>
       <button id="hideout">Goblin starter</button><button id="load">Load JSON</button><button id="save" class="primary">Save JSON</button></nav>
   </header>
@@ -19,6 +19,7 @@
       <p class="hint">Select an area to edit its details. Choose a paint area above the grid to assign cells.</p>
       <div id="areas" class="list"></div>
       <h2>Design markers</h2><div id="markers" class="list"></div>
+      <h2>Map features</h2><div id="features" class="list"></div>
       <h2>Overland reference</h2><button id="reference-load">Load region JSON</button>
       <p id="reference-status" class="hint">Optional: load an overland export to check exit destinations. The reference file is never changed.</p>
       <label>Destination location<select id="reference-location"><option value="">No region loaded</option></select></label>
@@ -28,11 +29,21 @@
     <section class="workspace" aria-label="Dungeon layout">
       <div class="heading"><h2 id="title"></h2><span id="dirty"></span></div>
       <div class="toolbar">
-        <label>Drawing tool<select id="tool"><option value="select">Select</option><option value="room">Room rectangle</option><option value="floor">Floor brush</option><option value="corridor">Corridor brush</option><option value="door">Door</option><option value="secret_door">Secret door</option><option value="wall">Wall block</option><option value="assign">Assign area</option><option value="erase">Erase</option><option value="marker">Place marker</option></select></label>
+        <label>Drawing tool<select id="tool"><option value="select">Select</option><option value="room">Room rectangle</option><option value="floor">Floor brush</option><option value="corridor">Corridor brush</option><option value="door">Door</option><option value="secret_door">Secret door</option><option value="wall">Wall block</option><option value="assign">Assign area</option><option value="erase">Erase</option><option value="marker">Place marker</option><option value="feature">Place symbol</option><option value="terrain">Natural feature brush</option><option value="clear_features">Clear features only</option></select></label>
         <label>Paint area<select id="paint-area"><option value="">Unassigned</option></select></label>
         <label>Marker type<select id="marker-type"></select></label>
         <label>Zoom<select id="zoom"><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
       </div>
+      <details class="symbol-panel" open><summary>Map symbols &amp; natural features</summary>
+        <div class="toolbar">
+          <label>Symbol group<select id="symbol-group"><option>Doors &amp; barriers</option><option>Travel</option><option>Room objects</option><option>Natural features</option></select></label>
+          <label>Wall edge<select id="feature-edge"><option value="north">North / top</option><option value="east">East / right</option><option value="south">South / bottom</option><option value="west">West / left</option></select></label>
+          <label>Object rotation<select id="feature-rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label>
+          <label>Map appearance<select id="appearance"><option value="colour">Colour</option><option value="mono">Monochrome</option></select></label>
+        </div>
+        <div id="symbol-palette" aria-label="Map symbol palette"></div>
+        <p id="symbol-choice" class="hint">Choose a symbol, then click a drawn floor cell. Edge symbols snap to the selected side.</p>
+      </details>
       <div class="history"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button><button id="place-entrance">Place entrance</button><button id="place-exit">Place exit</button><span id="cursor">Cell 0, 0</span></div>
       <p id="tool-help" class="hint"></p>
       <div id="viewport"><svg id="grid" tabindex="0" role="application" aria-label="Dungeon drawing grid. Arrow keys move the cursor; Enter applies the selected tool. Escape cancels a rectangle or stroke."></svg></div>

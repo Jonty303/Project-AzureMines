@@ -3,6 +3,8 @@ const M = DungeonModel, $ = id => document.getElementById(id), grid = $('grid'),
 const size = 28;
 const badges = {entrance:'E',exit:'X',stairs:'S',passage:'P',npc:'N',encounter:'!',secret:'?',conversation:'C'};
 let doc = M.empty(), saved = M.serialize(doc), selection = {type:'map'}, pending = false;
+let featureKind = 'door', terrainKind = 'water';
+const collection = type => ({area:'areas',marker:'markers',feature:'features'}[type]);
 let undo = [], redo = [], cursor = {x:0,y:0}, stroke = null, roomStart = null, reference = null;
 const say = text => { $('status').textContent = text; };
 const attempt = action => {try {action();} catch(error) {say(error.message);}};
@@ -32,18 +34,28 @@ function input(name,label,initial,kind='text',choices=null) {
   if (name === 'id') {element.required = true; element.pattern = '[a-z0-9_]+'; element.maxLength = 100;}
   if (name === 'name') {element.required = true; element.maxLength = 200;}
   if (['width','height'].includes(name)) {element.min='8';element.max='64';}
-  element.value = initial; wrapper.append(element); form.append(wrapper);
+  if (kind==='checkbox') {element.checked=initial;wrapper.className='check';}
+  else element.value = initial; wrapper.append(element); form.append(wrapper);
 }
 function inspector() {
   form.replaceChildren();
   let item = doc;
-  if (selection.type !== 'map') item = doc[selection.type === 'area' ? 'areas' : 'markers'].find(i => i.id === selection.id);
+  if (selection.type !== 'map') item = doc[collection(selection.type)].find(i => i.id === selection.id);
   if (!item) {selection = {type:'map'}; item = doc;}
-  $('inspector-title').textContent = selection.type === 'map' ? 'Dungeon details' : selection.type === 'area' ? 'Area details' : 'Marker details';
+  $('inspector-title').textContent = selection.type === 'map' ? 'Dungeon details' : selection.type === 'area' ? 'Area details' : selection.type === 'feature' ? 'Feature details' : 'Marker details';
   input('id','ID',item.id); input('name','Name',item.name);
   if (selection.type === 'map') {
     input('width','Grid width (8–64 cells)',doc.width,'number'); input('height','Grid height (8–64 cells)',doc.height,'number');
   } else {
+    if (selection.type === 'feature') {
+      input('kind','Symbol',item.kind,'text',M.featureTypes);
+      input('x','Grid X',item.x,'number');input('y','Grid Y',item.y,'number');
+      input('edge','Placement',item.edge,'text',['center','north','east','south','west']);
+      input('rotation','Rotation (objects only)',item.rotation,'text',[0,90,180,270]);
+      for(const [key,label] of [['locked','Locked'],['concealed','Initially concealed'],['blocks_movement','Blocks movement (validation)'],['provides_cover','Provides cover (design note)']]) input(key,label,item[key],'checkbox');
+      input('target_document','Destination document ID (travel symbols only)',item.target_document);
+      input('target_location','Destination area / location ID',item.target_location);
+    }
     if (selection.type === 'marker') {
       input('type','Marker type',item.type,'text',M.markerTypes);
       input('x','Grid X (zero-based)',item.x,'number'); input('y','Grid Y (zero-based)',item.y,'number');
@@ -61,13 +73,13 @@ function inspector() {
   if (selection.type !== 'map') {
     const del=document.createElement('button');del.type='button';del.textContent='Delete';del.className='danger';
     del.onclick=()=>{
-      if (!confirm(selection.type==='area' ? 'Delete area details? Floor remains; area assignments and local links to this area will be cleared. Undo can restore them.' : 'Delete this marker? Undo can restore it.')) return;
-      const next=selection.type==='area' ? M.removeArea(doc,selection.id) : M.change(doc,d=>{d.markers=d.markers.filter(m=>m.id!==selection.id);});
+      if (!confirm(selection.type==='area' ? 'Delete area details? Floor remains; area assignments and local links to this area will be cleared. Undo can restore them.' : 'Delete this item? Ground remains. Undo can restore it.')) return;
+      const next=selection.type==='area' ? M.removeArea(doc,selection.id) : M.change(doc,d=>{const list=collection(selection.type);d[list]=d[list].filter(m=>m.id!==selection.id);});
       selection={type:'map'};commit(next,'Deleted.');
     };actions.append(del);
   }
   form.append(actions);
-  $('use-reference').disabled=!(reference?.locations.length && selection.type==='marker' && M.linkTypes.includes(item.type));
+  $('use-reference').disabled=!(reference?.locations.length && ((selection.type==='marker' && M.linkTypes.includes(item.type)) || (selection.type==='feature' && M.travelTypes.includes(item.kind))));
 }
 form.oninput=()=>{pending=true;mark();};
 form.onsubmit=event=>{
@@ -76,6 +88,10 @@ form.onsubmit=event=>{
     const item={id:value('id'),name:value('name'),author_notes:value('author_notes')};
     if (selection.type==='map') next=M.metadata(doc,{...item,width:Number(value('width')),height:Number(value('height'))});
     else if (selection.type==='area') next=M.area(doc,{...item,description:value('description')},selection.id);
+    else if(selection.type==='feature') {
+      const flags={};for(const k of ['locked','concealed','blocks_movement','provides_cover'])flags[k]=form.elements.namedItem(k).checked;
+      next=M.feature(doc,{...item,...flags,kind:value('kind'),x:Number(value('x')),y:Number(value('y')),edge:value('edge'),rotation:Number(value('rotation')),description:value('description'),target_document:value('target_document'),target_location:value('target_location')},selection.id);
+    }
     else next=M.marker(doc,{...item,description:value('description'),type:value('type'),x:Number(value('x')),y:Number(value('y')),
       reference:value('reference'),target_document:value('target_document'),target_location:value('target_location')},selection.id);
     if (selection.type==='area' && $('paint-area').value===selection.id) {
@@ -89,10 +105,46 @@ function svg(tag,attrs={},text) {
   const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
   Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v)); if (text!==undefined) el.textContent=text; return el;
 }
+function symbolPaths(group,kind) {
+  const d=DungeonSymbols[kind][2];
+  group.append(svg('path',{d,class:'symbol-halo'}),svg('path',{d,class:'symbol-ink'}));
+}
+function drawFeature(f) {
+  const group=svg('g',{'data-feature':f.id,class:`map-feature ${f.kind}${selection.type==='feature'&&selection.id===f.id?' chosen':''}`});
+  group.append(svg('title',{},`${f.name}${f.locked?' (locked)':''}${f.concealed?' (concealed)':''}`));
+  let x=f.x*size+14,y=f.y*size+14,rotation=f.rotation;
+  if(f.edge==='north')y-=14;
+  if(f.edge==='south')y+=14;
+  if(f.edge==='east'){x+=14;rotation=90;}
+  if(f.edge==='west'){x-=14;rotation=90;}
+  group.setAttribute('transform',`translate(${x},${y}) rotate(${rotation}) translate(-14,-14)`);
+  if(M.natureTypes.includes(f.kind))group.append(svg('rect',{x:0,y:0,width:28,height:28,class:'nature-wash'}));
+  else group.append(svg('rect',{x:2,y:2,width:24,height:24,rx:3,class:'symbol-back'}));
+  symbolPaths(group,f.kind);
+  if(f.concealed)group.append(svg('rect',{x:1,y:1,width:26,height:26,class:'concealed-outline'}));
+  grid.append(group);
+}
+function palette() {
+  $('symbol-palette').replaceChildren();
+  for(const [kind,[group,label]] of Object.entries(DungeonSymbols)) {
+    if(group!==$('symbol-group').value)continue;
+    const button=document.createElement('button');button.type='button';button.title=label;button.setAttribute('aria-label',label);button.dataset.symbol=kind;
+    const icon=svg('svg',{viewBox:'-2 -2 32 32','aria-hidden':'true'});symbolPaths(icon,kind);button.append(icon,document.createTextNode(label));
+    button.classList.toggle('selected',M.natureTypes.includes(kind)?kind===terrainKind:kind===featureKind);
+    button.onclick=()=>{
+      if(!guard())return;stroke=null;roomStart=null;
+      if(M.natureTypes.includes(kind)){terrainKind=kind;$('tool').value='terrain';}
+      else{featureKind=kind;$('tool').value='feature';}
+      $('symbol-choice').textContent=`Selected: ${label}. ${M.natureTypes.includes(kind)?'Drag on existing floor.':M.edgeTypes.includes(kind)?'Choose Wall edge, then click the adjoining floor cell.':'Choose Object rotation, then click a floor cell.'}`;
+      palette();help();draw();
+    };
+    $('symbol-palette').append(button);
+  }
+}
 function draw() {
   grid.replaceChildren();
-  grid.setAttribute('viewBox',`0 0 ${doc.width*size} ${doc.height*size}`);
-  const zoom=Number($('zoom').value);grid.style.width=`${doc.width*size*zoom}px`;grid.style.height=`${doc.height*size*zoom}px`;
+  grid.setAttribute('viewBox',`-14 -14 ${doc.width*size+28} ${doc.height*size+28}`);
+  const zoom=Number($('zoom').value);grid.style.width=`${(doc.width*size+28)*zoom}px`;grid.style.height=`${(doc.height*size+28)*zoom}px`;
   const cells=new Map(doc.cells.map(c=>[`${c.x},${c.y}`,c]));
   for (let y=0;y<doc.height;y++) for (let x=0;x<doc.width;x++) {
     const c=cells.get(`${x},${y}`);
@@ -101,6 +153,7 @@ function draw() {
     if (c?.tile==='secret_door') grid.append(svg('text',{x:x*size+14,y:y*size+19,class:'secret-door-symbol'},'S'));
     if (c?.tile==='door') grid.append(svg('path',{d:`M ${x*size+6} ${y*size+14} H ${x*size+22}`,class:'door-bar'}));
   }
+  for(const f of [...doc.features].sort((a,b)=>Number(M.natureTypes.includes(b.kind))-Number(M.natureTypes.includes(a.kind)))) drawFeature(f);
   // One short label per area, anchored to a real assigned cell.
   for (const area of doc.areas) {
     const first=doc.cells.find(c=>c.area_id===area.id);if (!first) continue;
@@ -126,12 +179,12 @@ function render() {
   cursor={x:Math.min(cursor.x,doc.width-1),y:Math.min(cursor.y,doc.height-1)};
   const paint=$('paint-area').value;$('paint-area').replaceChildren();option($('paint-area'),'','Unassigned');
   doc.areas.forEach(a=>option($('paint-area'),a.id,a.name));$('paint-area').value=doc.areas.some(a=>a.id===paint)?paint:'';
-  for (const [collection,type] of [['areas','area'],['markers','marker']]) {
+  for (const [collection,type] of [['areas','area'],['markers','marker'],['features','feature']]) {
     $(collection).replaceChildren();
     for (const item of doc[collection]) {
-      const button=document.createElement('button');button.textContent=type==='area'?item.name:`${badges[item.type]} · ${item.name}`;
+      const button=document.createElement('button');button.textContent=type==='area'?item.name:type==='feature'?`${item.name} · ${item.x}, ${item.y}`:`${badges[item.type]} · ${item.name}`;
       if (selection.type===type&&selection.id===item.id) button.className='selected';
-      button.onclick=()=>{if(!guard())return;selection={type,id:item.id};if(type==='marker'){cursor={x:item.x,y:item.y};} render();};$(collection).append(button);
+      button.onclick=()=>{if(!guard())return;selection={type,id:item.id};if(type==='marker'||type==='feature'){cursor={x:item.x,y:item.y};} render();};$(collection).append(button);
     }
   }
   inspector();draw();validation();help();
@@ -147,6 +200,9 @@ function validation() {
 function help() {
   const tool=$('tool').value;
   const hints={select:'Click a cell to inspect its area or marker. Use the lists to select stacked markers.',room:'Drag from one corner to the opposite corner. Keyboard: Enter at each corner.',
+    feature:'Click a floor cell to place the selected symbol. Edge symbols use Wall edge; room objects use Object rotation.',
+    terrain:'Drag across existing floor to paint the selected natural feature without replacing the ground.',
+    clear_features:'Drag to remove symbols and natural features only. Ground and design markers stay intact.',
     floor:'Drag to paint floor cells. Choose a paint area to group them into a named room.',corridor:'Drag to draw a connected, one-cell-wide passage.',door:'Click or drag to place walkable door cells. Door states and locks are author notes only.',
     wall:'Drag to place solid wall blocks. Markers on replaced cells are removed; Undo restores them.',
     secret_door:'Drag to place secret doors (purple S). Connectivity assumes they can be discovered and opened; no discovery simulation is included.',
@@ -158,10 +214,19 @@ function useCell(point) {
   if(!guard())return;
   const tool=$('tool').value;
   if(tool==='select') {
+    const features=doc.features.filter(f=>f.x===point.x&&f.y===point.y);
     const markers=doc.markers.filter(m=>m.x===point.x&&m.y===point.y),cell=doc.cells.find(c=>c.x===point.x&&c.y===point.y);
     if(markers.length) {select('marker',markers[0].id);if(markers.length>1)say(`${markers.length} markers here; use the marker list to select each one.`);}
+    else if(features.length)select('feature',features[features.length-1].id);
     else if(cell?.area_id)select('area',cell.area_id);else select('map');
-  } else if(tool==='marker') attempt(()=>{
+  } else if(tool==='feature') attempt(()=>{
+    const id=unique('features',featureKind),item=M.featureDefaults(featureKind,point.x,point.y,id);
+    item.edge=M.edgeTypes.includes(featureKind)?$('feature-edge').value:'center';
+    item.rotation=item.edge==='center'?Number($('feature-rotation').value):0;
+    const next=M.feature(doc,item);selection={type:'feature',id};commit(next,'Symbol placed. Edit its properties in the inspector.');
+  });
+  else if(tool==='terrain'||tool==='clear_features') attempt(()=>commit(M.terrain(doc,[point],tool==='terrain'?terrainKind:tool),'Feature layer updated.'));
+  else if(tool==='marker') attempt(()=>{
     const type=$('marker-type').value,id=unique('markers',type);
     const next=M.marker(doc,{id,name:`New ${type}`,type,x:point.x,y:point.y,description:'',author_notes:'',reference:'',target_document:'',target_location:''});
     selection={type:'marker',id};commit(next,'Marker placed. Add its name, notes and references in the inspector.');
@@ -178,9 +243,14 @@ function point(event) {
 }
 grid.onpointerdown=event=>{
   if(event.button!==0||!guard())return;
-  const p=point(event);if(!p)return;event.preventDefault();grid.focus();cursor=p;roomStart=null;
-  if(['select','marker'].includes($('tool').value)){useCell(p);return;}
-  stroke={tool:$('tool').value,area:$('paint-area').value,start:p,last:p,points:new Map([[`${p.x},${p.y}`,p]])};grid.setPointerCapture(event.pointerId);draw();
+  const hit=event.target.closest('[data-feature]');
+  if($('tool').value==='select' && hit) {
+    event.preventDefault();grid.focus({preventScroll:true});
+    select('feature',hit.getAttribute('data-feature'));return;
+  }
+  const p=point(event);if(!p)return;event.preventDefault();grid.focus({preventScroll:true});cursor=p;roomStart=null;
+  if(['select','marker','feature'].includes($('tool').value)){useCell(p);return;}
+  stroke={tool:$('tool').value,terrain:terrainKind,area:$('paint-area').value,start:p,last:p,points:new Map([[`${p.x},${p.y}`,p]])};grid.setPointerCapture(event.pointerId);draw();
 };
 grid.onpointermove=event=>{
   const p=point(event);if(!p)return;cursor=p;
@@ -197,9 +267,9 @@ grid.onpointerup=event=>{
   if(grid.hasPointerCapture(event.pointerId))grid.releasePointerCapture(event.pointerId);
   attempt(()=>{
     const points=current.tool==='room'?M.rectangle(current.start,current.last):[...current.points.values()];
-    const next=M.paint(doc,points,current.tool==='room'?'floor':current.tool,current.area);
-    const removed=doc.markers.length-next.markers.length;
-    commit(next,removed?`Removed ${removed} marker(s) from erased or blocked cells. Undo restores them.`:'Drawing applied.');
+    const next=['terrain','clear_features'].includes(current.tool)?M.terrain(doc,points,current.tool==='terrain'?current.terrain:current.tool):M.paint(doc,points,current.tool==='room'?'floor':current.tool,current.area);
+    const removed=doc.markers.length-next.markers.length+doc.features.length-next.features.length;
+    commit(next,removed?`Removed ${removed} item(s) from erased or blocked cells. Undo restores them.`:'Drawing applied.');
   });draw();
 };
 grid.onpointercancel=()=>{stroke=null;draw();};
@@ -243,15 +313,18 @@ $('reference-file').onchange=async()=>{
     $('reference-location').replaceChildren();next.locations.forEach(l=>option($('reference-location'),l.id,l.name));
     $('reference-status').textContent=`Reference: ${next.name} (${next.id}). Read-only; not included in dungeon export.`;
     // Do not redraw the inspector: an external reference must not erase form edits.
-    const selected=doc.markers.find(m=>m.id===selection.id);
-    $('use-reference').disabled=!(selection.type==='marker'&&selected&&M.linkTypes.includes(selected.type)&&next.locations.length);
+    const selected=selection.type==='map'?null:doc[collection(selection.type)].find(m=>m.id===selection.id);
+    $('use-reference').disabled=!(selected&&((selection.type==='marker'&&M.linkTypes.includes(selected.type))||(selection.type==='feature'&&M.travelTypes.includes(selected.kind)))&&next.locations.length);
     validation();say(`Loaded overland reference ${file.name}.`);
   }catch(error){say(`Reference rejected; previous reference kept.\n${error.message}`);}
 };
 $('use-reference').onclick=()=>{
-  if(!reference||selection.type!=='marker'||!$('reference-location').value)return;
+  if(!reference||!['marker','feature'].includes(selection.type)||!$('reference-location').value)return;
   form.elements.namedItem('target_document').value=reference.id;form.elements.namedItem('target_location').value=$('reference-location').value;
   pending=true;mark();say('Destination filled in. Apply details to save it to the marker.');
 };
+$('symbol-group').onchange=palette;
+$('appearance').onchange=()=>grid.classList.toggle('mono',$('appearance').value==='mono');
+palette();
 window.addEventListener('beforeunload',event=>{if(dirty()){event.preventDefault();event.returnValue='';}});
 render();

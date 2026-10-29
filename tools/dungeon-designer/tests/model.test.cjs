@@ -5,9 +5,63 @@ const path=require('node:path');
 const M=require('../model.js'), samples=require('../samples.js');
 const mark=(overrides={})=>({id:'test_marker',name:'Test',type:'secret',x:2,y:6,description:'',author_notes:'',reference:'',target_document:'',target_location:'',...overrides});
 
-test('v1 files upgrade without losing authored content',()=>{
-  const old={...M.empty(),schema_version:1};
-  assert.deepEqual(M.parse(JSON.stringify(old)),{...old,schema_version:2});
+test('v1 and v2 files upgrade without losing authored content',()=>{
+  for(const version of [1,2]) {
+    const old=M.paint(M.empty(),[{x:1,y:1}],'floor');old.schema_version=version;delete old.features;
+    old.author_notes='Preserve my notes';
+    assert.deepEqual(M.parse(JSON.stringify(old)),{...old,schema_version:3,features:[]});
+  }
+});
+
+test('every supported feature has original symbol artwork and sensible defaults',()=>{
+  const symbols=require('../symbols.js');assert.deepEqual(Object.keys(symbols).sort(),[...M.featureTypes].sort());
+  let doc=M.paint(M.empty(),[{x:1,y:1}],'floor');
+  for(const kind of M.featureTypes) {
+    const next=M.feature(doc,M.featureDefaults(kind,1,1,'symbol'));assert.equal(M.validate(next).errors.length,0);
+    assert.deepEqual(M.parse(M.serialize(next)),next);
+  }
+});
+test('features preserve floor and painting terrain preserves object layers and notes',()=>{
+  let doc=M.paint(M.empty(),[{x:1,y:1},{x:2,y:1}],'floor');
+  doc=M.feature(doc,M.featureDefaults('chest',1,1,'chest'));
+  const cells=JSON.stringify(doc.cells);doc=M.terrain(doc,[{x:1,y:1}],'water');
+  assert.equal(doc.features.length,2);assert.equal(JSON.stringify(doc.cells),cells);
+  const water=doc.features.find(f=>f.kind==='water');
+  doc=M.feature(doc,{...water,author_notes:'Deep pool'},water.id);
+  assert.equal(M.terrain(doc,[{x:1,y:1}],'water').features.find(f=>f.kind==='water').author_notes,'Deep pool');
+  doc=M.terrain(doc,[{x:1,y:1}],'rubble');assert.ok(doc.features.some(f=>f.kind==='chest'));assert.equal(doc.features.length,2);
+  doc=M.terrain(doc,[{x:1,y:1}],'clear_features');assert.equal(doc.features.length,0);assert.equal(JSON.stringify(doc.cells),cells);
+});
+test('opposing edges share a slot; movement-blocking edges affect connectivity',()=>{
+  let doc=M.paint(M.empty(),[{x:1,y:1},{x:2,y:1}],'floor');
+  doc=M.feature(doc,{...M.featureDefaults('bars',1,1,'bars'),edge:'east'});
+  assert.ok(M.validate(doc).warnings.some(w=>w.includes('2 disconnected')));
+  assert.throws(()=>M.feature(doc,{...M.featureDefaults('door',2,1,'duplicate'),edge:'west'}),/occupied/);
+  doc=M.feature(doc,{...doc.features[0],blocks_movement:false},'bars');
+  assert.ok(!M.validate(doc).warnings.some(w=>w.includes('disconnected')));
+});
+test('objects can rotate; invalid placement, rotation and duplicate IDs rejected atomically',()=>{
+  const doc=M.paint(M.empty(),[{x:1,y:1},{x:2,y:1}],'floor'),before=M.serialize(doc);
+  for(const change of [{rotation:45},{edge:'north'},{x:9},{locked:'yes'}])
+    assert.throws(()=>M.feature(doc,{...M.featureDefaults('chest',1,1,'chest'),...change}));
+  assert.throws(()=>M.feature(doc,{...M.featureDefaults('door',1,1,'door'),rotation:90}));
+  const rotated=M.feature(doc,{...M.featureDefaults('chest',1,1,'chest'),rotation:270});
+  assert.equal(rotated.features[0].rotation,270);
+  assert.throws(()=>M.feature(rotated,M.featureDefaults('bed',2,1,'chest')),/duplicate/);
+  assert.equal(M.serialize(doc),before);
+});
+test('terrain paints fail atomically on missing ground; chasms block routes',()=>{
+  let doc=M.paint(M.empty(),M.line({x:1,y:1},{x:3,y:1}),'floor');const before=M.serialize(doc);
+  assert.throws(()=>M.terrain(doc,[{x:1,y:1},{x:0,y:0}],'water'));assert.equal(M.serialize(doc),before);
+  doc=M.terrain(doc,[{x:2,y:1}],'chasm');assert.ok(M.validate(doc).warnings.some(w=>w.includes('2 disconnected')));
+  doc=M.paint(doc,[{x:2,y:1}],'wall');assert.equal(doc.features.length,0);
+});
+test('feature links follow local renames and area deletion',()=>{
+  let doc=M.area(M.paint(M.empty(),[{x:1,y:1}],'floor'),{id:'entry',name:'Entry',description:'',author_notes:''});
+  doc=M.feature(doc,{...M.featureDefaults('stairs_up',1,1,'stairs'),target_document:doc.id,target_location:'entry'});
+  doc=M.area(doc,{...doc.areas[0],id:'entry_new'},'entry');assert.equal(doc.features[0].target_location,'entry_new');
+  doc=M.metadata(doc,{id:'map_new'});assert.equal(doc.features[0].target_document,'map_new');
+  doc=M.removeArea(doc,'entry_new');assert.equal(doc.features[0].target_document,'');
 });
 test('walls block connectivity and markers; secret doors connect',()=>{
   let doc=M.paint(M.empty(),M.line({x:1,y:1},{x:3,y:1}),'floor');

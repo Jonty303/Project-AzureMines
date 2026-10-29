@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Azure Mines dungeon authoring v2",
+  "title": "Azure Mines dungeon authoring v3",
   "type": "object",
   "properties": {
     "schema_version": {
-      "const": 2
+      "const": 3
     },
     "document_type": {
       "const": "dungeon"
@@ -182,6 +182,130 @@
         "additionalProperties": false
       },
       "maxItems": 1024
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "pattern": "\\S",
+            "maxLength": 200
+          },
+          "kind": {
+            "enum": [
+              "door",
+              "open_doorway",
+              "locked_door",
+              "secret_door",
+              "bars",
+              "window",
+              "railing",
+              "stairs_up",
+              "stairs_down",
+              "ladder",
+              "trapdoor",
+              "chest",
+              "bed",
+              "table",
+              "cage",
+              "altar",
+              "pillar",
+              "trap",
+              "boulder",
+              "stalagmite",
+              "water",
+              "stream",
+              "waterfall",
+              "rubble",
+              "chasm",
+              "ledge"
+            ]
+          },
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 63
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 63
+          },
+          "edge": {
+            "enum": [
+              "center",
+              "north",
+              "east",
+              "south",
+              "west"
+            ]
+          },
+          "rotation": {
+            "enum": [
+              0,
+              90,
+              180,
+              270
+            ]
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "concealed": {
+            "type": "boolean"
+          },
+          "blocks_movement": {
+            "type": "boolean"
+          },
+          "provides_cover": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "author_notes": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "target_document": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]*$",
+            "maxLength": 100
+          },
+          "target_location": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]*$",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "x",
+          "y",
+          "edge",
+          "rotation",
+          "locked",
+          "concealed",
+          "blocks_movement",
+          "provides_cover",
+          "description",
+          "author_notes",
+          "target_document",
+          "target_location"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 4096
     }
   },
   "required": [
@@ -194,7 +318,8 @@
     "height",
     "areas",
     "cells",
-    "markers"
+    "markers",
+    "features"
   ],
   "additionalProperties": false
 }

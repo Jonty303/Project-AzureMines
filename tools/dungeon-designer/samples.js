@@ -15,6 +15,12 @@
     d = M.paint(d,M.line({x:12,y:12},{x:18,y:12}),'wall');
     d = M.marker(d,{id:'entry_marker',name:'Practice entrance',type:'entrance',x:2,y:8,description:'',author_notes:'Local return link demonstrates destination IDs.',reference:'',target_document:d.id,target_location:'entry'});
     d = M.marker(d,{id:'practice_conversation',name:'Conversation placeholder',type:'conversation',x:15,y:8,description:'',author_notes:'Reference is a placeholder, not a supplied Ink story.',reference:'practice.ink#hello',target_document:'',target_location:''});
+    d = M.feature(d,{...M.featureDefaults('locked_door',12,8,'hall_door'),edge:'west'});
+    d = M.feature(d,{...M.featureDefaults('chest',17,6,'practice_chest'),rotation:90});
+    d = M.feature(d,M.featureDefaults('table',14,10,'practice_table'));
+    d = M.feature(d,{...M.featureDefaults('stairs_down',16,2,'practice_stairs'),target_document:d.id,target_location:'entry'});
+    d = M.terrain(d,M.rectangle({x:3,y:6},{x:4,y:7}),'water');
+    d = M.terrain(d,[{x:17,y:10},{x:18,y:10}],'rubble');
     return d;
   }
   function hideout() {

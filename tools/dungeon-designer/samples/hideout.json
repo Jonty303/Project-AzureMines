@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "document_type": "dungeon",
   "id": "goblin_hideout_draft",
   "name": "Goblin hideout — layout to author",
@@ -39,5 +39,6 @@
     }
   ],
   "cells": [],
-  "markers": []
+  "markers": [],
+  "features": []
 }
