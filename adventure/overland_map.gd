@@ -44,6 +44,9 @@ func _draw() -> void:
         draw_dashed_line(a, b, Color("#e1d0ad"), 1.0, 9.0)
     for id_variant in nodes.keys():
         var id: String = str(id_variant)
+        # Interior chambers belong only on the local dungeon chart.
+        if (id.begins_with("cave_") and id != "cave_approach") or id == "watchpost_tree":
+            continue
         if not campaign.knows_location(id):
             continue
         var node: Dictionary = nodes[id]
