@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "grid_size": [
+    12,
+    10
+  ],
+  "party_positions": {
+    "alden": [
+      2,
+      3
+    ],
+    "elyra": [
+      1,
+      5
+    ],
+    "brunna": [
+      2,
+      6
+    ],
+    "pip": [
+      1,
+      7
+    ]
+  },
+  "deployment_zone": {
+    "min": [
+      0,
+      3
+    ],
+    "max": [
+      3,
+      8
+    ]
+  },
+  "hazards": [],
+  "backdrop": {
+    "kind": "cave",
+    "rows": 0
+  },
+  "id": "cave_midden_grub",
+  "name": "Rubbish Tip — Midden Grub",
+  "intro": "A small plated scavenger wriggles from the midden. The deeper shaft is not a traversable combat tile.",
+  "rewards": {
+    "xp_total": 25,
+    "gold_gp": 0
+  },
+  "enemies": [
+    {
+      "speed_feet": 20,
+      "ability_scores": {
+        "dexterity": 8
+      },
+      "id": "midden_grub",
+      "name": "Midden Grub",
+      "max_hp": 9,
+      "armor_class": 11,
+      "position": [
+        9,
+        5
+      ],
+      "role": "melee",
+      "attacks": [
+        {
+          "id": "mandibles",
+          "kind": "melee_weapon",
+          "to_hit": 3,
+          "damage": "1d4+1",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/goblin_front_64.png"
+      }
+    }
+  ],
+  "obstacles": [
+    {
+      "id": "rubbish_heap",
+      "kind": "pile",
+      "position": [
+        6,
+        3
+      ],
+      "size": [
+        2,
+        2
+      ],
+      "blocks_movement": true,
+      "blocks_sight": false,
+      "cover": "half"
+    }
+  ],
+  "walls": [],
+  "difficult_terrain": [
+    [
+      7,
+      6
+    ],
+    [
+      8,
+      6
+    ],
+    [
+      8,
+      7
+    ]
+  ]
+}
