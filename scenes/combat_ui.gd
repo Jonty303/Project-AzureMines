@@ -419,10 +419,66 @@ func _on_exploration_choice(choice_id: String) -> void:
     var result: Dictionary = adventure.choose_exploration(choice_id, engine.actors, engine)
     if bool(result.get("ok", false)) and choice_id.begins_with("hesk_"):
         adventure.campaign.capture_party(engine.actors)
+    if bool(result.get("ok", false)) and result.has("battle"):
+        if not _start_dungeon_battle(str(result["battle"])):
+            story_feedback = "This encounter could not be started."
+        return
     story_feedback = str(result.get("text", ""))
     overland_map.queue_redraw()
     local_cave_map.queue_redraw()
     _refresh()
+
+
+func _start_dungeon_battle(encounter_id: String) -> bool:
+    if adventure.stage != "exploration" or not adventure.exploration.locations.has(adventure.campaign.current_location):
+        return false
+    if not adventure.begin_dungeon_battle(encounter_id):
+        return false
+    adventure.campaign.capture_party(engine.actors)
+    var combat := CombatEngine.new()
+    var fixture_path: String = adventure.dungeon_fixture_path()
+    if not combat.start(42024 + adventure.campaign.completed_encounters.size() * 101, true, fixture_path):
+        adventure.stage = "exploration"
+        adventure.dungeon_encounter_id = ""
+        return false
+    adventure.campaign.restore_party(combat.actors)
+    engine = combat
+    board.engine = engine
+    if not engine.begin_battle():
+        adventure.stage = "exploration"
+        adventure.dungeon_encounter_id = ""
+        return false
+    action_mode = ""
+    subdue_mode = false
+    show_map = false
+    show_journal = false
+    story_feedback = ""
+    _heard_event_count = 0
+    _run_enemy_turns()
+    _refresh()
+    return true
+
+
+func _complete_dungeon_combat() -> void:
+    var outcome: Dictionary = adventure.conclude_dungeon_battle(engine.victor, engine.actors)
+    if not bool(outcome.get("ok", false)):
+        return
+    story_feedback = str(outcome.get("text", ""))
+    if not bool(outcome.get("victory", false)):
+        # Defeat uses the existing game-over story screen, not fabricated travel.
+        return
+    # A completed combat board is only a presentation surface; state stays global.
+    var idle := CombatEngine.new()
+    idle.start(42024, true)
+    idle.finished = true
+    idle.victor = "party"
+    idle.deployment_active = false
+    adventure.campaign.restore_party(idle.actors)
+    adventure.campaign.restore_named_npcs(idle.actors)
+    engine = idle
+    board.engine = engine
+    action_mode = ""
+    current_picker_actor = ""
 
 
 func _journal_text() -> String:
@@ -484,9 +540,7 @@ func _refresh_exploration() -> void:
     overland_map.nodes = adventure.exploration.locations
     local_cave_map.campaign = adventure.campaign
     local_cave_map.nodes = adventure.exploration.locations
-    var in_cave: bool = str(adventure.campaign.current_location) in [
-        "cave_approach", "cave_entrance", "cave_threshold"
-    ]
+    var in_cave: bool = str(adventure.campaign.current_location).begins_with("cave_")
     var art_path: String = str(info.get("art", ""))
     var picture_available: bool = not art_path.is_empty() and ResourceLoader.exists(art_path)
     story_image.visible = picture_available and not show_map
@@ -650,7 +704,7 @@ func _selected_spell() -> String:
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
-    if adventure.stage not in ["deployment", "battle"]:
+    if adventure.stage not in ["deployment", "battle", "dungeon_battle"]:
         return
     if engine.deployment_active:
         var clicked_id: String = engine.actor_at(cell)
@@ -834,6 +888,8 @@ func _refresh() -> void:
         if adventure.stage == "victory":
             adventure.campaign.capture_party(engine.actors)
             adventure.campaign.capture_npc_from_combat(engine.actors)
+    if adventure.stage == "dungeon_battle" and engine.finished:
+        _complete_dungeon_combat()
     if adventure.stage == "exploration":
         _refresh_exploration()
         return
@@ -842,6 +898,8 @@ func _refresh() -> void:
         return
     story_panel.visible = false
     story_image.visible = false
+    overland_map.visible = false
+    local_cave_map.visible = false
     log_heading.visible = true
     combat_log.visible = true
     setup_panel.visible = engine.deployment_active
