@@ -545,7 +545,8 @@
           "type": "travel",
           "target": "overgrown_track"
         }
-      ]
+      ],
+      "art": "res://assets/story/cave_wooded_valley.svg"
     },
     {
       "id": "watchpost_tree",
@@ -610,7 +611,8 @@
           "type": "travel",
           "target": "cave_approach"
         }
-      ]
+      ],
+      "art": "res://assets/story/cave_wooded_valley.svg"
     },
     {
       "id": "cave_threshold",
@@ -769,7 +771,8 @@
           "type": "travel",
           "target": "cave_corridor"
         }
-      ]
+      ],
+      "art": "res://assets/story/cave_rubbish_shaft.svg"
     },
     {
       "id": "cave_guardroom",
@@ -929,7 +932,8 @@
           "type": "travel",
           "target": "cave_corridor"
         }
-      ]
+      ],
+      "art": "res://assets/story/cave_underground_waterfall.svg"
     },
     {
       "id": "cave_bugbear_outer",
