@@ -11,8 +11,8 @@ func _initialize() -> void:
     if not engine.start(12345):
         _fail("Combat fixture did not load")
         return
-    if engine.actors.size() != 6 or engine.turn_order.size() != 6:
-        _fail("Expected four heroes and two goblins")
+    if engine.actors.size() != 8 or engine.turn_order.size() != 8:
+        _fail("Expected four heroes and four goblins")
         return
     if int(engine.actors["alden"]["armor_class"]) != 19:
         _fail("Alden's sword-and-shield AC must be 19")

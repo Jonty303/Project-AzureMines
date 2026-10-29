@@ -1,0 +1,235 @@
+extends RefCounted
+## Authored choice graph: no executable content or arbitrary mutations in adventure JSON.
+const PATH := "res://adventures/test_adventure/exploration_v08.json"
+const Dice = preload("res://core/dice_roller.gd")
+const HeskInteraction = preload("res://adventure/hesk_interaction.gd")
+
+var locations: Dictionary = {}
+var state: RefCounted
+var hesk: RefCounted
+
+
+func _init(campaign: RefCounted) -> void:
+    state = campaign
+    hesk = HeskInteraction.new(state)
+    var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
+    if not parsed is Dictionary or int(parsed.get("schema_version", 0)) != 1:
+        push_error("Invalid narrative adventure data")
+        return
+    for location_variant in parsed.get("locations", []):
+        var location: Dictionary = location_variant
+        locations[str(location["id"])] = location
+
+
+func begin() -> bool:
+    if locations.is_empty():
+        return false
+    state.mark_visited("wagon_clearing")
+    state.reveal_route("town_road")
+    state.record_event("arrived_at_wagon", "The party survived the wagon ambush on the Old Trade Road.")
+    return true
+
+
+func current_scene() -> Dictionary:
+    var id: String = str(state.current_location)
+    if not locations.has(id):
+        return {}
+    var scene: Dictionary = locations[id].duplicate(true)
+    if state.visited.has(id) and state.flags.get("revisited_" + id, false):
+        scene["description"] = scene.get("revisit_text", scene.get("description", ""))
+    if id in ["cave_approach", "cave_entrance", "cave_threshold", "cave_corridor", "cave_guardroom", "cave_rubbish", "cave_common", "cave_waterfall", "cave_bugbear_outer"]:
+        var notices: PackedStringArray = []
+        if state.flags.get("watchpost_alarm_raised", false):
+            notices.append("The lookouts have sounded the alarm. Voices carry between the trees and the cave.")
+        elif str(state.flags.get("goblin_lair_readiness", "")) == "alerted":
+            notices.append("There are signs of heightened vigilance. Someone may have warned the cave before you arrived.")
+        if id == "cave_guardroom" and state.flags.get("guardroom_resolved", false):
+            notices.append("The goblin guard and wolf no longer hold this room.")
+        if id == "cave_rubbish" and state.flags.get("midden_grub_resolved", false):
+            notices.append("The dead scavenger lies motionless amid the refuse.")
+        if id == "cave_approach" and state.flags.get("watchpost_resolved", false):
+            notices.append("The two watchpost sentries were defeated; their platform stands empty.")
+        if id == "cave_approach" and state.flags.get("watchpost_spotted", false) and not state.flags.get("watchpost_resolved", false):
+            notices.append("Now that you know where to look, you can make out two goblins at a concealed platform in the branches.")
+        if id == "cave_approach" and state.flags.get("watchpost_parley_open", false) and not state.flags.get("watchpost_crossed", false) and not state.flags.get("watchpost_parley_failed", false):
+            notices.append("Two watchpost sentries hold you at bowpoint, waiting for an explanation. They have not yet raised an alarm.")
+        if state.flags.get("watchpost_admitted_under_guard", false) and id in ["cave_approach", "cave_entrance", "cave_threshold"]:
+            notices.append("The tree sentries allowed you through under watch. Their permission is not a promise of safety deeper inside.")
+        if id == "cave_approach" and state.flags.get("watchpost_outflanked", false):
+            notices.append("You have scouted a concealed approach behind the tree watchpost.")
+        if not notices.is_empty():
+            scene["description"] = str(scene.get("description", "")) + "\n\n" + "\n\n".join(notices)
+    if id == "wagon_clearing":
+        var hesk_text: String = hesk.description()
+        if not hesk_text.is_empty():
+            scene["description"] = str(scene.get("description", "")) + "\n\n" + hesk_text
+    return scene
+
+
+func available_choices() -> Array[Dictionary]:
+    var scene: Dictionary = current_scene()
+    var result: Array[Dictionary] = []
+    if str(state.current_location) == "wagon_clearing":
+        result.append_array(hesk.available_choices())
+    for raw in scene.get("choices", []):
+        var choice: Dictionary = raw
+        if choice.has("requires_flag") and not bool(state.flags.get(str(choice["requires_flag"]), false)):
+            continue
+        if choice.has("requires_any_flags"):
+            var meets_any := false
+            for flag_id in choice["requires_any_flags"]:
+                if bool(state.flags.get(str(flag_id), false)):
+                    meets_any = true
+                    break
+            if not meets_any:
+                continue
+        if choice.has("unless_flag") and bool(state.flags.get(str(choice["unless_flag"]), false)):
+            continue
+        var forbidden: bool = false
+        for flag_id in choice.get("unless_flags", []):
+            if bool(state.flags.get(str(flag_id), false)):
+                forbidden = true
+                break
+        if forbidden:
+            continue
+        if choice.has("requires_known") and not state.knows_location(str(choice["requires_known"])):
+            continue
+        if choice.get("once", false) and state.flags.has("choice_" + str(choice["id"])):
+            continue
+        result.append(choice)
+    return result
+
+
+func choose(choice_id: String, party: Dictionary, combat: RefCounted = null) -> Dictionary:
+    if choice_id.begins_with("hesk_"):
+        return hesk.choose(choice_id, party, combat)
+    var choice: Dictionary = {}
+    for candidate in available_choices():
+        if str(candidate["id"]) == choice_id:
+            choice = candidate
+            break
+    if choice.is_empty():
+        return {"ok": false, "text": "That option is not available."}
+    var kind: String = str(choice.get("type", ""))
+    var identifier: String = str(choice["id"])
+    if kind == "battle":
+        # Tactical content is selected by a fixed whitelist outside adventure data.
+        var encounter_id: String = str(choice.get("encounter_id", ""))
+        if encounter_id not in ["cave_watchpost", "cave_guardroom", "cave_midden_grub"]:
+            return {"ok": false, "text": "Unknown tactical encounter."}
+        if state.completed_encounters.has(encounter_id):
+            return {"ok": false, "text": "The encounter is already resolved."}
+        return {"ok": true, "battle": encounter_id, "text": "The party moves into position for battle."}
+    if kind == "travel":
+        var destination: String = str(choice.get("target", ""))
+        if not locations.has(destination):
+            return {"ok": false, "text": "Unknown destination."}
+        # A route is available only if explicitly authored as a visible choice.
+        var has_visited: bool = state.visited.has(destination)
+        state.mark_visited(destination)
+        state.reveal_route(destination)
+        if has_visited:
+            state.flags["revisited_" + destination] = true
+        state.record_event("visit_" + destination, "The party reached %s." % locations[destination]["title"])
+        return {"ok": true, "text": "", "travel": destination}
+    if kind == "effects":
+        if not _validate_effects(choice.get("effects", [])):
+            return {"ok": false, "text": "Adventure effect data invalid."}
+        _apply_effects(choice.get("effects", []))
+        if choice.get("once", false):
+            state.flags["choice_" + identifier] = true
+        return {"ok": true, "text": str(choice.get("result", ""))}
+    if kind == "check":
+        if state.checks.has(identifier):
+            return {"ok": false, "text": "This check has already been attempted."}
+        var ability: String = str(choice.get("ability", ""))
+        var skill: String = str(choice.get("skill", ""))
+        var dc: int = int(choice.get("dc", 0))
+        if ability not in ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] or dc < 1 or dc > 30:
+            return {"ok": false, "text": "Adventure check data invalid."}
+        if not _validate_effects(choice.get("success", {}).get("effects", [])) or not _validate_effects(choice.get("failure", {}).get("effects", [])):
+            return {"ok": false, "text": "Adventure check effects invalid."}
+        var best_id := ""
+        var best_bonus := -999
+        for id in ["alden", "elyra", "brunna", "pip"]:
+            if not party.has(id) or int(party[id].get("hp", 0)) <= 0:
+                continue
+            var actor: Dictionary = party[id]
+            var bonus: int = Dice.ability_modifier(int(actor.get("ability_scores", {}).get(ability, 10)))
+            if actor.get("skill_proficiencies", []).has(skill):
+                bonus += int(actor.get("proficiency_bonus", 2))
+            if bonus > best_bonus:
+                best_bonus = bonus
+                best_id = id
+        if best_id.is_empty():
+            return {"ok": false, "text": "No conscious adventurer can attempt this check."}
+        var die1: int = Dice.roll_d20(state.check_rng)
+        var die: int = die1
+        var die2: int = 0
+        var advantage: bool = choice.has("advantage_if_flag") and bool(state.flags.get(str(choice["advantage_if_flag"]), false))
+        if advantage and choice.has("advantage_if_flag_equals"):
+            var condition: Dictionary = choice["advantage_if_flag_equals"]
+            advantage = state.flags.get(str(condition.get("key", ""))) == condition.get("value")
+        if advantage:
+            die2 = Dice.roll_d20(state.check_rng)
+            die = maxi(die1, die2)
+        var total: int = die + best_bonus
+        var won: bool = total >= dc
+        state.checks[identifier] = {"character_id": best_id, "die": die, "bonus": best_bonus,
+            "total": total, "dc": dc, "success": won, "advantage": advantage,
+            "rolls": [die1, die2] if advantage else [die1]}
+        state.flags["choice_" + identifier] = true
+        var outcome: Dictionary = choice.get("success", {}) if won else choice.get("failure", {})
+        _apply_effects(outcome.get("effects", []))
+        var heading: String = "%s: %s (%s) %d + %d = %d vs DC %d%s — %s." % [
+            str(party[best_id].get("name", best_id)), ability.capitalize(),
+            skill.capitalize(), die, best_bonus, total, dc,
+            " (advantage %d/%d: %s)" % [die1, die2, str(choice.get("advantage_reason", "favourable position"))] if advantage else "",
+            "SUCCESS" if won else "FAILURE"
+        ]
+        state.record_event("check_" + identifier, heading)
+        var outcome_text: String = str(outcome.get("text", ""))
+        if identifier == "watchpost_sneak" and state.flags.get("watchpost_alarm_raised", false) and won:
+            outcome_text = "You reach the cave mouth without a second shout, but the earlier alarm has already been raised. The goblin sentries remain at their posts."
+        return {"ok": true, "text": heading + "\n\n" + outcome_text, "check": true}
+    return {"ok": false, "text": "Unsupported adventure choice."}
+
+
+func _validate_effects(effects: Array) -> bool:
+    # Reject an entire batch before applying any action to avoid partial mutations.
+    for item in effects:
+        if not item is Dictionary:
+            return false
+        var kind: String = str(item.get("type", ""))
+        if kind not in ["flag", "clue", "event", "reveal_route", "quest", "npc"]:
+            return false
+        if kind in ["clue", "event", "reveal_route", "quest", "npc"] and str(item.get("id", "")).is_empty():
+            return false
+        if kind == "flag" and str(item.get("key", "")).is_empty():
+            return false
+        if kind == "reveal_route" and not locations.has(str(item["id"])):
+            return false
+        if kind == "npc" and (not state.npc_registry.has(str(item["id"])) or not item.has("attitude")):
+            return false
+    return true
+
+
+func _apply_effects(effects: Array) -> void:
+    for item in effects:
+        match str(item["type"]):
+            "flag":
+                state.flags[str(item["key"])] = item.get("value", true)
+            "clue":
+                state.discover_clue(str(item["id"]), str(item.get("text", "")), str(item.get("certainty", "confirmed")))
+            "event":
+                state.record_event(str(item["id"]), str(item.get("text", "")))
+            "reveal_route":
+                state.reveal_route(str(item["id"]))
+            "quest":
+                state.quests[str(item["id"])] = str(item.get("status", "offered"))
+            "npc":
+                var current: Dictionary = state.npc_registry[str(item["id"])]
+                state.set_npc(str(item["id"]), {
+                    "attitude": str(item["attitude"]),
+                    "trust": int(current.get("trust", 0)) + int(item.get("trust", 0))
+                })

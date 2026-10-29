@@ -11,7 +11,10 @@ func _initialize() -> void:
         return
     var turns := 0
     while not battle.finished and turns < 100:
-        if battle.current_is_party():
+        if not battle.pending_reaction.is_empty():
+            # Headless player resolves interactive Opportunity Attack / Shield prompts.
+            battle.resolve_reaction(true)
+        elif battle.current_is_party():
             _play_party_turn(battle)
         else:
             battle.take_ai_turn()

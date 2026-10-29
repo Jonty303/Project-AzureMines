@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "training_battle",
-  "name": "The Training Ground — First Combat",
+  "name": "Wagon Camp — The First Ambush",
   "grid_size": [
     12,
     10
@@ -24,46 +24,64 @@
       7
     ]
   },
-  "walls": [
-    [
-      5,
-      3
-    ],
-    [
-      5,
-      4
-    ],
-    [
-      5,
-      5
-    ],
-    [
-      6,
-      5
-    ],
-    [
-      9,
-      2
-    ]
-  ],
+  "walls": [],
   "difficult_terrain": [
     [
-      4,
-      7
+      3,
+      8
     ],
     [
-      5,
-      7
+      4,
+      8
     ],
     [
       6,
-      7
+      8
+    ],
+    [
+      8,
+      8
     ]
   ],
   "enemies": [
     {
       "id": "goblin_blade",
-      "name": "Goblin Blade",
+      "name": "Hesk, Roadwatch",
+      "max_hp": 9,
+      "armor_class": 16,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        10,
+        3
+      ],
+      "attacks": [
+        {
+          "id": "shortsword",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "slashing",
+          "reach_feet": 5
+        }
+      ],
+      "role": "melee",
+      "npc_id": "hesk_roadwatch",
+      "special_npc": true,
+      "death_saves": true,
+      "equipment": [
+        "shortsword",
+        "shield"
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/hesk_sword_shield_64.svg"
+      }
+    },
+    {
+      "id": "goblin_blade_two",
+      "name": "Goblin Cutpurse",
       "max_hp": 7,
       "armor_class": 15,
       "speed_feet": 30,
@@ -72,7 +90,7 @@
       },
       "position": [
         9,
-        3
+        5
       ],
       "attacks": [
         {
@@ -82,17 +100,9 @@
           "damage": "1d4+2",
           "damage_type": "piercing",
           "reach_feet": 5
-        },
-        {
-          "id": "shortbow",
-          "kind": "ranged_weapon",
-          "to_hit": 4,
-          "damage": "1d6+2",
-          "damage_type": "piercing",
-          "normal_range_feet": 80,
-          "long_range_feet": 320
         }
-      ]
+      ],
+      "role": "melee"
     },
     {
       "id": "goblin_bow",
@@ -104,18 +114,10 @@
         "dexterity": 14
       },
       "position": [
-        9,
+        10,
         7
       ],
       "attacks": [
-        {
-          "id": "dagger",
-          "kind": "melee_weapon",
-          "to_hit": 4,
-          "damage": "1d4+2",
-          "damage_type": "piercing",
-          "reach_feet": 5
-        },
         {
           "id": "shortbow",
           "kind": "ranged_weapon",
@@ -124,9 +126,141 @@
           "damage_type": "piercing",
           "normal_range_feet": 80,
           "long_range_feet": 320
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
         }
-      ]
+      ],
+      "role": "ranged"
+    },
+    {
+      "id": "goblin_bow_two",
+      "name": "Goblin Bowshot",
+      "max_hp": 7,
+      "armor_class": 15,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        9,
+        8
+      ],
+      "attacks": [
+        {
+          "id": "shortbow",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "role": "ranged"
     }
   ],
-  "note": "Original tutorial goblins; combat supports HP-based knockouts, not PC death saves yet."
+  "note": "One named shield-bearing goblin Hesk uses player-style 0HP survival, three routine goblins use instant death. Four adversaries, two melee and two shortbows. Fire burns on entry and turn start.",
+  "obstacles": [
+    {
+      "id": "covered_wagon",
+      "kind": "wagon",
+      "position": [
+        5,
+        3
+      ],
+      "size": [
+        3,
+        2
+      ],
+      "blocks_movement": true,
+      "blocks_sight": true,
+      "cover": "total",
+      "art": "res://assets/environment/covered_wagon_192x128.svg"
+    },
+    {
+      "id": "supply_chest_west",
+      "kind": "chest",
+      "position": [
+        4,
+        5
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "blocks_movement": true,
+      "blocks_sight": false,
+      "cover": "half",
+      "art": "res://assets/environment/supply_chest_64.svg"
+    },
+    {
+      "id": "supply_chest_east",
+      "kind": "chest",
+      "position": [
+        8,
+        6
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "blocks_movement": true,
+      "blocks_sight": false,
+      "cover": "half",
+      "art": "res://assets/environment/supply_chest_64.svg"
+    }
+  ],
+  "hazards": [
+    {
+      "id": "campfire",
+      "kind": "fire",
+      "position": [
+        7,
+        7
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "damage": "1d4",
+      "damage_type": "fire",
+      "trigger": [
+        "enter",
+        "start_turn"
+      ],
+      "art": "res://assets/environment/campfire_64.svg"
+    }
+  ],
+  "backdrop": {
+    "kind": "forest",
+    "edge": "north",
+    "art": "res://assets/environment/forest_treeline_768x128.svg",
+    "rows": 2
+  },
+  "deployment_zone": {
+    "min": [
+      0,
+      3
+    ],
+    "max": [
+      3,
+      8
+    ]
+  },
+  "intro": "A broken wagon blocks the trail. A sound in the brush, then movement among the trees: goblins are preparing to strike. Arrange the party before the first exchange.",
+  "default_formation": "square"
 }

@@ -30,8 +30,22 @@ func _run_test() -> void:
     if not (board_instance is Control):
         _fail("Combat scene did not construct its board")
         return
-    if not engine_instance.current_is_party():
-        _fail("AI prelude did not advance to a party turn")
+    if not engine_instance.deployment_active:
+        _fail("Scene should open with party deployment")
+        return
+    if scene_root.get("adventure").stage != "approach" or not scene_root.get("story_panel").visible:
+        _fail("Original opening story should appear first")
+        return
+    if engine_instance.turn_order.size() != 0:
+        _fail("Initiative must not roll before deployment ends")
+        return
+    scene_root.call("_on_story_continue")
+    if not scene_root.get("setup_panel").visible:
+        _fail("Continue did not reveal party setup")
+        return
+    scene_root.call("_on_begin_battle")
+    if engine_instance.deployment_active or not engine_instance.current_is_party():
+        _fail("Begin Battle failed to advance to a party turn")
         return
 
     var current: String = engine_instance.current_id()
@@ -42,8 +56,8 @@ func _run_test() -> void:
     await process_frame
     await process_frame
 
-    if int(engine_instance.actors.size()) != 6:
-        _fail("Expected four party members and two tutorial goblins")
+    if int(engine_instance.actors.size()) != 8:
+        _fail("Expected four party members and four campsite goblins")
         return
     var status: Variant = scene_root.get("status_label")
     if not (status is Label) or not status.text.begins_with("Round "):

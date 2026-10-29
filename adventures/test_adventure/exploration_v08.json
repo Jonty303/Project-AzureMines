@@ -1,0 +1,1157 @@
+{
+  "schema_version": 1,
+  "starting_location": "wagon_clearing",
+  "locations": [
+    {
+      "id": "wagon_clearing",
+      "title": "The Wagon Clearing",
+      "subtitle": "THE OLD TRADE ROAD",
+      "map_pos": [
+        178,
+        304
+      ],
+      "art": "res://assets/story/old_timber_road_campfire.svg",
+      "description": "The broken wagon stands beneath the trees. Its wheels have sunk into the mud, and the campfire has burned low. Scattered crates bear the stamps of Seabrook merchants.",
+      "revisit_text": "The abandoned wagon is familiar now. Its ruined canvas stirs in the breeze. You remember the clues you found here, and the way the raiders moved through the woods.",
+      "choices": [
+        {
+          "id": "search_wagon",
+          "label": "Search the wagon and scattered crates",
+          "type": "check",
+          "ability": "intelligence",
+          "skill": "investigation",
+          "dc": 12,
+          "once": true,
+          "success": {
+            "text": "Among the broken crates you find a partial freight manifest, with a shipment missing from the tally.",
+            "effects": [
+              {
+                "type": "clue",
+                "id": "partial_freight_manifest",
+                "text": "A partial manifest reveals a missing mineral consignment."
+              },
+              {
+                "type": "flag",
+                "key": "wagon_searched",
+                "value": true
+              }
+            ]
+          },
+          "failure": {
+            "text": "The wagon has been badly disturbed. You cannot establish what was taken.",
+            "effects": [
+              {
+                "type": "event",
+                "id": "wagon_search_failed",
+                "text": "The party searched the wagon but found no reliable manifest."
+              }
+            ]
+          }
+        },
+        {
+          "id": "follow_tracks",
+          "label": "Follow the goblin tracks into the woods",
+          "type": "check",
+          "ability": "wisdom",
+          "skill": "survival",
+          "dc": 12,
+          "once": true,
+          "success": {
+            "text": "The tracks skirt a fallen oak, then descend towards an overgrown ravine path.",
+            "effects": [
+              {
+                "type": "clue",
+                "id": "goblin_trail",
+                "text": "Goblin tracks lead towards an overgrown ravine trail."
+              },
+              {
+                "type": "reveal_route",
+                "id": "overgrown_track"
+              },
+              {
+                "type": "flag",
+                "key": "goblin_trail_known",
+                "value": true
+              }
+            ]
+          },
+          "failure": {
+            "text": "The prints disappear amongst older tracks and wet limestone gravel. Someone in town may know the road better.",
+            "effects": [
+              {
+                "type": "event",
+                "id": "tracking_failed",
+                "text": "The party lost the goblin trail; the hideout remains undiscovered."
+              }
+            ]
+          }
+        },
+        {
+          "id": "follow_known_track",
+          "label": "Take the discovered ravine path",
+          "type": "travel",
+          "target": "overgrown_track",
+          "requires_known": "overgrown_track"
+        },
+        {
+          "id": "to_town_road",
+          "label": "Continue towards Harrowford",
+          "type": "travel",
+          "target": "town_road"
+        }
+      ]
+    },
+    {
+      "id": "town_road",
+      "title": "The Northern Road",
+      "subtitle": "ON THE WAY TO HARROWFORD",
+      "map_pos": [
+        364,
+        276
+      ],
+      "description": "The Old Trade Road cuts through open valleys. Beyond the fields, the high moor rises against grey mountains. Ahead, roofs cluster around an ore weighhouse.",
+      "choices": [
+        {
+          "id": "go_harrowford",
+          "label": "Enter Harrowford and report to the guild",
+          "type": "travel",
+          "target": "harrowford_guild"
+        },
+        {
+          "id": "go_market",
+          "label": "Visit the trading post and market",
+          "type": "travel",
+          "target": "harrowford_market"
+        },
+        {
+          "id": "return_wagon",
+          "label": "Return to the wagon clearing",
+          "type": "travel",
+          "target": "wagon_clearing"
+        }
+      ]
+    },
+    {
+      "id": "harrowford_guild",
+      "title": "Harrowford Adventurers' Guild",
+      "subtitle": "THE MARKET TOWN",
+      "map_pos": [
+        580,
+        190
+      ],
+      "description": "The guild occupies a sturdy stone-fronted hall. An overworked clerk listens carefully to the report of the goblin attack and opens Tavian Marr's contract ledger.",
+      "revisit_text": "The guild's noticeboard is familiar. The clerk has not forgotten your account of the road ambush.",
+      "choices": [
+        {
+          "id": "report_contract",
+          "label": "Report the ambush under Tavian Marr's contract",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "quest",
+              "id": "marr_missing_caravans",
+              "status": "reported"
+            },
+            {
+              "type": "event",
+              "id": "guild_report",
+              "text": "The party reported the ambush to Harrowford's Adventurers' Guild."
+            }
+          ],
+          "result": "The clerk records the surviving details of the ambush. The guild expects a fuller account when the caravan mystery is solved."
+        },
+        {
+          "id": "ask_mines",
+          "label": "Ask why ore deliveries have slowed",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "ore_deliveries_irregular",
+              "text": "The guild confirms ore shipments are sporadic, though the dwarves insist nothing is wrong.",
+              "certainty": "confirmed"
+            }
+          ],
+          "result": "The clerk admits the ore consignments have become unreliable. Mine representatives say their workings are sound, but the weighhouse records suggest otherwise."
+        },
+        {
+          "id": "go_market",
+          "label": "Visit the Stoneweight Trading Post",
+          "type": "travel",
+          "target": "harrowford_market"
+        },
+        {
+          "id": "return_road",
+          "label": "Return to the northern road",
+          "type": "travel",
+          "target": "town_road"
+        }
+      ]
+    },
+    {
+      "id": "harrowford_market",
+      "title": "Stoneweight Trading Post",
+      "subtitle": "HARROWFORD MARKET",
+      "map_pos": [
+        645,
+        308
+      ],
+      "description": "Ore scales stand beside market stalls. A woman with a worn wagoner's coat watches traders argue over missing consignments. She introduces herself as Mara Venn.",
+      "revisit_text": "Mara Venn recognises you among the traders. Empty ore carts still wait beside the scales.",
+      "choices": [
+        {
+          "id": "ask_mara",
+          "label": "Ask Mara about the goblin raids",
+          "type": "effects",
+          "unless_flag": "mara_lead_given",
+          "effects": [
+            {
+              "type": "clue",
+              "id": "mara_ravine_lead",
+              "text": "Mara Venn knows a route to the goblin ravine beyond the wagon clearing."
+            },
+            {
+              "type": "reveal_route",
+              "id": "overgrown_track"
+            },
+            {
+              "type": "flag",
+              "key": "mara_lead_given",
+              "value": true
+            },
+            {
+              "type": "quest",
+              "id": "road_raiders",
+              "status": "offered"
+            },
+            {
+              "type": "npc",
+              "id": "mara_venn",
+              "attitude": "helpful",
+              "trust": 1
+            },
+            {
+              "type": "event",
+              "id": "mara_witness",
+              "text": "Mara Venn offered reliable directions to the raiders' ravine."
+            }
+          ],
+          "result": "Mara has suffered the same raiders. She describes a split rock beside the ravine trail, offers a modest reward for stopping the attacks, and marks your overland map. No further check is needed."
+        },
+        {
+          "id": "accept_raider_task",
+          "label": "Accept Mara's offer to investigate the raiders",
+          "type": "effects",
+          "requires_flag": "mara_lead_given",
+          "unless_flag": "road_raiders_accepted",
+          "effects": [
+            {
+              "type": "flag",
+              "key": "road_raiders_accepted",
+              "value": true
+            },
+            {
+              "type": "quest",
+              "id": "road_raiders",
+              "status": "accepted"
+            },
+            {
+              "type": "event",
+              "id": "raider_quest_accepted",
+              "text": "The party accepted Mara Venn's request to investigate the raiders."
+            }
+          ],
+          "result": "Mara nods. 'Bring an end to the attacks, and we shall make sure you are paid.'"
+        },
+        {
+          "id": "back_guild",
+          "label": "Return to the Adventurers' Guild",
+          "type": "travel",
+          "target": "harrowford_guild"
+        },
+        {
+          "id": "back_road",
+          "label": "Leave town by the northern road",
+          "type": "travel",
+          "target": "town_road"
+        }
+      ]
+    },
+    {
+      "id": "overgrown_track",
+      "title": "The Overgrown Ravine",
+      "subtitle": "OFF THE OLD TRADE ROAD",
+      "map_pos": [
+        310,
+        440
+      ],
+      "description": "A narrow track disappears between wet limestone walls. Bent branches and goblin prints confirm that this is no ordinary animal path. Up the valley, woodland gathers around a pale rock face. The goblins' cave lies somewhere ahead.",
+      "choices": [
+        {
+          "id": "record_hideout_rumour",
+          "label": "Mark the likely hideout approach in your journal",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "suspected_hideout",
+              "text": "The ravine likely leads towards the goblins' hideout.",
+              "certainty": "suspected"
+            },
+            {
+              "type": "event",
+              "id": "ravine_scouted",
+              "text": "The party scouted the overgrown ravine but did not enter a cave."
+            }
+          ],
+          "result": "You sketch the narrow limestone pass and the wooded valley beyond. The way towards the cave mouth is now clear."
+        },
+        {
+          "id": "back_wagon",
+          "label": "Return to the wagon clearing",
+          "type": "travel",
+          "target": "wagon_clearing"
+        },
+        {
+          "id": "to_harrowford",
+          "label": "Travel onward towards Harrowford",
+          "type": "travel",
+          "target": "town_road"
+        },
+        {
+          "id": "approach_goblin_cave",
+          "label": "Follow the ravine to the wooded cave approach",
+          "type": "travel",
+          "target": "cave_approach"
+        }
+      ]
+    },
+    {
+      "id": "cave_approach",
+      "title": "Wooded Valley — Cave Approach",
+      "subtitle": "GOBLIN HIDEOUT • OUTSIDE",
+      "map_pos": [
+        416,
+        527
+      ],
+      "description": "A limestone wall rises above the narrow valley, its pale face streaked with rain. Dark undergrowth hides a cave mouth beneath dangling roots. Branches move overhead although there is little wind. The trees would make an excellent lookout.",
+      "revisit_text": "The limestone wall and cave mouth are familiar. The woodland above still offers excellent cover for anyone on watch.",
+      "choices": [
+        {
+          "id": "watchpost_scout",
+          "label": "Carefully scan the trees for sentries (Perception DC 12)",
+          "type": "check",
+          "ability": "wisdom",
+          "skill": "perception",
+          "dc": 12,
+          "once": true,
+          "success": {
+            "text": "Two small figures crouch in a crude platform among the branches. One keeps a bow close; the other watches the trail. You have spotted the ambushers before they spring their trap.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_spotted",
+                "value": true
+              },
+              {
+                "type": "reveal_route",
+                "id": "watchpost_tree"
+              },
+              {
+                "type": "clue",
+                "id": "watchpost_two_sentries",
+                "text": "Two goblin sentries occupy a hidden tree watchpost overlooking the cave approach."
+              },
+              {
+                "type": "event",
+                "id": "watchpost_detected",
+                "text": "The party spotted two hidden goblin lookouts before entering the cave."
+              }
+            ]
+          },
+          "failure": {
+            "text": "Shadows shift between the branches, but you cannot confirm whether anyone is watching. Moving closer may expose the party.",
+            "effects": [
+              {
+                "type": "event",
+                "id": "watchpost_scan_unsure",
+                "text": "The party searched for lookouts at the cave but could not confirm their position."
+              }
+            ]
+          },
+          "unless_flags": [
+            "watchpost_spotted",
+            "watchpost_crossed",
+            "watchpost_resolved",
+            "watchpost_parley_open"
+          ]
+        },
+        {
+          "id": "watchpost_hail",
+          "label": "Call out peacefully and ask the lookouts to speak",
+          "type": "effects",
+          "once": true,
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_resolved",
+            "watchpost_parley_open"
+          ],
+          "effects": [
+            {
+              "type": "flag",
+              "key": "watchpost_parley_open",
+              "value": true
+            },
+            {
+              "type": "flag",
+              "key": "watchpost_spotted",
+              "value": true
+            },
+            {
+              "type": "reveal_route",
+              "id": "watchpost_tree"
+            },
+            {
+              "type": "event",
+              "id": "watchpost_parley_hail",
+              "text": "The party hailed the hidden sentries and asked permission to enter without fighting."
+            }
+          ],
+          "result": "A branch rattles. Two goblins lean over a concealed wooden platform, bows in hand. 'Stop there! What do you want?' one calls. They have seen you, but they have not sounded the alarm. You can give them an honest reason to hear you out—or try a bluff."
+        },
+        {
+          "type": "check",
+          "ability": "charisma",
+          "once": true,
+          "requires_flag": "watchpost_parley_open",
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_resolved",
+            "watchpost_parley_failed"
+          ],
+          "id": "watchpost_persuade",
+          "label": "Ask for peaceful passage to speak with the goblins (Persuasion DC 13)",
+          "skill": "persuasion",
+          "dc": 13,
+          "advantage_if_flag": "hesk_promised_family",
+          "advantage_if_flag_equals": {
+            "key": "hesk_fate",
+            "value": "released"
+          },
+          "advantage_reason": "Hesk vouched for your promise to protect goblin families",
+          "success": {
+            "text": "The lookouts exchange uneasy glances. 'Keep your weapons down. You can go in and speak, but we're watching you.' They step aside without a battle alarm. The goblins deeper inside have not agreed to anything, and their commander is another matter.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_crossed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_admitted_under_guard",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_entry_method",
+                "value": "peaceful_request"
+              },
+              {
+                "type": "event",
+                "id": "watchpost_peaceful_admission",
+                "text": "The goblin sentries admitted the party cautiously after a peaceful appeal, without raising a battle alarm."
+              }
+            ]
+          },
+          "failure": {
+            "text": "'We don't believe you!' the sentry snaps. A warning call echoes towards the cave. They'll hear no more of this approach, although you can withdraw or confront them.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_parley_failed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_alarm_raised",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_parley_rejected",
+                "text": "The watchpost rejected the party's request for peaceful passage and raised the cave alarm."
+              }
+            ]
+          }
+        },
+        {
+          "type": "check",
+          "ability": "charisma",
+          "once": true,
+          "requires_flag": "watchpost_parley_open",
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_resolved",
+            "watchpost_parley_failed"
+          ],
+          "id": "watchpost_bluff",
+          "label": "Claim the chief is expecting an important message (Deception DC 15)",
+          "skill": "deception",
+          "dc": 15,
+          "success": {
+            "text": "'A message for the chief?' One goblin mutters to the other, then points a spear at the cave. 'Go on, then. No tricks.' They grudgingly let you through. They may challenge your story later.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_crossed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_admitted_under_guard",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_entry_method",
+                "value": "bluff"
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_bluff_unverified",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_bluff_admission",
+                "text": "The party convinced the goblin sentries they carried an important message; the deception remains unverified."
+              }
+            ]
+          },
+          "failure": {
+            "text": "'Then you'll know his name,' the sentry demands. The bluff doesn't hold. The second goblin shouts a warning inside, and the lookouts keep their bows trained on you.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_parley_failed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_alarm_raised",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_bluff_failed",
+                "text": "The goblin lookouts caught the party's bluff and sounded an alarm."
+              }
+            ]
+          }
+        },
+        {
+          "id": "watchpost_outflank",
+          "label": "Circle behind the discovered watchpost (Stealth DC 12)",
+          "type": "check",
+          "ability": "dexterity",
+          "skill": "stealth",
+          "dc": 12,
+          "once": true,
+          "requires_flag": "watchpost_spotted",
+          "success": {
+            "text": "You slip into a concealed position behind the two sentries. The goblins have not noticed you. If you choose to pass their watchpost, this position improves your chances. A direct watchpost battle will be added in the next combat milestone.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_outflanked",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_outflanked",
+                "text": "The party reached concealed positions behind the goblin tree watchpost."
+              }
+            ]
+          },
+          "failure": {
+            "text": "A twig snaps. Both sentries turn and shout towards the cave. The watchpost has raised the alarm, though the party can still retreat or approach the entrance.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_alarm_raised",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_alarmed",
+                "text": "The goblin watchpost detected the party and raised the alarm."
+              }
+            ]
+          },
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_alarm_raised",
+            "watchpost_parley_open",
+            "watchpost_resolved"
+          ]
+        },
+        {
+          "id": "watchpost_sneak",
+          "label": "Slip past the watchpost to the cave mouth (Stealth DC 13)",
+          "type": "check",
+          "ability": "dexterity",
+          "skill": "stealth",
+          "dc": 13,
+          "once": true,
+          "advantage_if_flag": "watchpost_outflanked",
+          "success": {
+            "text": "The party slips between the trunks and reaches the cave mouth without drawing the sentries' notice. The guards remain at their post; they have not been defeated.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_crossed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_bypassed",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_silently_bypassed",
+                "text": "The party bypassed the two goblin lookouts without fighting."
+              }
+            ]
+          },
+          "failure": {
+            "text": "One of the goblins catches a glimpse of movement and cries out. You reach cover by the cave mouth, but a warning echoes inside; the sentries are still at their post.",
+            "effects": [
+              {
+                "type": "flag",
+                "key": "watchpost_crossed",
+                "value": true
+              },
+              {
+                "type": "flag",
+                "key": "watchpost_alarm_raised",
+                "value": true
+              },
+              {
+                "type": "event",
+                "id": "watchpost_sneak_failed",
+                "text": "The party reached the cave entrance but the tree lookouts sounded an alarm."
+              }
+            ]
+          },
+          "unless_flags": [
+            "watchpost_crossed",
+            "watchpost_parley_open",
+            "watchpost_resolved"
+          ]
+        },
+        {
+          "id": "watchpost_open",
+          "label": "Approach the cave mouth openly despite the lookout risk",
+          "type": "effects",
+          "unless_flag": "watchpost_crossed",
+          "once": true,
+          "effects": [
+            {
+              "type": "flag",
+              "key": "watchpost_crossed",
+              "value": true
+            },
+            {
+              "type": "flag",
+              "key": "watchpost_alarm_raised",
+              "value": true
+            },
+            {
+              "type": "event",
+              "id": "watchpost_open_approach",
+              "text": "The party approached the cave openly and the tree sentries warned the occupants."
+            }
+          ],
+          "result": "Two goblins call a warning from the branches as you hurry into cover at the rock face. Their alarm carries into the passage. You have not fought or captured the sentries."
+        },
+        {
+          "id": "watchpost_observe",
+          "label": "Mark the discovered tree watchpost on your local map",
+          "type": "effects",
+          "requires_flag": "watchpost_spotted",
+          "once": true,
+          "effects": [
+            {
+              "type": "event",
+              "id": "watchpost_sketch",
+              "text": "The party recorded the hidden goblin watchpost on a local cave sketch."
+            }
+          ],
+          "result": "You draw the lookout platform high in the trees and mark the two goblin sentries. They remain at their post."
+        },
+        {
+          "id": "enter_cave_mouth",
+          "label": "Go to the cave mouth",
+          "type": "travel",
+          "requires_flag": "watchpost_crossed",
+          "target": "cave_entrance"
+        },
+        {
+          "id": "watchpost_attack",
+          "label": "Attack the two lookouts on the tree platform",
+          "type": "battle",
+          "encounter_id": "cave_watchpost",
+          "requires_any_flags": [
+            "watchpost_spotted",
+            "watchpost_alarm_raised"
+          ],
+          "unless_flags": [
+            "watchpost_resolved",
+            "watchpost_bypassed"
+          ]
+        },
+        {
+          "id": "back_to_ravine",
+          "label": "Withdraw to the ravine",
+          "type": "travel",
+          "target": "overgrown_track"
+        }
+      ],
+      "art": "res://assets/story/cave_wooded_valley.svg"
+    },
+    {
+      "id": "watchpost_tree",
+      "title": "Tree Watchpost",
+      "subtitle": "GOBLIN HIDEOUT • HIDDEN FEATURE",
+      "map_pos": [
+        400,
+        460
+      ],
+      "description": "A rough timber platform hides two goblin sentries among dense branches.",
+      "choices": []
+    },
+    {
+      "id": "cave_entrance",
+      "title": "Cave Entrance",
+      "subtitle": "GOBLIN HIDEOUT • LIMESTONE WALL",
+      "map_pos": [
+        535,
+        524
+      ],
+      "description": "The cave mouth opens beneath hanging roots. Cool, damp air carries the smell of woodsmoke and stone. A long passage disappears into the dark. The woodland behind you offers a way back.",
+      "revisit_text": "The damp cave entrance is familiar. The passage ahead vanishes into the pale limestone.",
+      "choices": [
+        {
+          "id": "cave_listen",
+          "label": "Listen for sounds deeper inside (Perception DC 11)",
+          "type": "check",
+          "ability": "wisdom",
+          "skill": "perception",
+          "dc": 11,
+          "once": true,
+          "success": {
+            "text": "Past distant voices and the drip of water you hear a steady rumble, as though water is falling somewhere underground.",
+            "effects": [
+              {
+                "type": "clue",
+                "id": "cave_water_sound",
+                "text": "A large volume of water can be heard deep in the goblin cave, beyond the entrance."
+              }
+            ]
+          },
+          "failure": {
+            "text": "The cave swallows each sound and returns indistinct echoes.",
+            "effects": [
+              {
+                "type": "event",
+                "id": "cave_listen_uncertain",
+                "text": "The party listened at the cave entrance but could not identify distant noises."
+              }
+            ]
+          }
+        },
+        {
+          "id": "enter_first_passage",
+          "label": "Enter the long limestone corridor",
+          "type": "travel",
+          "target": "cave_threshold"
+        },
+        {
+          "id": "return_to_trees",
+          "label": "Step back outside the cave",
+          "type": "travel",
+          "target": "cave_approach"
+        }
+      ],
+      "art": "res://assets/story/cave_wooded_valley.svg"
+    },
+    {
+      "id": "cave_threshold",
+      "title": "First Passage",
+      "subtitle": "GOBLIN HIDEOUT • UNDERGROUND",
+      "map_pos": [
+        641,
+        521
+      ],
+      "description": "The narrow entrance gives way to a long twisting corridor in pale limestone. The air smells of refuse, smoke and damp fur. Passages branch into shadow on either side; from deeper underground comes the thunder of falling water. The larger rooms are beyond this first bend.",
+      "revisit_text": "The limestone corridor slopes towards the roaring waterfall. Side passages lead to the rubbish tip, guardroom and communal caves.",
+      "choices": [
+        {
+          "id": "deeper_corridor",
+          "label": "Advance to the branching main corridor",
+          "type": "travel",
+          "target": "cave_corridor"
+        },
+        {
+          "id": "exit_to_entrance",
+          "label": "Return to the cave mouth",
+          "type": "travel",
+          "target": "cave_entrance"
+        }
+      ]
+    },
+    {
+      "id": "cave_corridor",
+      "title": "The Main Limestone Passage",
+      "subtitle": "GOBLIN HIDEOUT • PASSAGE",
+      "map_pos": [
+        700,
+        510
+      ],
+      "description": "A long rough passage runs towards the thunder of underground water. Rotting scraps stink from a hole in the left wall. To the right, rough timber fittings mark a guardroom; farther along, an open area smells of cooking. A guarded waterfall lies deeper within the rock, and a narrower bend leads towards the chieftain's private chambers.",
+      "choices": [
+        {
+          "id": "to_rubbish",
+          "label": "Follow the reeking side passage to the rubbish tip",
+          "type": "travel",
+          "target": "cave_rubbish"
+        },
+        {
+          "id": "to_guardroom",
+          "label": "Approach the goblin guardroom",
+          "type": "travel",
+          "target": "cave_guardroom"
+        },
+        {
+          "id": "to_common",
+          "label": "Approach the goblin eating and sleeping chamber",
+          "type": "travel",
+          "target": "cave_common"
+        },
+        {
+          "id": "to_waterfall",
+          "label": "Follow the roar of the underground waterfall",
+          "type": "travel",
+          "target": "cave_waterfall"
+        },
+        {
+          "id": "to_bugbear_outer",
+          "label": "Scout the passage leading towards the commander's chamber",
+          "type": "travel",
+          "target": "cave_bugbear_outer"
+        },
+        {
+          "id": "back_threshold",
+          "label": "Return towards the cave entrance",
+          "type": "travel",
+          "target": "cave_threshold"
+        }
+      ]
+    },
+    {
+      "id": "cave_rubbish",
+      "title": "The Rubbish Tip",
+      "subtitle": "GOBLIN HIDEOUT • REFUSE",
+      "map_pos": [
+        450,
+        320
+      ],
+      "description": "Broken dishes, moldy sacks, food scraps and gnawed bones heap around the room. Most of the refuse has been tipped through a ragged hole in the limestone floor. A squat pale shape stirs among the discarded food: a plated cave scavenger. It seems more interested in eating than in the party.",
+      "choices": [
+        {
+          "id": "midden_notice",
+          "label": "Observe the pale scavenger without approaching",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "midden_scavenger",
+              "text": "A pale plated scavenger feeds amid the rubbish and appears defensive rather than predatory."
+            }
+          ],
+          "result": "The creature paws through damp peels and gnawed bones, keeping its blunt mandibles low. It does not charge."
+        },
+        {
+          "id": "midden_feed",
+          "label": "Throw edible rubbish to distract the scavenger",
+          "type": "effects",
+          "once": true,
+          "unless_flag": "midden_grub_resolved",
+          "effects": [
+            {
+              "type": "flag",
+              "key": "midden_grub_avoided",
+              "value": true
+            },
+            {
+              "type": "event",
+              "id": "midden_grub_fed",
+              "text": "The party distracted the rubbish-tip scavenger with scraps instead of fighting."
+            }
+          ],
+          "result": "The grub drags a lump of discarded food into a corner. It remains alive and uninterested in your search."
+        },
+        {
+          "id": "midden_fight",
+          "label": "Fight the Midden Grub (optional combat)",
+          "type": "battle",
+          "encounter_id": "cave_midden_grub",
+          "unless_flags": [
+            "midden_grub_resolved",
+            "midden_grub_avoided"
+          ]
+        },
+        {
+          "id": "rubbish_hole",
+          "label": "Inspect the hole where goblins throw their rubbish",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "flag",
+              "key": "rubbish_shaft_noticed",
+              "value": true
+            },
+            {
+              "type": "clue",
+              "id": "rubbish_shaft",
+              "text": "The goblins discard most of their rubbish through a hole in the cave floor; its depth and destination are unknown."
+            },
+            {
+              "type": "event",
+              "id": "shaft_inspected",
+              "text": "The party inspected the refuse shaft but did not descend."
+            }
+          ],
+          "result": "The hole opens into darkness. Falling scraps make faint, irregular echoes far below. You mark it on your map, but have no safe descent or knowledge of where it leads."
+        },
+        {
+          "id": "rubbish_back",
+          "label": "Return to the main passage",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ],
+      "art": "res://assets/story/cave_rubbish_shaft.svg"
+    },
+    {
+      "id": "cave_guardroom",
+      "title": "The Guardroom",
+      "subtitle": "GOBLIN HIDEOUT • GUARDED",
+      "map_pos": [
+        560,
+        395
+      ],
+      "description": "A rough timber table, hanging furs and an old iron lantern furnish this small chamber. A goblin guard watches the entrance while a large wolf raises its head and growls. They block the deeper end of the chamber.",
+      "choices": [
+        {
+          "id": "guardroom_battle",
+          "label": "Confront the goblin guard and his wolf",
+          "type": "battle",
+          "encounter_id": "cave_guardroom",
+          "unless_flag": "guardroom_resolved"
+        },
+        {
+          "id": "guardroom_defeat_note",
+          "label": "Search the abandoned guardroom for signs of raiding",
+          "type": "effects",
+          "once": true,
+          "requires_flag": "guardroom_resolved",
+          "effects": [
+            {
+              "type": "clue",
+              "id": "goblin_guardroom_records",
+              "text": "The goblins have been guarding stolen caravan goods in the cave."
+            },
+            {
+              "type": "event",
+              "id": "guardroom_searched",
+              "text": "The party searched the guardroom after its defenders were defeated."
+            }
+          ],
+          "result": "You find stained merchants' wrappings and evidence of a recently raided caravan. No captive is held here."
+        },
+        {
+          "id": "guardroom_leave",
+          "label": "Withdraw into the main passage",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ]
+    },
+    {
+      "id": "cave_common",
+      "title": "The Goblin Common Cave",
+      "subtitle": "GOBLIN HIDEOUT • COOKING AND SLEEPING",
+      "map_pos": [
+        648,
+        278
+      ],
+      "description": "Six goblins share this smoky chamber, where cooking pots and thin bedding compete for space. One older goblin sits apart, listening to the others complain in low voices. They look wary rather than eager to fight. Their former place in the tribe is not obvious from appearance alone.",
+      "choices": [
+        {
+          "id": "chief_open_talk",
+          "label": "Ask to speak with the older goblin",
+          "type": "effects",
+          "once": true,
+          "unless_flag": "chief_spoken",
+          "effects": [
+            {
+              "type": "flag",
+              "key": "chief_spoken",
+              "value": true
+            },
+            {
+              "type": "event",
+              "id": "chief_conversation",
+              "text": "The party spoke to an older goblin in the communal cave."
+            }
+          ],
+          "result": "'I led us once,' the goblin mutters. 'Now the big brute takes the food and sends our children hungry. Don't draw your blades in here.'"
+        },
+        {
+          "id": "chief_about_bugbear",
+          "label": "Ask why the former chief lost his authority",
+          "type": "effects",
+          "once": true,
+          "requires_flag": "chief_spoken",
+          "effects": [
+            {
+              "type": "clue",
+              "id": "former_chief_bugbear",
+              "text": "The goblins' former chief says an outsider seized command and mistreats the tribe."
+            },
+            {
+              "type": "event",
+              "id": "former_chief_account",
+              "text": "The former chief described the outsider's harsh rule."
+            }
+          ],
+          "result": "'He came with orders and enough muscle to make us obey. Most of us would see him gone. But not if our families pay for it.'"
+        },
+        {
+          "id": "chief_discuss_help",
+          "label": "Suggest helping the goblins remove the overlord",
+          "type": "effects",
+          "once": true,
+          "requires_flag": "chief_spoken",
+          "effects": [
+            {
+              "type": "flag",
+              "key": "chief_uprising_discussed",
+              "value": true
+            },
+            {
+              "type": "event",
+              "id": "chief_uprising_proposal",
+              "text": "The party proposed helping the former chief resist the overlord."
+            }
+          ],
+          "result": "The old chief looks to the sleeping children and wounded. 'If we can do it without bringing down his guards on our homes, there may be a way. Find a way to weaken him first.' This is a possible future alliance, not yet a completed uprising."
+        },
+        {
+          "id": "common_return",
+          "label": "Leave the goblins in peace and return to the corridor",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ]
+    },
+    {
+      "id": "cave_waterfall",
+      "title": "The Underground Waterfall",
+      "subtitle": "GOBLIN HIDEOUT • LOWER CHAMBER",
+      "map_pos": [
+        757,
+        243
+      ],
+      "description": "White water drops from an unseen ledge into a black pool, its spray silvering the rough limestone. Three goblin guards maintain a watch close to a dark tunnel on the far side. The path beyond them appears to lead towards the commander's private chamber.",
+      "choices": [
+        {
+          "id": "waterfall_guards",
+          "label": "Observe the guards and the tunnel from cover",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "waterfall_private_tunnel",
+              "text": "Three goblins defend the underground waterfall; a separate tunnel links it to the commander's side of the cave."
+            },
+            {
+              "type": "flag",
+              "key": "waterfall_tunnel_noted",
+              "value": true
+            }
+          ],
+          "result": "The three sentries watch the ledges and their tunnel carefully. There is another route towards the overlord, but the tunnel is not safely passable until its guards are dealt with in a later encounter."
+        },
+        {
+          "id": "waterfall_return",
+          "label": "Return to the main corridor",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ],
+      "art": "res://assets/story/cave_underground_waterfall.svg"
+    },
+    {
+      "id": "cave_bugbear_outer",
+      "title": "Outside the Commander's Chamber",
+      "subtitle": "GOBLIN HIDEOUT • PRIVATE PASSAGE",
+      "map_pos": [
+        768,
+        370
+      ],
+      "description": "From behind a jagged stone outcrop you glimpse a broad-shouldered bugbear occupying the private cave. Two goblin guards stand near him and another large wolf sprawls in the torchlight. A weakened, chained human mage sits in one corner. The bugbear gives sharp, contemptuous orders to his goblins, and the guards watch the approach closely.",
+      "choices": [
+        {
+          "id": "bugbear_observe",
+          "label": "Study the chamber and its prisoner without revealing yourself",
+          "type": "effects",
+          "once": true,
+          "effects": [
+            {
+              "type": "clue",
+              "id": "mage_held_by_bugbear",
+              "text": "A malnourished mage remains chained in the chamber of the bugbear who rules the goblins."
+            },
+            {
+              "type": "clue",
+              "id": "bugbear_guard_count",
+              "text": "The bugbear has two goblin guards and a second wolf with him."
+            },
+            {
+              "type": "event",
+              "id": "boss_chamber_scouted",
+              "text": "The party scouted the occupied bugbear chamber but did not enter it."
+            }
+          ],
+          "result": "The mage is alive but weak. The bugbear has two guards and a wolf at his side. Charging in unsupported would be dangerous; this chamber will become a tactical encounter in the next milestone."
+        },
+        {
+          "id": "bugbear_back",
+          "label": "Withdraw quietly to the main corridor",
+          "type": "travel",
+          "target": "cave_corridor"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "grid_size": [
+    12,
+    10
+  ],
+  "party_positions": {
+    "alden": [
+      2,
+      3
+    ],
+    "elyra": [
+      1,
+      5
+    ],
+    "brunna": [
+      2,
+      6
+    ],
+    "pip": [
+      1,
+      7
+    ]
+  },
+  "deployment_zone": {
+    "min": [
+      0,
+      3
+    ],
+    "max": [
+      3,
+      8
+    ]
+  },
+  "hazards": [],
+  "backdrop": {
+    "kind": "cave",
+    "rows": 0
+  },
+  "id": "cave_watchpost",
+  "name": "Tree Watchpost — Two Lookouts",
+  "intro": "Two goblins keep watch from the trees. Resolve their ambush at the limestone cave.",
+  "rewards": {
+    "xp_total": 100,
+    "gold_gp": 0
+  },
+  "enemies": [
+    {
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "id": "watch_scout",
+      "name": "Goblin Lookout",
+      "max_hp": 7,
+      "armor_class": 15,
+      "position": [
+        9,
+        2
+      ],
+      "role": "ranged",
+      "attacks": [
+        {
+          "id": "shortbow",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ]
+    },
+    {
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "id": "watch_signal",
+      "name": "Goblin Sentry",
+      "max_hp": 7,
+      "armor_class": 15,
+      "position": [
+        10,
+        6
+      ],
+      "role": "melee",
+      "attacks": [
+        {
+          "id": "knife",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ]
+    }
+  ],
+  "obstacles": [
+    {
+      "id": "fallen_trunk",
+      "kind": "boulder",
+      "position": [
+        5,
+        3
+      ],
+      "size": [
+        2,
+        1
+      ],
+      "blocks_movement": true,
+      "blocks_sight": true,
+      "cover": "total"
+    }
+  ],
+  "walls": [],
+  "difficult_terrain": [
+    [
+      4,
+      6
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      6,
+      6
+    ]
+  ]
+}

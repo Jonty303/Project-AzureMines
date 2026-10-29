@@ -1,0 +1,239 @@
+{
+  "schema_version": 1,
+  "status": "author_defined_geography_with_provisional_local_names",
+  "region": {
+    "id": "the_dales",
+    "name": "The Dales",
+    "description": "A recently settled, sparsely governed frontier of fertile valleys, lowland woods, high moorland, rugged hills and mountains, with exceptionally rich mineral seams and limestone caves.",
+    "settlement_history": "The current era of settled towns and intercommunity agreements spans only a few centuries; the older histories of individual peoples and underground places are not yet authored.",
+    "terrain": [
+      "fertile_valleys",
+      "lowland_woodland",
+      "high_moorland",
+      "hills",
+      "mountains",
+      "limestone_karst",
+      "caves",
+      "underground_passages",
+      "waterfalls"
+    ],
+    "economy": {
+      "primary_exports": [
+        "iron_and_other_ore",
+        "precious_metals",
+        "gems"
+      ],
+      "primary_producers": [
+        "dwarven_mines"
+      ],
+      "secondary_industries": [
+        "construction_timber",
+        "valley_farming",
+        "crafts_and_transport"
+      ],
+      "material_tension": "Farmers and timbercraft need cleared ground and building wood; local woodland elves guard the forest closely, particularly against excessive felling.",
+      "resource_character": "Great natural wealth, especially underground, despite sparse settlements and dangerous transport.",
+      "public_trends": [
+        {
+          "id": "ore_deliveries_irregular",
+          "claim": "Mine consignments have become sporadic and unpredictable.",
+          "status": "reported_fact",
+          "source": "traders_and_freight_records"
+        },
+        {
+          "id": "dwarven_reassurances",
+          "claim": "Dwarven representatives publicly insist their mines have no problem.",
+          "status": "reported_statement",
+          "source": "mine_representatives"
+        },
+        {
+          "id": "cause_of_shortage_unknown",
+          "claim": "The cause of the inconsistent supply has not been established by outsiders.",
+          "status": "unresolved",
+          "source": "market_rumours"
+        }
+      ],
+      "impact": "Missed ore shipments strain caravans, smiths, markets, toll income and supplies, magnifying already uneasy relationships between mining holds, woodland communities and settlers."
+    },
+    "inhabitants": {
+      "communities": [
+        "dwarven_mining_holds",
+        "local_elven_woodland_communities",
+        "newer_human_and_other_settlements"
+      ],
+      "relationships": "An uneasy, negotiated balance of trust and truce among communities; local interests differ and should not be reduced to one attitude per ancestry."
+    },
+    "wilderness": "Away from settlements the Dales remain generally wild, with caves, caverns, falls, woods and remote moorland providing many possible exploration sites.",
+    "map_constraints": {
+      "seabrook": "west_of_the_dales",
+      "harrowford": "northern_edge_of_the_dales",
+      "trade_route_id": "old_trade_road",
+      "orientation": "Place Seabrook west of the Dales on overland maps, with Harrowford at the northern margin; exact coordinates are left to the setting author."
+    }
+  },
+  "settlements": [
+    {
+      "id": "seabrook",
+      "name": "Seabrook",
+      "kind": "small_coastal_city",
+      "position": "Western coastal gateway to the Dales",
+      "notes": "A mixed-ancestry western port built on coastal trade in ore, precious metals and gems from the dwarven mines. Its commerce and dockside crime outgrew the city’s rudimentary stone watchtowers and ruined keep.",
+      "important_sites": [
+        {
+          "id": "seabrook_docks",
+          "name": "Seabrook Docks",
+          "role": "caravans_and_coastal_trade"
+        },
+        {
+          "id": "old_rookhold",
+          "name": "Old Rookhold",
+          "role": "ruined_keep",
+          "condition": "derelict",
+          "monsters": "rumoured_not_confirmed",
+          "description": "The old keep on a headland has fallen into serious disrepair. Collapsed roofs, broken walls and flooded vaults make it unsuitable for defence. Residents whisper of something nesting below, but no one has verified what lives there."
+        },
+        {
+          "id": "watchtowers",
+          "name": "Harbour Watchtowers",
+          "role": "fragmentary_defences",
+          "condition": "poorly_manned"
+        }
+      ],
+      "map_region": "west",
+      "trade": [
+        "ore",
+        "precious_metals",
+        "gems",
+        "coastal_shipping",
+        "caravan_supplies"
+      ]
+    },
+    {
+      "id": "harrowford",
+      "name": "Harrowford",
+      "kind": "northern_dales_market_town",
+      "position": "Northern edge of the Dales",
+      "notes": "A northern market town at the meeting of valley farms and ore roads, with twice-weekly markets built around mining trade and supplies; the journey from western Seabrook follows the Old Trade Road.",
+      "important_sites": [
+        {
+          "id": "guildhall",
+          "name": "Harrowford Adventurers' Guild",
+          "role": "commission_reporting",
+          "notes": "The party must report here as a contractual requirement."
+        },
+        {
+          "id": "golden_stag_inn",
+          "name": "The Golden Stag",
+          "role": "inn_rest_and_rumours"
+        },
+        {
+          "id": "wrens_store",
+          "name": "Wren's Sundries",
+          "role": "general_store"
+        },
+        {
+          "id": "bramwell_farm",
+          "name": "Bramwell Farm",
+          "role": "farm",
+          "notes": "One of two rival farming families."
+        },
+        {
+          "id": "kestrel_farm",
+          "name": "Kestrel Farm",
+          "role": "farm",
+          "notes": "The Bramwells' rivals in land and livestock."
+        },
+        {
+          "id": "red_anvil",
+          "name": "The Red Anvil",
+          "role": "blacksmith"
+        },
+        {
+          "id": "carpenters_yard",
+          "name": "Hollis's Yard",
+          "role": "carpentry_and_town_upgrades",
+          "notes": "Possible woodworks contracts, repairs and town investments as a future gold sink."
+        },
+        {
+          "id": "lethiel_shrine",
+          "name": "The Shrine of Lethiel",
+          "role": "life_shrine",
+          "deity": "Lethiel",
+          "notes": "Small local sanctuary dedicated to the goddess of life; healing and refuge may be offered at a cost."
+        },
+        {
+          "id": "vale_manor",
+          "name": "Vale Manor",
+          "role": "local_lords_residence",
+          "lord": "Lord Osric Vale",
+          "notes": "Modest occupied manor house. The lord is self-serving and may be exploiting miners and farmers."
+        },
+        {
+          "id": "ore_weighhouse",
+          "name": "The Stoneweight Trading Post",
+          "role": "ore_and_market_trade",
+          "market_days_per_week": 2,
+          "notes": "Ore brought from surrounding mines is weighed and sold. Twice-weekly markets draw farmers, miners and craftspeople."
+        }
+      ],
+      "map_region": "north"
+    }
+  ],
+  "people": [
+    {
+      "id": "tavian_marr",
+      "name": "Tavian Marr",
+      "home": "seabrook",
+      "role": "merchant_patron",
+      "quest": "marr_missing_caravans",
+      "notes": "A merchant whose ore, gem and precious-metal convoys travel the Old Trade Road. Hires adventurers because guarded caravans are disappearing entirely; the party must report at Harrowford's Adventurers' Guild."
+    },
+    {
+      "id": "mara_venn",
+      "name": "Mara Venn",
+      "home": "harrowford",
+      "role": "wagoner_witness",
+      "notes": "Has previously suffered raids; can disclose the goblin trail without a mandatory roll if tracking fails."
+    },
+    {
+      "id": "osric_vale",
+      "name": "Lord Osric Vale",
+      "home": "harrowford",
+      "role": "local_lord",
+      "notes": "Self-interested and politically compromised, but his actual crimes should be discovered in play."
+    },
+    {
+      "id": "hesk_roadwatch",
+      "name": "Hesk, Roadwatch",
+      "role": "named_goblin_survivor",
+      "notes": "Can become an informant, ally or antagonist depending on survival and treatment. Not linked to the ruined coastal keep."
+    }
+  ],
+  "routes": [
+    {
+      "id": "old_trade_road",
+      "name": "Old Trade Road",
+      "origin": "seabrook",
+      "destination": "harrowford",
+      "purpose": "Transport ore, precious metals and gems from Dales dwarven mines toward western coastal trade and carry supplies back inland.",
+      "conditions": "Wild and imperfectly patrolled; bandits, goblins and other creatures attack passing caravans.",
+      "escorts": {
+        "typical": [
+          "minor_mage",
+          "inexpensive_hired_swordsman"
+        ],
+        "prosperous": [
+          "additional_hired_guards",
+          "priest_when_affordable"
+        ],
+        "notes": "The escorts are a believable deterrent, not a guarantee against a determined attack."
+      },
+      "anomaly": "Caravan attacks are known, but complete disappearance of wagons, drivers and escorts with no survivors reaching settled areas is rare and alarming.",
+      "connected_questions": [
+        "why_ore_supply_is_irregular",
+        "why_guarded_caravans_vanish",
+        "whether_disappearances_and_mining_delays_share_a_cause"
+      ]
+    }
+  ]
+}

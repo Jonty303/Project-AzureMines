@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<path d="M9 22 L49 14 L57 20 L57 45 L16 54 L7 47 Z" fill="#171b21" />
+<path d="M9 19 L49 12 L57 20 L16 29 Z" fill="#80502b" />
+<path d="M16 29 L57 20 L57 43 L16 54 Z" fill="#5a341f" />
+<path d="M9 19 L16 29 L16 54 L9 47 Z" fill="#412a22" />
+<path d="M12 23L53 15" stroke="#6e4124" stroke-width="1" fill="none"/>
+<path d="M12 29L53 21" stroke="#6e4124" stroke-width="1" fill="none"/>
+<path d="M12 35L53 27" stroke="#6e4124" stroke-width="1" fill="none"/>
+<path d="M12 41L53 33" stroke="#6e4124" stroke-width="1" fill="none"/>
+<path d="M19 27 L24 26 L24 51 L19 52 Z" fill="#6b7475" />
+<path d="M45 21 L50 19 L50 43 L45 45 Z" fill="#6b7475" />
+<path d="M12 18 L15 17 L21 26 L18 29 Z" fill="#a4a2a0" />
+<path d="M42 13 L46 13 L52 20 L48 21 Z" fill="#a4a2a0" />
+<rect x="31" y="28" width="9" height="10" fill="#c59c50" />
+<rect x="34" y="30" width="3" height="5" fill="#34322c" />
+<path d="M19 40L50 33" stroke="#2c211a" stroke-width="1" fill="none"/>
+</svg>

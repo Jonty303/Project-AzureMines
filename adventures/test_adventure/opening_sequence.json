@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "id": "old_trade_road_opening",
+  "title": "The Old Trade Road",
+  "encounter_id": "training_battle",
+  "screens": {
+    "approach": {
+      "eyebrow": "CHAPTER I • THE OLD TRADE ROAD",
+      "title": "The Watchfire",
+      "paragraphs": [
+        "West of the Dales, the harbour city of Seabrook grows rich on dwarven ore, precious metals and gemstones. Lately the mines have sent irregular loads, though their representatives insist the workings are sound. Tavian Marr, a merchant on the Old Trade Road, has commissioned Alden, Elyra, Brunna and Pip to discover why his caravans have stopped reaching the coast.",
+        "The roads have always been dangerous. A cheap swordsman and a hedge-mage are usual protection; prosperous merchants may hire a priest besides. Bandits and goblins take their chances, yet a driver or guard ordinarily escapes to tell the tale. Lately entire caravans have disappeared, with no wagons, no cargo, and no survivors returning to report what happened.",
+        "The contract requires a report to the Adventurers' Guild at Harrowford, a small market town on the northern edge of the Dales. Beyond the settled valleys lie wild woods, high moors and limestone hills riddled with old passages.",
+        "Tonight the four companions rest in shadow around a small fire beneath dark pines. At dawn they find a covered wagon abandoned on the road. A second campfire is still warm, goblin tracks mark the mud, and somewhere through the trees a bowstring creaks."
+      ],
+      "button": "Continue — Prepare for Ambush",
+      "art": "res://assets/story/old_timber_road_campfire.svg"
+    },
+    "victory": {
+      "eyebrow": "AFTER THE AMBUSH",
+      "title": "The Road Falls Silent",
+      "paragraphs": [
+        "The fighting ceases. The goblins lie dead or incapacitated, and the clearing grows quiet except for the crackle of the abandoned fire.",
+        "Beneath an overturned chest the party recovers a little coin. There is no worthwhile equipment to carry away.",
+        "Whoever attacked this wagon left tracks towards the woods. The trail may lead towards the missing caravans, but the contract also requires a report to the Adventurers' Guild at Harrowford. You can search the wagon and follow the tracks now, or leave for Harrowford and return later."
+      ],
+      "button": "Continue to Wagon Clearing",
+      "art": "res://assets/story/old_timber_road_campfire.svg"
+    },
+    "defeat": {
+      "eyebrow": "THE AMBUSH",
+      "title": "The Road Takes Its Toll",
+      "paragraphs": [
+        "The goblins reclaim the clearing. The journey towards the Azure Mines ends at this broken wagon.",
+        "The party may try the approach again with a different deployment."
+      ],
+      "button": "Try Again",
+      "art": "res://assets/story/old_timber_road_campfire.svg"
+    },
+    "aftermath": {
+      "eyebrow": "CHAPTER I • CONTINUED",
+      "title": "The Road Beyond",
+      "paragraphs": [
+        "The Old Trade Road winds on towards Harrowford and the mines beyond. For all the wealth carried over its worn stones, the settlements still feel small amid the hills and woodland.",
+        "You can return to the wagon clearing, investigate the raiders' trail, or continue towards Harrowford. The choice is yours."
+      ],
+      "button": "Continue to Wagon Clearing",
+      "art": "res://assets/story/old_timber_road_campfire.svg"
+    }
+  },
+  "rewards": {
+    "xp_total": 200,
+    "gold_gp": 12,
+    "consumables": [],
+    "named_items": []
+  },
+  "commission": {
+    "id": "marr_missing_caravans",
+    "patron_id": "tavian_marr",
+    "patron_name": "Tavian Marr",
+    "origin_id": "seabrook",
+    "destination_id": "harrowford",
+    "required_report": "harrowford_adventurers_guild",
+    "purpose": "Investigate unusually complete disappearances of escorted caravans carrying dwarven ore, precious metals and gems between the Dales and western Seabrook",
+    "route_id": "old_trade_road",
+    "primary_trade": [
+      "ore",
+      "precious_metals",
+      "gems"
+    ],
+    "contract_objective": "Report to the Adventurers' Guild in Harrowford and investigate losses along the Old Trade Road",
+    "public_clues": [
+      "ore_shipments_have_become_irregular",
+      "mine_representatives_deny_trouble",
+      "guarded_caravans_disappear_without_survivors"
+    ]
+  }
+}

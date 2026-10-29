@@ -48,3 +48,35 @@ jobs:
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_level1_features.gd
       - name: 64px combat sprite validation
         run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_sprite_assets.gd
+      - name: Downed assets and action bar regression test
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_action_bar_and_downed.gd
+      - name: Original audio and contextual action-bar regression
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_audio_and_contextual_ui.gd
+      - name: Opportunity Attacks and Disengage integration
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_reactions_and_disengage.gd
+      - name: Shield reaction and Bless concentration
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_shield_and_bless.gd
+      - name: Four-goblin campsite, hazards and cover
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_wagon_camp.gd
+      - name: Party setup, formations and manual deployment
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_party_deployment.gd
+      - name: Opening narrative and once-only XP/gold rewards
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_opening_adventure.gd
+      - name: Named goblin death saves and nonlethal survival
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_named_survivors.gd
+      - name: Named survivor narrative aftermath and treatment
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_named_survivor_ui.gd
+      - name: Dales settlements and illustrated opening contract
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_setting_and_story_art.gd
+      - name: Campaign state, narrative exploration and save reload
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_campaign_exploration.gd
+      - name: Developer battle skip preserves named Hesk alive
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_debug_skip_battle.gd
+      - name: Hesk narrative kill, capture and leave fate persistence
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_hesk_narrative_fates.gd
+      - name: v0.9 cave approach watchpost and local map regression
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_cave_approach_v09.gd
+      - name: v0.9.1 three cave tactical fights and full environment
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_cave_multibattle_v091.gd
+      - name: Goblin watchpost parley, Hesk reputation and noncombat entry
+        run: ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script res://tests/test_watchpost_parley.gd
