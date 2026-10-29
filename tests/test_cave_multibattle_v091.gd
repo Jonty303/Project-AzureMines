@@ -41,6 +41,29 @@ func _winning_combat(ui: Node, enemy_ids: Array[String], xp_total: int) -> bool:
 
 
 func _run() -> void:
+    # Each enemy must use its authored attack rather than a hard-coded goblin knife.
+    for config in [
+        {"path": "res://adventures/test_adventure/encounters/guardroom_goblin_wolf.json", "actor": "guard_wolf", "weapon": "bite"},
+        {"path": "res://adventures/test_adventure/encounters/rubbish_midden_grub.json", "actor": "midden_grub", "weapon": "mandibles"}
+    ]:
+        var ai = CombatEngine.new()
+        if not ai.start(1200, false, str(config["path"])):
+            _fail("Could not start authored enemy AI test")
+            return
+        if ai._ai_weapon_id(ai.actors[str(config["actor"])], 1) != str(config["weapon"]):
+            _fail("Enemy AI did not select authored attack: " + str(config["weapon"]))
+            return
+        var creature: Dictionary = ai.actors[str(config["actor"])]
+        creature["position"] = Vector2i(3, 3)
+        ai.actors[str(config["actor"])] = creature
+        ai.turn_index = ai.turn_order.find(str(config["actor"]))
+        ai._begin_turn()
+        ai.take_ai_turn()
+        if not ai.events.any(func(evt: Dictionary) -> bool:
+                return str(evt.get("text", "")).contains("uses " + str(config["weapon"]))):
+            _fail("Enemy did not actually attack using " + str(config["weapon"]))
+            return
+
     var ui: Node = CombatScene.instantiate()
     root.add_child(ui)
     await process_frame
