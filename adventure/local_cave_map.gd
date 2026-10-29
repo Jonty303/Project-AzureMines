@@ -69,6 +69,10 @@ func _draw() -> void:
     var notes: PackedStringArray = []
     if campaign.flags.get("watchpost_spotted", false):
         notes.append("Lookout: two goblin sentries")
+    if campaign.flags.get("watchpost_admitted_under_guard", false):
+        notes.append("Watchpost: cautious entry granted; not allies")
+    elif campaign.flags.get("watchpost_parley_failed", false):
+        notes.append("Watchpost: negotiation failed")
     if campaign.flags.get("watchpost_alarm_raised", false):
         notes.append("ALARM: tree watchpost raised a warning")
     elif str(campaign.flags.get("goblin_lair_readiness", "")) == "alerted":
