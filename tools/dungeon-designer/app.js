@@ -1,6 +1,6 @@
 'use strict';
 const M = DungeonModel, $ = id => document.getElementById(id), grid = $('grid'), form = $('details');
-const size = 28, colours = ['#386778','#596b45','#73596e','#6a6248','#465e86','#3a7365'];
+const size = 28;
 const badges = {entrance:'E',exit:'X',stairs:'S',passage:'P',npc:'N',encounter:'!',secret:'?',conversation:'C'};
 let doc = M.empty(), saved = M.serialize(doc), selection = {type:'map'}, pending = false;
 let undo = [], redo = [], cursor = {x:0,y:0}, stroke = null, roomStart = null, reference = null;
@@ -95,10 +95,10 @@ function draw() {
   const zoom=Number($('zoom').value);grid.style.width=`${doc.width*size*zoom}px`;grid.style.height=`${doc.height*size*zoom}px`;
   const cells=new Map(doc.cells.map(c=>[`${c.x},${c.y}`,c]));
   for (let y=0;y<doc.height;y++) for (let x=0;x<doc.width;x++) {
-    const c=cells.get(`${x},${y}`),index=c ? doc.areas.findIndex(a=>a.id===c.area_id) : -1;
+    const c=cells.get(`${x},${y}`);
     const attrs={x:x*size,y:y*size,width:size,height:size,class:`cell ${c?.tile || 'void'}`,'data-x':x,'data-y':y};
-    if (c?.tile==='floor') attrs.fill=index>=0 ? colours[index%colours.length] : '#455863';
     grid.append(svg('rect',attrs));
+    if (c?.tile==='secret_door') grid.append(svg('text',{x:x*size+14,y:y*size+19,class:'secret-door-symbol'},'S'));
     if (c?.tile==='door') grid.append(svg('path',{d:`M ${x*size+6} ${y*size+14} H ${x*size+22}`,class:'door-bar'}));
   }
   // One short label per area, anchored to a real assigned cell.
@@ -112,7 +112,7 @@ function draw() {
   for (const m of doc.markers) {
     const k=`${m.x},${m.y}`;if (drawn.has(k)) continue;drawn.add(k);
     const group=svg('g');group.append(svg('title',{},doc.markers.filter(i=>i.x===m.x&&i.y===m.y).map(i=>i.name).join(', ')));
-    group.append(svg('circle',{cx:m.x*size+14,cy:m.y*size+14,r:10,class:'badge'}));
+    group.append(svg('circle',{cx:m.x*size+14,cy:m.y*size+14,r:10,class:`badge ${m.type}`}));
     group.append(svg('text',{x:m.x*size+14,y:m.y*size+19,class:'badge-text'},counts.get(k)>1 ? String(counts.get(k)) : badges[m.type]));grid.append(group);
   }
   if (stroke) for (const p of stroke.tool==='room' ? M.rectangle(stroke.start,stroke.last) : stroke.points.values())
@@ -148,6 +148,8 @@ function help() {
   const tool=$('tool').value;
   const hints={select:'Click a cell to inspect its area or marker. Use the lists to select stacked markers.',room:'Drag from one corner to the opposite corner. Keyboard: Enter at each corner.',
     floor:'Drag to paint floor cells. Choose a paint area to group them into a named room.',corridor:'Drag to draw a connected, one-cell-wide passage.',door:'Click or drag to place walkable door cells. Door states and locks are author notes only.',
+    wall:'Drag to place solid wall blocks. Markers on replaced cells are removed; Undo restores them.',
+    secret_door:'Drag to place secret doors (purple S). Connectivity assumes they can be discovered and opened; no discovery simulation is included.',
     assign:'Drag over existing floor to assign the chosen area; choose Unassigned to clear it.',erase:'Drag to remove cells and any markers on them. Undo restores the whole stroke.',marker:'Click a floor cell to place the chosen marker type, then edit its details.'};
   $('tool-help').textContent=hints[tool]+' Arrow keys move the grid cursor; Enter uses the tool. Escape cancels drawing.';
 }
@@ -197,7 +199,7 @@ grid.onpointerup=event=>{
     const points=current.tool==='room'?M.rectangle(current.start,current.last):[...current.points.values()];
     const next=M.paint(doc,points,current.tool==='room'?'floor':current.tool,current.area);
     const removed=doc.markers.length-next.markers.length;
-    commit(next,removed?`Erased ${removed} marker(s) with the floor. Undo restores them.`:'Drawing applied.');
+    commit(next,removed?`Removed ${removed} marker(s) from erased or blocked cells. Undo restores them.`:'Drawing applied.');
   });draw();
 };
 grid.onpointercancel=()=>{stroke=null;draw();};
@@ -206,6 +208,9 @@ grid.onkeydown=event=>{
   if(moves[event.key]){event.preventDefault();const [x,y]=moves[event.key];cursor={x:Math.max(0,Math.min(doc.width-1,cursor.x+x)),y:Math.max(0,Math.min(doc.height-1,cursor.y+y))};draw();}
   if(event.key==='Enter'||event.key===' '){event.preventDefault();useCell(cursor);}
   if(event.key==='Escape'){stroke=null;roomStart=null;draw();say('Drawing cancelled.');}
+};
+for (const type of ['entrance','exit']) $('place-'+type).onclick=()=>{
+  if(!guard())return;stroke=null;roomStart=null;$('tool').value='marker';$('marker-type').value=type;help();draw();say(`Click a walkable cell to place the dungeon ${type}.`);
 };
 $('tool').onchange=()=>{stroke=null;roomStart=null;help();draw();};$('zoom').onchange=draw;
 $('map-details').onclick=()=>select('map');

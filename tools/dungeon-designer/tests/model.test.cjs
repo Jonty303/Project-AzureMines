@@ -5,6 +5,23 @@ const path=require('node:path');
 const M=require('../model.js'), samples=require('../samples.js');
 const mark=(overrides={})=>({id:'test_marker',name:'Test',type:'secret',x:2,y:6,description:'',author_notes:'',reference:'',target_document:'',target_location:'',...overrides});
 
+test('v1 files upgrade without losing authored content',()=>{
+  const old={...M.empty(),schema_version:1};
+  assert.deepEqual(M.parse(JSON.stringify(old)),{...old,schema_version:2});
+});
+test('walls block connectivity and markers; secret doors connect',()=>{
+  let doc=M.paint(M.empty(),M.line({x:1,y:1},{x:3,y:1}),'floor');
+  doc=M.paint(doc,[{x:2,y:1}],'wall');
+  assert.ok(M.validate(doc).warnings.some(w=>w.includes('2 disconnected')));
+  assert.throws(()=>M.marker(doc,mark({x:2,y:1})));
+  doc=M.paint(doc,[{x:2,y:1}],'secret_door');
+  assert.ok(!M.validate(doc).warnings.some(w=>w.includes('disconnected')));
+  doc=M.marker(doc,mark({x:2,y:1}));
+  const blocked=M.paint(doc,[{x:2,y:1}],'wall');assert.equal(blocked.markers.length,0);
+  assert.equal(doc.markers.length,1);
+  assert.deepEqual(M.parse(M.serialize(blocked)),blocked);
+});
+
 test('practice sample validates, round-trips and has no warnings',()=>{
   const doc=samples.practice();assert.deepEqual(M.validate(doc),{errors:[],warnings:[]});
   assert.deepEqual(M.parse(M.serialize(doc)),doc);
@@ -43,7 +60,7 @@ test('erase removes markers; assign preserves tile types',()=>{
 });
 test('reject malformed imports, unsupported versions, extra fields and bad types',()=>{
   for(const value of ['{','null','[]','{}'])assert.throws(()=>M.parse(value));
-  for(const mutate of [d=>d.schema_version=2,d=>d.document_type='region',d=>d.width=7,d=>d.height=65,
+  for(const mutate of [d=>d.schema_version=99,d=>d.document_type='region',d=>d.width=7,d=>d.height=65,
     d=>d.cells[0].x=.5,d=>d.cells[0].tile='lava',d=>d.areas[0].id='../bad',d=>d.extra=true,d=>d.name='  ',d=>delete d.cells]) {
     const doc=samples.practice();mutate(doc);assert.ok(M.validate(doc).errors.length);assert.throws(()=>M.parse(JSON.stringify(doc)));
   }

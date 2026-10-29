@@ -27,13 +27,19 @@ test('offline drawing, details, linking, undo and JSON round trip',async()=>{
     await page.locator('#redo').click();assert.equal(await page.locator('.cell.floor').count(),16);
     await page.locator('#paint-area').selectOption('');await page.locator('#tool').selectOption('corridor');await drag([5,4],[10,4]);
     await page.locator('#tool').selectOption('door');await clickCell(8,4);assert.equal(await page.locator('.cell.door').count(),1);
-    await page.locator('#tool').selectOption('marker');await page.locator('#marker-type').selectOption('exit');await clickCell(3,3);
+    await page.locator('#tool').selectOption('wall');await clickCell(8,4);assert.equal(await page.locator('.cell.wall').count(),1);
+    await page.locator('#tool').selectOption('secret_door');await clickCell(8,4);assert.equal(await page.locator('.cell.secret_door').count(),1);
+    const floorColour=await page.locator('.cell.floor').first().evaluate(el=>getComputedStyle(el).fill);
+    const corridorColour=await page.locator('.cell.corridor').first().evaluate(el=>getComputedStyle(el).fill);
+    assert.notEqual(floorColour,corridorColour);
+    await page.locator('#place-exit').click();await clickCell(3,3);
     await field('name').fill('Return outside');await field('description').fill('<img src=x onerror=alert(1)>');
     await page.locator('#reference-file').setInputFiles(path.resolve(__dirname,'../../adventure-designer/samples/dales_road.json'));
     await page.waitForFunction(()=>document.querySelector('#reference-status').textContent.includes('dales_road'));
     assert.equal(await field('name').inputValue(),'Return outside'); // reference load retains pending edits
     await page.locator('#reference-location').selectOption('cave_approach');await page.locator('#use-reference').click();await apply();
     const saved=await download(),doc=M.parse(saved);assert.equal(doc.areas[0].id,'test_room');assert.equal(doc.markers[0].target_location,'cave_approach');
+    assert.ok(doc.cells.some(c=>c.tile==='secret_door'));assert.equal(await page.locator('.badge.exit').count(),1);
     assert.equal(doc.markers[0].description,'<img src=x onerror=alert(1)>');
     await page.locator('#tool').selectOption('erase');await clickCell(3,3);assert.equal(await page.locator('#markers button').count(),0);
     await page.locator('#undo').click();assert.equal(await page.locator('#markers button').count(),1);
@@ -74,6 +80,8 @@ test('keyboard room drawing, cancellation and protected replacement',async()=>{
     assert.equal(await page.locator('.cell.floor').count(),4);
     await page.locator('#undo').click();assert.equal(await page.locator('.cell.floor').count(),0);
     await page.locator('#redo').click();assert.equal(await page.locator('.cell.floor').count(),4);
+    await page.locator('#place-entrance').click();await page.locator('#grid').focus();await page.keyboard.press('ArrowLeft');await page.keyboard.press('Enter');
+    assert.equal(await page.locator('.badge.entrance').count(),1);
     await page.locator('#zoom').selectOption('2');
     assert.equal(await page.locator('#grid').evaluate(el=>el.style.width),'1792px');
   } finally {await browser.close();}

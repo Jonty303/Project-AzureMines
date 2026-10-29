@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "document_type": "dungeon",
   "id": "practice_dungeon",
   "name": "Practice dungeon — not campaign canon",
@@ -120,7 +120,7 @@
     {
       "x": 15,
       "y": 4,
-      "tile": "door",
+      "tile": "secret_door",
       "area_id": ""
     },
     {
@@ -354,7 +354,7 @@
     {
       "x": 9,
       "y": 8,
-      "tile": "corridor",
+      "tile": "door",
       "area_id": ""
     },
     {
@@ -596,6 +596,48 @@
       "y": 11,
       "tile": "floor",
       "area_id": "hall"
+    },
+    {
+      "x": 12,
+      "y": 12,
+      "tile": "wall",
+      "area_id": ""
+    },
+    {
+      "x": 13,
+      "y": 12,
+      "tile": "wall",
+      "area_id": ""
+    },
+    {
+      "x": 14,
+      "y": 12,
+      "tile": "wall",
+      "area_id": ""
+    },
+    {
+      "x": 15,
+      "y": 12,
+      "tile": "wall",
+      "area_id": ""
+    },
+    {
+      "x": 16,
+      "y": 12,
+      "tile": "wall",
+      "area_id": ""
+    },
+    {
+      "x": 17,
+      "y": 12,
+      "tile": "wall",
+      "area_id": ""
+    },
+    {
+      "x": 18,
+      "y": 12,
+      "tile": "wall",
+      "area_id": ""
     }
   ],
   "markers": [

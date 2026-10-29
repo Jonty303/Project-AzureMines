@@ -28,15 +28,15 @@
     <section class="workspace" aria-label="Dungeon layout">
       <div class="heading"><h2 id="title"></h2><span id="dirty"></span></div>
       <div class="toolbar">
-        <label>Drawing tool<select id="tool"><option value="select">Select</option><option value="room">Room rectangle</option><option value="floor">Floor brush</option><option value="corridor">Corridor brush</option><option value="door">Door</option><option value="assign">Assign area</option><option value="erase">Erase</option><option value="marker">Place marker</option></select></label>
+        <label>Drawing tool<select id="tool"><option value="select">Select</option><option value="room">Room rectangle</option><option value="floor">Floor brush</option><option value="corridor">Corridor brush</option><option value="door">Door</option><option value="secret_door">Secret door</option><option value="wall">Wall block</option><option value="assign">Assign area</option><option value="erase">Erase</option><option value="marker">Place marker</option></select></label>
         <label>Paint area<select id="paint-area"><option value="">Unassigned</option></select></label>
         <label>Marker type<select id="marker-type"></select></label>
         <label>Zoom<select id="zoom"><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
       </div>
-      <div class="history"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button><span id="cursor">Cell 0, 0</span></div>
+      <div class="history"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button><button id="place-entrance">Place entrance</button><button id="place-exit">Place exit</button><span id="cursor">Cell 0, 0</span></div>
       <p id="tool-help" class="hint"></p>
       <div id="viewport"><svg id="grid" tabindex="0" role="application" aria-label="Dungeon drawing grid. Arrow keys move the cursor; Enter applies the selected tool. Escape cancels a rectangle or stroke."></svg></div>
-      <p class="legend">Dark: solid / undrawn · Coloured: floor areas · Grey: corridor · Gold: door · Letter badges: markers</p>
+      <p class="legend">Teal: floor · Sand: corridor · Slate: wall · Gold: door · Purple S: secret door · Green E: entrance · Red X: exit · Dark: undrawn</p>
       <p id="status" role="status" aria-live="polite">Try Practice map, or start with a named area and draw a room.</p>
       <details open><summary id="validation-summary">Validation</summary><div id="validation"></div></details>
     </section>

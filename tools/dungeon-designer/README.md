@@ -1,4 +1,4 @@
-# Dungeon Designer v1
+# Dungeon Designer v2
 
 An offline, author-only layout editor. Open `index.html` in desktop Edge or Chrome.
 No installation or server is needed. Keep this folder beside `adventure-designer`:
@@ -11,16 +11,18 @@ the optional overland-reference importer uses that tool's existing validator.
 2. Use **+ Add** under Named areas. Enter an ID, name, description and author notes,
    then **Apply details**. A new area is automatically selected as the paint area.
 3. Choose **Room rectangle** and drag between opposite corners. Use **Floor brush**
-   for irregular caves. Empty cells represent solid or undrawn space; walls are the
-   boundaries between floor and empty space, not separate wall objects.
+   for irregular caves. Floors are teal and corridors are sand-coloured. Choose
+   **Wall block** to paint solid slate-coloured cells; dark cells remain undrawn.
 4. Choose **Corridor brush** and paint passages between rooms. Pointer samples are
    joined with four-way steps so even fast diagonal strokes remain connected.
    Set **Paint area** to Unassigned for corridors that do not belong to a room.
-5. Choose **Door** to place a door cell. A door is walkable for validation; locks,
-   secret doors and opening conditions are not simulated.
+5. Choose **Door** for a gold door or **Secret door** for a purple S block. Both
+   count as potential passages during validation; discovery, locks and opening
+   conditions are not simulated. Walls block connectivity.
 6. **Assign area** changes ownership of existing cells without changing their tile
    type. **Erase** removes cells and any markers on them. Undo restores the entire stroke.
-7. Choose **Place marker**, select its type, then click a floor cell. Edit its name,
+7. Use **Place entrance** (green E) or **Place exit** (red X), then click a walkable
+   cell. For other markers, choose **Place marker**, select its type, and click a cell. Edit its name,
    notes, content reference or destination in the inspector. Select markers from the
    left list when several share a cell; their grid badge shows the count.
 8. Click **Save JSON** and check your downloads folder. Load that file next session.
@@ -28,7 +30,8 @@ the optional overland-reference importer uses that tool's existing validator.
 
 Click **Select** to inspect an area or marker through the grid. Named areas can cover
 multiple rooms; each cell belongs to at most one area. Painting replaces a cell's
-tile and area assignment. Existing markers remain unless the cell is erased.
+tile and area assignment. Existing markers remain unless the cell is erased or replaced by a wall. Painting
+a wall removes markers on that cell, and Undo restores them with the previous tile.
 Deleting an area preserves the floor, removes area assignments, and clears local
 links targeting that area. These changes can be undone.
 
@@ -81,7 +84,9 @@ External dungeon targets and NPC/encounter/Ink references are not verified in v1
 
 ## Data and validation
 
-`dungeon.schema.json` defines the version 1 authoring format. It shares lower-case
+`dungeon.schema.json` defines the version 2 authoring format. Version 1 files load
+automatically with their existing content preserved and save as version 2. Older
+editor copies cannot load version 2 exports; use this updated editor. It shares lower-case
 ASCII IDs and separate descriptions/author notes with the overland format, but it is
 a distinct document (`document_type: "dungeon"`) and is not a runtime adventure file.
 
@@ -89,10 +94,11 @@ a distinct document (`document_type: "dungeon"`) and is not a runtime adventure 
 | --- | --- |
 | Dungeon | `schema_version`, `document_type`, `id`, `name`, `author_notes`, `width`, `height`, `areas`, `cells`, `markers` |
 | Area | `id`, `name`, `description`, `author_notes` |
-| Cell | zero-based `x`, `y`, `tile` (`floor`, `corridor`, `door`), `area_id` (empty means unassigned) |
+| Cell | zero-based `x`, `y`, `tile` (`floor`, `corridor`, `door`, `secret_door`, `wall`), `area_id` (empty means unassigned) |
 | Marker | `id`, `name`, `type`, `x`, `y`, `description`, `author_notes`, `reference`, `target_document`, `target_location` |
 
-Cells are sparse: omitted positions are solid/undrawn. There is no metres/feet scale
+Cells are sparse: omitted positions are undrawn and non-traversable; explicit walls
+are also non-traversable. There is no metres/feet scale
 or canonical world distance. All fields are required; unknown fields, unsupported
 versions, duplicate IDs/cells, missing area references, out-of-bounds positions,
 off-floor markers, and broken local destinations are rejected. Destination fields
@@ -101,8 +107,8 @@ invalid edits leave the current document intact. File input is limited to 5 MB.
 
 Warnings report empty/undrawn areas, disconnected floor groups, missing entrances,
 unset link/content references and unverified external destinations. They do not block
-saving. Four-way flood fill considers every floor/corridor/door cell traversable;
-it ignores locks, secrets and transition markers. Thus intentionally disconnected
+saving. Four-way flood fill considers every floor/corridor/door/secret-door cell traversable;
+it excludes walls and ignores locks, discovery state and transition markers. Thus intentionally disconnected
 levels linked by stairs still produce a warning. Loaded overland references can
 verify their location IDs; this is not a complete multi-document dependency checker.
 
@@ -144,8 +150,9 @@ maintenance, deletion, malformed imports and atomic failures. The browser workfl
 covers drawing, doors, markers, undo/redo, external linking, pending edit protection,
 invalid imports, resizing, download/reload and both starter buttons.
 
-Initial verification: 13 dungeon model tests, two desktop Edge browser workflows,
-and nine existing overland model tests passed. Godot is unavailable in the coding
+Version 2 verification: 15 dungeon model tests and two desktop Edge browser workflows
+cover the new tiles, colours, entrance/exit shortcuts and version 1 import. Initially,
+nine existing overland model tests also passed. Godot is unavailable in the coding
 environment; its runtime smoke test was not run. The changed paths are tools and
 documentation only, and the existing overland sample is unchanged.
 

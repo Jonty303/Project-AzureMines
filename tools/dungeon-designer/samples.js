@@ -10,7 +10,9 @@
     d = M.paint(d,M.rectangle({x:12,y:5},{x:18,y:11}),'floor','hall');
     d = M.paint(d,M.rectangle({x:13,y:1},{x:17,y:3}),'floor','side_room');
     d = M.paint(d,M.line({x:7,y:8},{x:11,y:8}),'corridor');
-    d = M.paint(d,[{x:15,y:4}],'door');
+    d = M.paint(d,[{x:9,y:8}],'door');
+    d = M.paint(d,[{x:15,y:4}],'secret_door');
+    d = M.paint(d,M.line({x:12,y:12},{x:18,y:12}),'wall');
     d = M.marker(d,{id:'entry_marker',name:'Practice entrance',type:'entrance',x:2,y:8,description:'',author_notes:'Local return link demonstrates destination IDs.',reference:'',target_document:d.id,target_location:'entry'});
     d = M.marker(d,{id:'practice_conversation',name:'Conversation placeholder',type:'conversation',x:15,y:8,description:'',author_notes:'Reference is a placeholder, not a supplied Ink story.',reference:'practice.ink#hello',target_document:'',target_location:''});
     return d;

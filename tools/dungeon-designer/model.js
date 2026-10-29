@@ -10,12 +10,12 @@
   const array = (items, maxItems) => ({type: 'array', items, maxItems});
   const markerTypes = ['entrance', 'exit', 'stairs', 'passage', 'npc', 'encounter', 'secret', 'conversation'];
   const linkTypes = ['entrance', 'exit', 'stairs', 'passage'];
-  const schema = {$schema: 'https://json-schema.org/draft/2020-12/schema', title: 'Azure Mines dungeon authoring v1',
-    ...object({schema_version: {const: 1}, document_type: {const: 'dungeon'}, id: ID, name, author_notes: text,
+  const schema = {$schema: 'https://json-schema.org/draft/2020-12/schema', title: 'Azure Mines dungeon authoring v2',
+    ...object({schema_version: {const: 2}, document_type: {const: 'dungeon'}, id: ID, name, author_notes: text,
       width: integer(8, 64), height: integer(8, 64),
       areas: array(object({id: ID, name, description: text, author_notes: text}), 256),
       cells: array(object({x: integer(0, 63), y: integer(0, 63),
-        tile: {enum: ['floor', 'corridor', 'door']}, area_id: optionalID}), 4096),
+        tile: {enum: ['floor', 'corridor', 'door', 'secret_door', 'wall']}, area_id: optionalID}), 4096),
       markers: array(object({id: ID, name, type: {enum: markerTypes}, x: integer(0, 63), y: integer(0, 63),
         description: text, author_notes: text, reference: text,
         target_document: optionalID, target_location: optionalID}), 1024)})};
@@ -45,6 +45,7 @@
     if (rule.minimum !== undefined && value < rule.minimum) fail(`minimum ${rule.minimum}`);
     if (rule.maximum !== undefined && value > rule.maximum) fail(`maximum ${rule.maximum}`);
   }
+  const walkable = cell => !!cell && cell.tile !== 'wall';
   const key = (x, y) => `${x},${y}`;
   const clone = value => JSON.parse(JSON.stringify(value));
   function validate(doc, region = null) {
@@ -64,7 +65,7 @@
       if (cell.area_id && !areas.has(cell.area_id)) errors.push(`cell ${k}: missing area ${cell.area_id}`);
     }
     for (const marker of doc.markers) {
-      if (!cells.has(key(marker.x, marker.y))) errors.push(`marker ${marker.id}: must be on a floor, corridor or door`);
+      if (!walkable(cells.get(key(marker.x, marker.y)))) errors.push(`marker ${marker.id}: must be on a floor, corridor, door or secret door`);
       if (!!marker.target_document !== !!marker.target_location) errors.push(`marker ${marker.id}: provide both destination IDs or neither`);
       if (!linkTypes.includes(marker.type) && (marker.target_document || marker.target_location)) errors.push(`marker ${marker.id}: only entrance, exit, stairs and passage markers may have destinations`);
       if (marker.target_document === doc.id && !areas.has(marker.target_location)) errors.push(`marker ${marker.id}: missing local destination area ${marker.target_location}`);
@@ -78,10 +79,11 @@
     }
     if (errors.length) return {errors, warnings};
     for (const area of doc.areas) if (!doc.cells.some(c => c.area_id === area.id)) warnings.push(`area ${area.id}: no cells assigned`);
-    if (!cells.size) warnings.push('No layout drawn yet.');
+    const traversable = new Map([...cells].filter(([,cell]) => walkable(cell)));
+    if (!traversable.size) warnings.push('No walkable layout drawn yet.');
     else {
       // Four-way adjacency, ignoring locks, secrets, and transitions to other maps.
-      const unseen = new Set(cells.keys()); let components = 0;
+      const unseen = new Set(traversable.keys()); let components = 0;
       while (unseen.size) {
         components++; const first = unseen.values().next().value, queue = [cells.get(first)]; unseen.delete(first);
         for (let i = 0; i < queue.length; i++) {
@@ -99,7 +101,7 @@
   function assert(doc) {const {errors} = validate(doc); if (errors.length) throw new Error(errors.join('\n')); return doc;}
   function change(doc, action) {const next = clone(doc); action(next); return assert(next);}
   function paint(doc, points, tile, areaId = '') {
-    if (!['floor', 'corridor', 'door', 'erase', 'assign'].includes(tile)) throw new Error('Unknown drawing tool');
+    if (!['floor', 'corridor', 'door', 'secret_door', 'wall', 'erase', 'assign'].includes(tile)) throw new Error('Unknown drawing tool');
     return change(doc, next => {
       const cells = new Map(next.cells.map(c => [key(c.x,c.y),c]));
       for (const {x,y} of points) {
@@ -110,7 +112,7 @@
         else cells.set(k, {x,y,tile,area_id: areaId});
       }
       next.cells = [...cells.values()].sort((a,b) => a.y-b.y || a.x-b.x);
-      next.markers = next.markers.filter(m => cells.has(key(m.x,m.y)));
+      next.markers = next.markers.filter(m => walkable(cells.get(key(m.x,m.y))));
     });
   }
   function area(doc, item, previousId = null) {
@@ -159,7 +161,12 @@
     return points;
   }
   const api = {schema, markerTypes, linkTypes, validate, change, paint, area, removeArea, marker, metadata, rectangle, line,
-    parse: source => assert(JSON.parse(source)), serialize: doc => JSON.stringify(assert(doc),null,2)+'\n',
-    empty: () => ({schema_version:1,document_type:'dungeon',id:'new_dungeon',name:'Untitled dungeon',author_notes:'',width:32,height:24,areas:[],cells:[],markers:[]})};
+    parse: source => {
+      const doc = JSON.parse(source);
+      // v2 adds wall and secret-door tiles; all v1 records otherwise map directly.
+      if (doc && doc.schema_version === 1) doc.schema_version = 2;
+      return assert(doc);
+    }, serialize: doc => JSON.stringify(assert(doc),null,2)+'\n',
+    empty: () => ({schema_version:2,document_type:'dungeon',id:'new_dungeon',name:'Untitled dungeon',author_notes:'',width:32,height:24,areas:[],cells:[],markers:[]})};
   if (typeof module !== 'undefined') module.exports = api; else root.DungeonModel = api;
 })(globalThis);
