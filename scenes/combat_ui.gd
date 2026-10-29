@@ -442,6 +442,9 @@ func _start_dungeon_battle(encounter_id: String) -> bool:
         adventure.dungeon_encounter_id = ""
         return false
     adventure.campaign.restore_party(combat.actors)
+    if encounter_id == "cave_watchpost" and adventure.campaign.flags.get("watchpost_outflanked", false) and not adventure.campaign.flags.get("watchpost_alarm_raised", false) and str(adventure.campaign.flags.get("goblin_lair_readiness", "")) != "alerted":
+        # 2024 SRD Surprise: the unaware side rolls initiative with Disadvantage.
+        combat.initiative_disadvantaged_team = "enemy"
     engine = combat
     board.engine = engine
     if not engine.begin_battle():
