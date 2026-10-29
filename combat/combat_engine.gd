@@ -15,6 +15,7 @@ const FORMATIONS := {
 
 var encounter_id := "training_battle"
 var encounter_name := "Wagon Camp — The First Ambush"
+var initiative_disadvantaged_team := ""
 var actors: Dictionary = {}
 var walls: Array[Vector2i] = []
 var difficult_terrain: Array[Vector2i] = []
@@ -57,6 +58,7 @@ func start(seed: int = 42024, with_deployment: bool = false, encounter_path: Str
     if not party.has("characters") or not encounter.has("enemies"):
         return false
 
+    initiative_disadvantaged_team = ""
     encounter_id = str(encounter.get("id", ""))
     encounter_name = str(encounter.get("name", encounter_id))
     if encounter_id.is_empty():
@@ -185,11 +187,24 @@ func _roll_initiative_and_start() -> void:
         var id: String = str(id_variant)
         var actor: Dictionary = actors[id]
         var dexterity := int(actor.get("ability_scores", {}).get("dexterity", 10))
-        var roll := Dice.roll_d20(rng)
-        var result := roll + Dice.ability_modifier(dexterity)
+        var roll1: int = Dice.roll_d20(rng)
+        var roll: int = roll1
+        var disadvantage: bool = not initiative_disadvantaged_team.is_empty() and (
+            str(actor.get("team", "")) == initiative_disadvantaged_team
+        )
+        var roll2 := 0
+        if disadvantage:
+            roll2 = Dice.roll_d20(rng)
+            roll = mini(roll1, roll2)
+        var result: int = roll + Dice.ability_modifier(dexterity)
         rolls.append({"id": id, "initiative": result, "tie": tie_order})
         tie_order += 1
-        _record("%s initiative: %d (%d on d20)" % [actor["name"], result, roll])
+        if disadvantage:
+            _record("%s initiative: %d (Surprised, Disadvantage %d/%d)" % [
+                actor["name"], result, roll1, roll2
+            ])
+        else:
+            _record("%s initiative: %d (%d on d20)" % [actor["name"], result, roll])
     rolls.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
         if a["initiative"] == b["initiative"]:
             return a["tie"] < b["tie"]
