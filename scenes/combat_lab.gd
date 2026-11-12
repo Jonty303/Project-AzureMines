@@ -303,7 +303,9 @@ func _build_ui() -> void:
     action_style.set_border_width_all(1)
     action_style.set_content_margin_all(8)
     bottom_action_panel.add_theme_stylebox_override("panel", action_style)
-    battle_panel.add_child(bottom_action_panel)
+    # Sibling of the scrollable battle region: commands stay docked to the viewport
+    # even when a portrait player scrolls the map and information console.
+    content.add_child(bottom_action_panel)
     bottom_action_layout = VBoxContainer.new()
     bottom_action_layout.add_theme_constant_override("separation", 6)
     bottom_action_panel.add_child(bottom_action_layout)
@@ -469,6 +471,7 @@ func _show_title() -> void:
     title_scroll.visible = true
     battle_panel.visible = false
     battle_scroll.visible = false
+    bottom_action_panel.visible = false
     _update_title()
 
 
@@ -496,6 +499,7 @@ func _start_battle() -> void:
     title_scroll.visible = false
     battle_panel.visible = true
     battle_scroll.visible = true
+    bottom_action_panel.visible = true
     event_log.text = ""
     _refresh()
 

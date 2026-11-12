@@ -94,8 +94,8 @@ func _run() -> void:
         return
     var bottom: PanelContainer = lab.get("bottom_action_panel")
     var controls: VBoxContainer = lab.get("bottom_action_layout")
-    if bottom.get_parent() != lab.get("battle_panel") or controls.get_parent() != bottom:
-        _fail("The bottom action bar is not below the battlefield")
+    if bottom.get_parent() != lab.get("battle_scroll").get_parent() or controls.get_parent() != bottom:
+        _fail("The bottom action bar must be a docked sibling of the scrolling battlefield")
         return
     for control in [lab.get("formation_panel"), lab.get("actions_panel"), lab.get("reaction_panel"), lab.get("action_hint")]:
         if control.get_parent() != controls:
@@ -106,7 +106,13 @@ func _run() -> void:
         if child is Button and str(child.text) in ["Battle Log", "Debug I/O"]:
             _fail("Top bar still has a redundant Log or Debug button")
             return
+    if bottom.visible:
+        _fail("Bottom bar should not appear on the title screen")
+        return
     lab.call("_start_battle")
+    if not bottom.visible:
+        _fail("Character commands must remain docked during combat")
+        return
     if lab.get("tabs").current_tab != 1:
         _fail("Party info should be the initial sidebar tab")
         return

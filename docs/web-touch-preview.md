@@ -93,3 +93,5 @@ Before v0.3 acceptance on iPad, inspect a melee hit, ranged miss, spell damage a
 To match iPad touch habits, the **player action bar is below the battlefield**. It contains deployment, Move, Attack, Spell, Second Wind, Dash, Dodge, Disengage, End Turn, spell/weapon selectors, reactions and targeting instructions. The sidebar is now exclusively for **Debug, Party, Details and Log**, with Party selected when entering combat. The Debug I/O action is preserved within Debug.
 
 Landscape retains map-left/sidebar-right and the bottom bar across the game area. Portrait stacks the map and sidebar, followed by the bottom bar within the scrollable battle screen. The underlying combat engine remains unchanged. Headless tests verify control hierarchy; actual iPad visual/touch comfort needs a playtest.
+
+**Docked bar implementation:** The bottom command bar is a sibling of the scrollable battle content, not inside it. Thus a player can scroll the board and party/details panel while retaining Move/Attack/Spell/End Turn and reaction controls at the bottom of the iPad screen. The bar is hidden when returning to the Combat Lab title screen.
