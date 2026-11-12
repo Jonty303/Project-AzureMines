@@ -56,9 +56,14 @@ var begin_button: Button
 var self_button: Button
 var attack_picker: OptionButton
 var spell_picker: OptionButton
-var weapon_strip: HBoxContainer
+var weapon_strip: VBoxContainer
 var spell_scroll: ScrollContainer
-var spell_strip: HBoxContainer
+var spell_strip: VBoxContainer
+var weapon_chip: Button
+var spell_chip: Button
+var weapon_popup: PanelContainer
+var spell_popup: PanelContainer
+var slot_gems: RichTextLabel
 var weapon_cards: Dictionary = {}
 var spell_cards: Dictionary = {}
 var level_picker: OptionButton
@@ -348,8 +353,27 @@ func _build_ui() -> void:
     player_commands.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     command_row.add_child(player_commands)
     move_button = _make_button("Move", player_commands, _select_mode.bind("move"), 78)
-    attack_button = _make_button("Attack", player_commands, _select_mode.bind("attack"), 90)
-    spell_button = _make_button("Spell", player_commands, _select_mode.bind("spell"), 85)
+    var attack_stack := VBoxContainer.new()
+    attack_stack.add_theme_constant_override("separation", 3)
+    player_commands.add_child(attack_stack)
+    attack_button = _make_button("Attack", attack_stack, _select_mode.bind("attack"), 122)
+    weapon_chip = _make_button("Weapon: —  ▴", attack_stack, _toggle_weapon_menu, 122)
+    weapon_chip.tooltip_text = "Tap to choose a weapon; Attack enters targeting mode."
+    weapon_chip.add_theme_font_size_override("font_size", 13)
+    var spell_stack := VBoxContainer.new()
+    spell_stack.add_theme_constant_override("separation", 3)
+    player_commands.add_child(spell_stack)
+    spell_button = _make_button("Spell", spell_stack, _select_mode.bind("spell"), 136)
+    spell_chip = _make_button("Spell: —  ▴", spell_stack, _toggle_spell_menu, 136)
+    spell_chip.tooltip_text = "Tap to open the spell list above this selector."
+    spell_chip.add_theme_font_size_override("font_size", 13)
+    slot_gems = RichTextLabel.new()
+    slot_gems.bbcode_enabled = true
+    slot_gems.fit_content = true
+    slot_gems.scroll_active = false
+    slot_gems.custom_minimum_size = Vector2(136, 22)
+    slot_gems.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    spell_stack.add_child(slot_gems)
     for choice in [move_button, attack_button, spell_button]:
         choice.toggle_mode = true
     wind_button = _make_button("Second Wind", player_commands, _use_second_wind, 120)
@@ -370,34 +394,36 @@ func _build_ui() -> void:
     end_hot.bg_color = Color("#a63b30")
     end_turn_button.add_theme_stylebox_override("hover", end_hot)
     end_turn_button.add_theme_font_size_override("font_size", 18)
-    var select_row := HFlowContainer.new()
-    select_row.add_theme_constant_override("h_separation", 8)
-    select_row.add_theme_constant_override("v_separation", 5)
-    actions_panel.add_child(select_row)
-    _make_label("WEAPONS", select_row, 14)
-    weapon_strip = HBoxContainer.new()
-    weapon_strip.add_theme_constant_override("separation", 5)
-    select_row.add_child(weapon_strip)
+    # Hidden legacy adapters retain stable automated-test selection state.
     attack_picker = OptionButton.new()
     attack_picker.visible = false
-    select_row.add_child(attack_picker)
-    _make_label("SPELLS", select_row, 14)
-    _make_button("◀", select_row, _scroll_spells.bind(-1), 46)
-    spell_scroll = ScrollContainer.new()
-    spell_scroll.custom_minimum_size = Vector2(350, 54)
-    spell_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    spell_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-    spell_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-    spell_scroll.scroll_deadzone = 8
-    select_row.add_child(spell_scroll)
-    spell_strip = HBoxContainer.new()
-    spell_strip.add_theme_constant_override("separation", 6)
-    spell_scroll.add_child(spell_strip)
-    _make_button("▶", select_row, _scroll_spells.bind(1), 46)
+    actions_panel.add_child(attack_picker)
     spell_picker = OptionButton.new()
     spell_picker.visible = false
-    select_row.add_child(spell_picker)
-    self_button = _make_button("Cast on Self", select_row, _cast_self, 135)
+    actions_panel.add_child(spell_picker)
+
+    # Floating menus live above the action bar rather than consuming another
+    # horizontal row. Both are populated from the current actor's legal data.
+    weapon_popup = _make_floating_picker("SELECT WEAPON")
+    var weapon_content: VBoxContainer = weapon_popup.get_child(0)
+    weapon_strip = VBoxContainer.new()
+    weapon_strip.add_theme_constant_override("separation", 5)
+    weapon_content.add_child(weapon_strip)
+
+    spell_popup = _make_floating_picker("SELECT A SPELL")
+    var spell_content: VBoxContainer = spell_popup.get_child(0)
+    spell_scroll = ScrollContainer.new()
+    spell_scroll.custom_minimum_size = Vector2(265, 180)
+    spell_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    spell_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+    spell_content.add_child(spell_scroll)
+    spell_strip = VBoxContainer.new()
+    spell_strip.add_theme_constant_override("separation", 4)
+    spell_scroll.add_child(spell_strip)
+
+    var utility_row := HBoxContainer.new()
+    actions_panel.add_child(utility_row)
+    self_button = _make_button("Cast on Self", utility_row, _cast_self, 128)
     reaction_panel = HBoxContainer.new()
     reaction_panel.add_theme_constant_override("separation", 12)
     bottom_action_layout.add_child(reaction_panel)
@@ -547,6 +573,7 @@ func _start_battle() -> void:
     recorded = false
     heard_events = 0
     picker_actor = ""
+    _hide_selection_menus()
     action_mode = ""
     deployment_actor = ""
     selected_cell = Vector2i(-1, -1)
@@ -580,6 +607,7 @@ func _select_mode(mode: String) -> void:
     if engine == null or not engine.current_is_party() or not engine.pending_reaction.is_empty():
         return
     action_mode = mode
+    _hide_selection_menus()
     _refresh()
 
 
@@ -607,6 +635,7 @@ func _on_cell_clicked(cell: Vector2i) -> void:
     if engine == null or engine.finished:
         return
     selected_cell = cell
+    _hide_selection_menus()
     _update_selection_details()
     if engine.deployment_active:
         var actor_id: String = engine.actor_at(cell)
@@ -691,12 +720,74 @@ func _run_ai() -> void:
         safety -= 1
 
 
+func _make_floating_picker(heading: String) -> PanelContainer:
+    var panel := PanelContainer.new()
+    panel.visible = false
+    panel.set_as_top_level(true)
+    panel.z_index = 100
+    panel.custom_minimum_size = Vector2(230, 0)
+    var style := StyleBoxFlat.new()
+    style.bg_color = Color("#142333")
+    style.border_color = Color("#b69257")
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(7)
+    style.set_content_margin_all(10)
+    panel.add_theme_stylebox_override("panel", style)
+    add_child(panel)
+    var column := VBoxContainer.new()
+    column.add_theme_constant_override("separation", 6)
+    panel.add_child(column)
+    var header := _make_label(heading, column, 15)
+    header.add_theme_color_override("font_color", GOLD)
+    return panel
+
+
+func _hide_selection_menus() -> void:
+    if weapon_popup != null:
+        weapon_popup.hide()
+    if spell_popup != null:
+        spell_popup.hide()
+
+
+func _open_selection_menu(panel: PanelContainer, anchor: Button) -> void:
+    var should_open: bool = not panel.visible
+    _hide_selection_menus()
+    if not should_open:
+        return
+    panel.show()
+    panel.reset_size()
+    var bounds: Vector2 = get_viewport_rect().size
+    var width: float = maxf(anchor.size.x, panel.get_combined_minimum_size().x)
+    var height: float = panel.get_combined_minimum_size().y
+    panel.size = Vector2(width, height)
+    var position_above: Vector2 = anchor.get_global_rect().position
+    var final_pos := Vector2(
+        clampf(position_above.x, 8.0, maxf(8.0, bounds.x - width - 8.0)),
+        maxf(8.0, position_above.y - height - 8.0))
+    panel.global_position = final_pos + Vector2(0, 14)
+    panel.modulate.a = 0.0
+    var animation := create_tween().set_parallel(true)
+    animation.tween_property(panel, "global_position", final_pos, 0.16)
+    animation.tween_property(panel, "modulate:a", 1.0, 0.16)
+
+
+func _toggle_weapon_menu() -> void:
+    if engine != null and engine.current_is_party():
+        _open_selection_menu(weapon_popup, weapon_chip)
+
+
+func _toggle_spell_menu() -> void:
+    if engine != null and engine.current_is_party():
+        _open_selection_menu(spell_popup, spell_chip)
+
+
 func _rebuild_pickers() -> void:
     if engine == null or engine.finished or engine.deployment_active:
         return
     var actor_id: String = engine.current_id()
     if actor_id == picker_actor:
         return
+    _hide_selection_menus()
     picker_actor = actor_id
     weapon_ids.clear()
     spell_ids.clear()
@@ -715,26 +806,43 @@ func _rebuild_pickers() -> void:
         if kind in ["melee_weapon", "ranged_weapon"]:
             var wid: String = str(attack["id"])
             weapon_ids.append(wid)
-            attack_picker.add_item(wid.replace("_", " ").capitalize())
-            var card := _make_button(wid.replace("_", " ").capitalize(),
-                weapon_strip, _select_weapon_card.bind(wid), 108)
+            var display_name: String = wid.replace("_", " ").capitalize()
+            attack_picker.add_item(display_name)
+            var card := _make_button(display_name, weapon_strip,
+                _select_weapon_card.bind(wid), 220)
             card.toggle_mode = true
             _set_button_icon(card, "bow" if kind == "ranged_weapon"
                 else ("dagger" if wid.contains("dagger") else "sword"))
             weapon_cards[wid] = card
-    for spell in engine.get_current_spells():
-        spell_ids.append(spell)
-        spell_picker.add_item(spell.replace("_", " ").capitalize())
-        var card := _make_button(spell.replace("_", " ").capitalize(),
-            spell_strip, _select_spell_card.bind(spell), 128)
-        card.toggle_mode = true
-        _set_button_icon(card, "second_wind" if spell in ["cure_wounds", "healing_word"] else "spell")
-        spell_cards[spell] = card
+    # Group the stable spell list by actual spell rank, never by damage type.
+    for tier in range(0, 10):
+        var tier_spells: Array[String] = []
+        for spell_id in engine.get_current_spells():
+            if int(Level1Spells.get_definition(spell_id).get("level", 0)) == tier:
+                tier_spells.append(spell_id)
+        if tier_spells.is_empty():
+            continue
+        var tier_label: String = "CANTRIPS  ·  ∞" if tier == 0 else "LEVEL %d SPELLS" % tier
+        var section: Label = _make_label(tier_label, spell_strip, 13)
+        section.add_theme_color_override("font_color",
+            Color("#e0e5e8") if tier == 0 else (
+                Color("#80c9f4") if tier == 1 else Color("#c0a0ee")))
+        for spell in tier_spells:
+            spell_ids.append(spell)
+            var display_name: String = spell.replace("_", " ").capitalize()
+            spell_picker.add_item(display_name)
+            var marker: String = "∞" if tier == 0 else (
+                "I" if tier == 1 else ("II" if tier == 2 else str(tier)))
+            var card := _make_button("%s  %s" % [marker, display_name],
+                spell_strip, _select_spell_card.bind(spell), 236)
+            card.toggle_mode = true
+            _set_button_icon(card, "second_wind" if spell in ["cure_wounds", "healing_word"] else "spell")
+            spell_cards[spell] = card
     if not weapon_ids.is_empty():
         attack_picker.select(0)
     if not spell_ids.is_empty():
         spell_picker.select(0)
-    spell_scroll.scroll_horizontal = 0
+    spell_scroll.scroll_vertical = 0
 
 
 func _select_weapon_card(weapon_id: String) -> void:
@@ -743,6 +851,7 @@ func _select_weapon_card(weapon_id: String) -> void:
         return
     attack_picker.select(index)
     action_mode = "attack"
+    _hide_selection_menus()
     _refresh()
 
 
@@ -752,11 +861,8 @@ func _select_spell_card(spell_id: String) -> void:
         return
     spell_picker.select(index)
     action_mode = "spell"
+    _hide_selection_menus()
     _refresh()
-
-
-func _scroll_spells(direction: int) -> void:
-    spell_scroll.scroll_horizontal = maxi(0, spell_scroll.scroll_horizontal + direction * 275)
 
 
 func _zoom_in() -> void:
@@ -919,7 +1025,35 @@ func _refresh() -> void:
         action_hint.text = "Choose Move, Attack or Spell to highlight legal destinations and targets."
     move_button.disabled = not can_act or not engine.can_move_current()
     attack_button.disabled = not can_act or engine.action_used
-    spell_button.disabled = not can_act or not engine.can_cast_current_spell(_selected_spell())
+    spell_button.disabled = not can_act or not engine.can_cast_any_current_spell()
+    weapon_chip.disabled = not can_act or weapon_ids.is_empty()
+    spell_chip.disabled = not can_act or spell_ids.is_empty()
+    weapon_chip.text = "Weapon: %s  ▴" % (
+        _selected_weapon().replace("_", " ").capitalize() if not weapon_ids.is_empty() else "—")
+    var active_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
+    var spell_rank: int = int(active_spell.get("level", 0))
+    var spell_marker: String = "∞" if spell_rank == 0 else (
+        "I" if spell_rank == 1 else ("II" if spell_rank == 2 else str(spell_rank)))
+    spell_chip.text = "%s  %s  ▴" % [spell_marker,
+        _selected_spell().replace("_", " ").capitalize() if not spell_ids.is_empty() else "—"]
+    spell_chip.modulate = Color("#9ba4b4") if not engine.can_cast_current_spell(_selected_spell()) else (
+        Color("#f1e7d5") if spell_rank == 0 else (
+            Color("#8dcfff") if spell_rank == 1 else Color("#c9a3f1")))
+    var gem_rows: PackedStringArray = []
+    if can_act and engine.current_actor().get("spellcasting") is Dictionary:
+        var current_caster: String = engine.current_id()
+        for tier in range(1, 4):
+            var total: int = engine.spell_slot_capacity(current_caster, tier)
+            if total <= 0:
+                continue
+            var remaining: int = mini(total, engine.spell_slots_left(current_caster, tier))
+            var colour: String = "#8bcff7" if tier == 1 else (
+                "#c7a4ff" if tier == 2 else "#edbd6c")
+            gem_rows.append("[color=%s]%s %s%s %d/%d[/color]" % [
+                colour, str(tier), "◆".repeat(remaining),
+                "◇".repeat(total - remaining), remaining, total])
+    slot_gems.text = "  ".join(gem_rows)
+    slot_gems.visible = not gem_rows.is_empty()
     dash_button.disabled = not can_act or not engine.can_dash()
     dodge_button.disabled = not can_act or not engine.can_dodge()
     disengage_button.disabled = not can_act or not engine.can_disengage()
@@ -938,6 +1072,7 @@ func _refresh() -> void:
             and str(sid) == _selected_spell())
         spell_card.tooltip_text = "Choose spell, then a gold target." if not spell_card.disabled else (
             engine.spell_unavailable_reason(str(sid), engine.current_id()))
+        spell_card.modulate = Color("#78818b") if spell_card.disabled else Color.WHITE
     attack_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
     spell_picker.disabled = not can_act or not engine.can_cast_any_current_spell()
     for index in spell_ids.size():
