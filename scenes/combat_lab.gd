@@ -56,6 +56,11 @@ var begin_button: Button
 var self_button: Button
 var attack_picker: OptionButton
 var spell_picker: OptionButton
+var weapon_strip: HBoxContainer
+var spell_scroll: ScrollContainer
+var spell_strip: HBoxContainer
+var weapon_cards: Dictionary = {}
+var spell_cards: Dictionary = {}
 var level_picker: OptionButton
 var fourth_picker: OptionButton
 var config_dialog: ConfirmationDialog
@@ -70,9 +75,9 @@ var debug_view: TextEdit
 var sfx_players: Dictionary = {}
 var party_level := 1
 var fourth_class := "thief"
-var enemy_kind := "goblin_melee"
+var enemy_kind := "mixed"
 var enemy_count := 4
-var arena_id := "camp"
+var arena_id := "wide"
 var encounter_seed := 42024
 var action_mode := ""
 var deployment_actor := ""
@@ -108,7 +113,15 @@ func _make_button(content: String, parent: Node, callback: Callable, min_width: 
     item.custom_minimum_size = Vector2(min_width, 48)
     item.pressed.connect(callback)
     parent.add_child(item)
+    _set_button_icon(item, content.to_snake_case())
     return item
+
+
+func _set_button_icon(item: Button, icon_name: String) -> void:
+    var resource: String = "res://assets/ui/icons/%s.svg" % icon_name
+    if ResourceLoader.exists(resource):
+        item.icon = load(resource) as Texture2D
+        item.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 
 func _make_text_view(dialog: AcceptDialog) -> TextEdit:
@@ -208,6 +221,9 @@ func _build_ui() -> void:
     battle_status = _make_label("Preparing battle...", heading, 17)
     _make_button("Retry Battle", heading, _start_battle, 145)
     _make_button("Return to Title", heading, _show_title, 175)
+    _make_button("Zoom +", heading, _zoom_in, 90)
+    _make_button("Zoom -", heading, _zoom_out, 90)
+    _make_button("Reset View", heading, _reset_view, 125)
     main_grid = GridContainer.new()
     main_grid.columns = 2
     main_grid.add_theme_constant_override("h_separation", 14)
@@ -321,33 +337,66 @@ func _build_ui() -> void:
     actions_panel = VBoxContainer.new()
     actions_panel.add_theme_constant_override("separation", 5)
     bottom_action_layout.add_child(actions_panel)
-    var command_row := HFlowContainer.new()
-    command_row.add_theme_constant_override("separation", 6)
+    var command_row := HBoxContainer.new()
+    command_row.add_theme_constant_override("separation", 8)
+    command_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     actions_panel.add_child(command_row)
-    move_button = _make_button("Move", command_row, _select_mode.bind("move"), 72)
-    attack_button = _make_button("Attack", command_row, _select_mode.bind("attack"), 72)
-    spell_button = _make_button("Spell", command_row, _select_mode.bind("spell"), 72)
+    var player_commands := HFlowContainer.new()
+    player_commands.add_theme_constant_override("h_separation", 6)
+    player_commands.add_theme_constant_override("v_separation", 5)
+    player_commands.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    command_row.add_child(player_commands)
+    move_button = _make_button("Move", player_commands, _select_mode.bind("move"), 78)
+    attack_button = _make_button("Attack", player_commands, _select_mode.bind("attack"), 90)
+    spell_button = _make_button("Spell", player_commands, _select_mode.bind("spell"), 85)
     for choice in [move_button, attack_button, spell_button]:
         choice.toggle_mode = true
-    wind_button = _make_button("Second Wind", command_row, _use_second_wind, 122)
-    dash_button = _make_button("Dash", command_row, _use_dash, 72)
-    dodge_button = _make_button("Dodge", command_row, _use_dodge, 72)
-    disengage_button = _make_button("Disengage", command_row, _use_disengage, 110)
-    end_turn_button = _make_button("End Turn", command_row, _end_turn, 110)
+    wind_button = _make_button("Second Wind", player_commands, _use_second_wind, 120)
+    dash_button = _make_button("Dash", player_commands, _use_dash, 76)
+    dodge_button = _make_button("Dodge", player_commands, _use_dodge, 85)
+    disengage_button = _make_button("Disengage", player_commands, _use_disengage, 118)
+    end_turn_button = _make_button("END TURN", command_row, _end_turn, 155)
+    end_turn_button.custom_minimum_size.y = 98
+    _set_button_icon(end_turn_button, "end_turn")
+    var end_style := StyleBoxFlat.new()
+    end_style.bg_color = Color("#7b2926")
+    end_style.border_color = Color("#e6b16c")
+    end_style.set_border_width_all(3)
+    end_style.set_corner_radius_all(8)
+    end_style.set_content_margin_all(8)
+    end_turn_button.add_theme_stylebox_override("normal", end_style)
+    var end_hot := end_style.duplicate() as StyleBoxFlat
+    end_hot.bg_color = Color("#a63b30")
+    end_turn_button.add_theme_stylebox_override("hover", end_hot)
+    end_turn_button.add_theme_font_size_override("font_size", 18)
     var select_row := HFlowContainer.new()
-    select_row.add_theme_constant_override("separation", 12)
+    select_row.add_theme_constant_override("h_separation", 8)
+    select_row.add_theme_constant_override("v_separation", 5)
     actions_panel.add_child(select_row)
-    _make_label("Weapon", select_row, 14)
+    _make_label("WEAPONS", select_row, 14)
+    weapon_strip = HBoxContainer.new()
+    weapon_strip.add_theme_constant_override("separation", 5)
+    select_row.add_child(weapon_strip)
     attack_picker = OptionButton.new()
-    attack_picker.custom_minimum_size = Vector2(170, 46)
-    attack_picker.item_selected.connect(_on_weapon_change)
+    attack_picker.visible = false
     select_row.add_child(attack_picker)
-    _make_label("Spell", select_row, 14)
+    _make_label("SPELLS", select_row, 14)
+    _make_button("◀", select_row, _scroll_spells.bind(-1), 46)
+    spell_scroll = ScrollContainer.new()
+    spell_scroll.custom_minimum_size = Vector2(350, 54)
+    spell_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    spell_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+    spell_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    spell_scroll.scroll_deadzone = 8
+    select_row.add_child(spell_scroll)
+    spell_strip = HBoxContainer.new()
+    spell_strip.add_theme_constant_override("separation", 6)
+    spell_scroll.add_child(spell_strip)
+    _make_button("▶", select_row, _scroll_spells.bind(1), 46)
     spell_picker = OptionButton.new()
-    spell_picker.custom_minimum_size = Vector2(230, 46)
-    spell_picker.item_selected.connect(_on_spell_change)
+    spell_picker.visible = false
     select_row.add_child(spell_picker)
-    self_button = _make_button("Cast on Self", select_row, _cast_self, 140)
+    self_button = _make_button("Cast on Self", select_row, _cast_self, 135)
     reaction_panel = HBoxContainer.new()
     reaction_panel.add_theme_constant_override("separation", 12)
     bottom_action_layout.add_child(reaction_panel)
@@ -372,8 +421,10 @@ func _build_dialogs() -> void:
     config_dialog.add_child(form)
     _make_label("Enemy archetype", form, 15)
     enemy_picker = OptionButton.new()
-    for kind in ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf", "midden_grub"]:
+    for kind in ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf",
+            "midden_grub", "skeleton", "spider", "kobold", "bandit", "mixed"]:
         enemy_picker.add_item(kind.replace("_", " ").capitalize())
+    enemy_picker.select(9)
     form.add_child(enemy_picker)
     _make_label("Number of enemies (1–8)", form, 15)
     count_picker = SpinBox.new()
@@ -384,8 +435,9 @@ func _build_dialogs() -> void:
     form.add_child(count_picker)
     _make_label("Battle location", form, 15)
     arena_picker = OptionButton.new()
-    for location in ["Forest camp", "Stone chamber", "Woodland watch", "Refuse room"]:
+    for location in ["Forest camp", "Stone chamber", "Woodland watch", "Refuse room", "Wide forest (17 columns)"]:
         arena_picker.add_item(location)
+    arena_picker.select(4)
     form.add_child(arena_picker)
     _make_label("Deterministic seed", form, 15)
     seed_picker = SpinBox.new()
@@ -425,8 +477,9 @@ func _show_config() -> void:
 
 
 func _apply_config() -> void:
-    var kinds := ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf", "midden_grub"]
-    var arenas := ["camp", "stone", "woodland", "refuse"]
+    var kinds := ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf",
+        "midden_grub", "skeleton", "spider", "kobold", "bandit", "mixed"]
+    var arenas := ["camp", "stone", "woodland", "refuse", "wide"]
     enemy_kind = kinds[enemy_picker.get_selected()]
     arena_id = arenas[arena_picker.get_selected()]
     enemy_count = int(count_picker.value)
@@ -488,6 +541,8 @@ func _start_battle() -> void:
     engine = instance
     board.engine = engine
     board.reset_presentation()
+    board.reset_camera()
+    _apply_responsive_layout(get_viewport_rect().size)
     recorded = false
     heard_events = 0
     picker_actor = ""
@@ -640,22 +695,75 @@ func _rebuild_pickers() -> void:
     picker_actor = actor_id
     weapon_ids.clear()
     spell_ids.clear()
+    weapon_cards.clear()
+    spell_cards.clear()
     attack_picker.clear()
     spell_picker.clear()
+    for strip in [weapon_strip, spell_strip]:
+        for child in strip.get_children():
+            strip.remove_child(child)
+            child.queue_free()
     if not engine.current_is_party():
         return
     for attack in engine.current_actor().get("attacks", []):
         var kind: String = str(attack.get("kind", ""))
         if kind in ["melee_weapon", "ranged_weapon"]:
-            weapon_ids.append(str(attack["id"]))
-            attack_picker.add_item(str(attack["id"]).replace("_", " ").capitalize())
+            var wid: String = str(attack["id"])
+            weapon_ids.append(wid)
+            attack_picker.add_item(wid.replace("_", " ").capitalize())
+            var card := _make_button(wid.replace("_", " ").capitalize(),
+                weapon_strip, _select_weapon_card.bind(wid), 108)
+            card.toggle_mode = true
+            _set_button_icon(card, "bow" if kind == "ranged_weapon"
+                else ("dagger" if wid.contains("dagger") else "sword"))
+            weapon_cards[wid] = card
     for spell in engine.get_current_spells():
         spell_ids.append(spell)
         spell_picker.add_item(spell.replace("_", " ").capitalize())
+        var card := _make_button(spell.replace("_", " ").capitalize(),
+            spell_strip, _select_spell_card.bind(spell), 128)
+        card.toggle_mode = true
+        _set_button_icon(card, "second_wind" if spell in ["cure_wounds", "healing_word"] else "spell")
+        spell_cards[spell] = card
     if not weapon_ids.is_empty():
         attack_picker.select(0)
     if not spell_ids.is_empty():
         spell_picker.select(0)
+    spell_scroll.scroll_horizontal = 0
+
+
+func _select_weapon_card(weapon_id: String) -> void:
+    var index: int = weapon_ids.find(weapon_id)
+    if index < 0:
+        return
+    attack_picker.select(index)
+    action_mode = "attack"
+    _refresh()
+
+
+func _select_spell_card(spell_id: String) -> void:
+    var index: int = spell_ids.find(spell_id)
+    if index < 0:
+        return
+    spell_picker.select(index)
+    action_mode = "spell"
+    _refresh()
+
+
+func _scroll_spells(direction: int) -> void:
+    spell_scroll.scroll_horizontal = maxi(0, spell_scroll.scroll_horizontal + direction * 275)
+
+
+func _zoom_in() -> void:
+    board.zoom_at(board.camera_viewport * 0.5, 1.2)
+
+
+func _zoom_out() -> void:
+    board.zoom_at(board.camera_viewport * 0.5, 1.0 / 1.2)
+
+
+func _reset_view() -> void:
+    board.reset_camera()
 
 
 func _play_events() -> void:
@@ -762,6 +870,19 @@ func _refresh() -> void:
     disengage_button.disabled = not can_act or not engine.can_disengage()
     wind_button.disabled = not can_act or not engine.can_use_second_wind()
     end_turn_button.disabled = not can_act
+    end_turn_button.modulate = Color(1.0, 0.95, 0.7) if can_act and (
+        engine.action_used or not engine.can_move_current()) else Color.WHITE
+    for wid in weapon_cards.keys():
+        var weapon_card: Button = weapon_cards[wid]
+        weapon_card.disabled = not can_act or engine.action_used
+        weapon_card.set_pressed_no_signal(str(wid) == _selected_weapon())
+    for sid in spell_cards.keys():
+        var spell_card: Button = spell_cards[sid]
+        var definition: Dictionary = Level1Spells.get_definition(str(sid))
+        spell_card.disabled = not can_act or (
+            int(definition.get("level", 0)) > 0 and
+            int(engine.current_actor().get("spell_slots_remaining", 0)) <= 0)
+        spell_card.set_pressed_no_signal(str(sid) == _selected_spell())
     attack_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
     spell_picker.disabled = not can_act or spell_ids.is_empty()
     var selected_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
@@ -862,10 +983,12 @@ func _apply_responsive_layout(view_size: Vector2) -> void:
     sidebar_panel.custom_minimum_size.x = float(sidebar_width) if landscape else 0.0
     # Reserve vertical space for the always-visible player action bar.
     var available_height: float = view_size.y - (300.0 if landscape else 250.0)
-    var cell: int = floori(minf(68.0, minf(available_width / 12.0, available_height / 10.0)))
-    if not landscape:
-        cell = floori(minf(68.0, available_width / 12.0))
+    # Use a clipped camera viewport rather than fitting all 17 columns at once.
+    var map_width: float = maxf(290.0, available_width)
+    var map_height: float = maxf(280.0, available_height)
+    var cell: int = clampi(floori(minf(map_width / 11.0, map_height / 8.0)), 38, 68)
     board.set_display_cell_size(cell)
+    board.set_viewport_size(Vector2(map_width, map_height))
 
 
 func _update_selection_details() -> void:

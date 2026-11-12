@@ -528,7 +528,8 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
             reactor["name"], target["name"], result["total"]
         ])
         _event("miss", reactor_id, target_id, {
-            "action_id": str(weapon.get("id", "")), "source_kind": "weapon", "reaction": true
+            "action_id": str(weapon.get("id", "")), "source_kind": "weapon", "reaction": true,
+            "attack_kind": str(weapon.get("kind", ""))
         })
         return
     var damage: int = RulesMath.roll_damage(str(weapon["damage"]), rng, bool(result["critical"]))
@@ -539,7 +540,8 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
     _event("hit", reactor_id, target_id, {
         "amount": damage, "action_id": str(weapon.get("id", "")),
         "damage_type": str(weapon.get("damage_type", "physical")), "source_kind": "weapon",
-        "critical": bool(result["critical"]), "reaction": true
+        "critical": bool(result["critical"]), "reaction": true,
+        "attack_kind": str(weapon.get("kind", ""))
     })
     _check_victory()
 
@@ -731,7 +733,8 @@ func attack(target_id: String, weapon_id: String = "", nonlethal: bool = false) 
         ])
         _event("miss", source_id, target_id, {
             "action_id": str(weapon.get("id", "")), "source_kind": "weapon",
-            "damage_type": str(weapon.get("damage_type", "physical"))
+            "damage_type": str(weapon.get("damage_type", "physical")),
+            "attack_kind": str(weapon.get("kind", ""))
         })
         return true
     if not bool(roll["critical"]) and _can_shield(target_id):
@@ -786,7 +789,8 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
     _event("hit", source_id, target_id, {
         "amount": damage, "action_id": str(weapon.get("id", "")),
         "damage_type": str(weapon.get("damage_type", "physical")),
-        "source_kind": "weapon", "critical": bool(roll["critical"]), "nonlethal": knocked_out
+        "source_kind": "weapon", "critical": bool(roll["critical"]), "nonlethal": knocked_out,
+        "attack_kind": str(weapon.get("kind", ""))
     })
     _emit_sound("damage")
     if knocked_out:
@@ -1413,6 +1417,14 @@ func _event(kind: String, actor_id: String = "", target_id: String = "",
         "round": round_number, "kind": kind, "actor_id": actor_id,
         "target_id": target_id, "text": "", "sound": ""
     }
+    # Position snapshots are captured when combat resolves, before the UI
+    # receives events. Presentation must not query moving actors for endpoints.
+    if actors.has(actor_id):
+        var source_cell: Vector2i = actors[actor_id]["position"]
+        entry["source_cell"] = [source_cell.x, source_cell.y]
+    if actors.has(target_id):
+        var target_cell: Vector2i = actors[target_id]["position"]
+        entry["target_cell"] = [target_cell.x, target_cell.y]
     for key in payload.keys():
         entry[key] = payload[key]
     events.append(entry)

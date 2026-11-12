@@ -51,3 +51,14 @@ When Codespaces is chosen as a runtime, verify actual Codespaces inventory, bran
 | Initial visual effects playback | Implemented, test event enqueue PASS | Real GPU/browser animation quality NOT RUN |
 | Real iPad Safari v0.3 animation, targeting and text legibility | NOT RUN | Owner to playtest new published build |
 
+
+## v0.4 — Wide arena, mixed enemies, camera/card/projectile pass
+
+| Check | Status | Evidence |
+| --- | --- | --- |
+| Original 12-column engine/combat regression | PASS, automated | GitHub Godot CI for v0.4 branch |
+| 17-column mixed enemy setup, SVG sprites and creature availability | PASS, automated | `tests/test_v04_wide_camera_projectiles.gd` |
+| Tap-on-release, drag suppresses attack, pinch, zoom/camera mapping | PASS, simulated events only | `tests/test_web_touch_input.gd` |
+| Direct weapon/spell buttons, End Turn icon and projectile flight/impact queue | PASS, automated | `tests/test_v04_wide_camera_projectiles.gd` |
+| GitHub Pages Web export | PENDING latest deployment | `.github/workflows/combat-lab-web.yml` |
+| Real iPad touch, swipe comfort, projectile visibility, enemy art acceptance | NOT RUN | Owner manual review after deployment |

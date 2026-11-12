@@ -6,15 +6,23 @@ const ARENAS := {
     "camp": "res://combat_lab/fixtures/encounters/training_battle.json",
     "stone": "res://combat_lab/fixtures/encounters/stone_chamber.json",
     "woodland": "res://combat_lab/fixtures/encounters/woodland_watch.json",
-    "refuse": "res://combat_lab/fixtures/encounters/refuse_room.json"
+    "refuse": "res://combat_lab/fixtures/encounters/refuse_room.json",
+    "wide": "res://combat_lab/fixtures/encounters/wide_training_camp.json"
 }
 const ENEMIES := {
     "goblin_melee": {"arena": "camp", "index": 1},
     "goblin_archer": {"arena": "camp", "index": 2},
     "goblin_vanguard": {"arena": "camp", "index": 0},
     "wolf": {"arena": "stone", "index": 1},
-    "midden_grub": {"arena": "refuse", "index": 0}
+    "midden_grub": {"arena": "refuse", "index": 0},
+    "skeleton": {"path": "res://combat_lab/fixtures/enemies/v04_archetypes.json", "index": 0},
+    "spider": {"path": "res://combat_lab/fixtures/enemies/v04_archetypes.json", "index": 1},
+    "kobold": {"path": "res://combat_lab/fixtures/enemies/v04_archetypes.json", "index": 2},
+    "bandit": {"path": "res://combat_lab/fixtures/enemies/v04_archetypes.json", "index": 3},
+    "mixed": {"kind": "preset"}
 }
+const MIXED_ROSTER := ["skeleton", "goblin_archer", "spider", "kobold", "bandit"]
+
 const CLASS_SPELLS := {
     "evoker": ["fire_bolt", "ray_of_frost", "magic_missile", "mage_armor", "shield"],
     "priest": ["sacred_flame", "cure_wounds", "healing_word", "bless"],
@@ -116,15 +124,23 @@ static func build_setup(level: int, fourth_class: String, enemy_kind: String, en
         return {}
     var party: Dictionary = _build_party(level, fourth_class)
     var arena: Dictionary = _read(str(ARENAS[arena_id]))
-    var enemy_spec: Dictionary = ENEMIES[enemy_kind]
-    var reference: Dictionary = _read(str(ARENAS[str(enemy_spec["arena"])]))
-    if party.is_empty() or arena.is_empty() or reference.is_empty():
+    if party.is_empty() or arena.is_empty():
         return {}
-    var templates: Array = reference.get("enemies", [])
-    var index: int = int(enemy_spec["index"])
-    if index < 0 or index >= templates.size():
-        return {}
-    var template: Dictionary = templates[index]
+    # Every species uses an authored creature stat block. "mixed" cycles through
+    # a documented roster without modifying the combat engine or its AI rules.
+    var enemy_templates: Dictionary = {}
+    for kind_variant in ENEMIES.keys():
+        var kind: String = str(kind_variant)
+        if kind == "mixed":
+            continue
+        var spec: Dictionary = ENEMIES[kind]
+        var fixture_path: String = str(spec.get("path", ARENAS.get(str(spec.get("arena", "")), "")))
+        var source: Dictionary = _read(fixture_path)
+        var definitions: Array = source.get("enemies", [])
+        var slot: int = int(spec.get("index", -1))
+        if slot < 0 or slot >= definitions.size():
+            return {}
+        enemy_templates[kind] = definitions[slot]
     var enemies: Array = []
     var blocked: Dictionary = {}
     for cell in arena.get("walls", []):
@@ -155,9 +171,11 @@ static func build_setup(level: int, fourth_class: String, enemy_kind: String, en
     if candidates.size() < enemy_count:
         return {}
     for n in range(enemy_count):
+        var archetype: String = str(MIXED_ROSTER[n % MIXED_ROSTER.size()]) if enemy_kind == "mixed" else enemy_kind
+        var template: Dictionary = enemy_templates[archetype]
         var enemy: Dictionary = template.duplicate(true)
-        enemy["id"] = "lab_%s_%02d" % [enemy_kind, n + 1]
-        enemy["name"] = "%s %d" % [str(template.get("name", enemy_kind)), n + 1]
+        enemy["id"] = "lab_%s_%02d" % [archetype, n + 1]
+        enemy["name"] = "%s %d" % [str(template.get("name", archetype)), n + 1]
         enemy["position"] = [candidates[n].x, candidates[n].y]
         enemy.erase("npc_id")
         enemy.erase("special_npc")

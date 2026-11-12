@@ -21,12 +21,31 @@ var selected_spell := ""
 var selected_deployment_actor := ""
 var _sprite_cache: Dictionary = {}
 var display_cell_size: int = CELL_SIZE
+var camera_offset := Vector2.ZERO
+var camera_zoom := 1.0
+var camera_viewport := Vector2(816, 680)
+var camera_view_active := false
+const TOUCH_DRAG_THRESHOLD := 8.0
+const MIN_ZOOM := 0.65
+const MAX_ZOOM := 1.6
+var _touch_points: Dictionary = {}
+var _touch_start := Vector2.ZERO
+var _touch_last := Vector2.ZERO
+var _touch_dragged := false
+var _pinch_used := false
+var _mouse_down := false
+var _mouse_start := Vector2.ZERO
+var _mouse_last := Vector2.ZERO
+var _mouse_dragged := false
 var keyboard_cell := Vector2i(2, 5)
 var _last_touch_cell := Vector2i(-1, -1)
 var _last_touch_msec := -10000
 var inspected_cell := Vector2i(-1, -1)
 var _effects: Array[Dictionary] = []
+var _projectiles: Array[Dictionary] = []
+var _next_projectile_start_ms := 0
 const EFFECT_DURATION_MS := 720
+const PROJECTILE_DURATION_MS := 450
 
 # Non-authoritative presentation driven only by engine-resolved combat facts.
 func enqueue_combat_event(event: Dictionary) -> void:
@@ -35,7 +54,29 @@ func enqueue_combat_event(event: Dictionary) -> void:
         return
     if engine == null:
         return
-    var target_id: String = str(event.get("target_id", ""))
+    var ranged: bool = kind in ["hit", "miss"] and (
+        str(event.get("attack_kind", "")) == "ranged_weapon" or (
+            str(event.get("source_kind", "")) == "spell" and
+            str(event.get("action_id", "")) in ["fire_bolt", "ray_of_frost", "magic_missile"]))
+    var from_data: Array = event.get("source_cell", [])
+    var to_data: Array = event.get("target_cell", [])
+    if ranged and from_data.size() == 2 and to_data.size() == 2:
+        var now := Time.get_ticks_msec()
+        var start_time: int = maxi(now, _next_projectile_start_ms)
+        _next_projectile_start_ms = start_time + PROJECTILE_DURATION_MS + 70
+        _projectiles.append({
+            "kind": kind, "amount": int(event.get("amount", 0)),
+            "damage_type": str(event.get("damage_type", "")),
+            "source_kind": str(event.get("source_kind", "")),
+            "from_cell": Vector2(float(from_data[0]), float(from_data[1])),
+            "to_cell": Vector2(float(to_data[0]), float(to_data[1])),
+            "start_ms": start_time,
+            "miss": kind == "miss"
+        })
+        set_process(true)
+        queue_redraw()
+        return
+    var target_id: String = str(event.get("actor_id", "")) if kind == "cast" else str(event.get("target_id", ""))
     if not engine.actors.has(target_id):
         target_id = str(event.get("actor_id", ""))
     if not engine.actors.has(target_id):
@@ -58,6 +99,8 @@ func enqueue_combat_event(event: Dictionary) -> void:
 
 func reset_presentation() -> void:
     _effects.clear()
+    _projectiles.clear()
+    _next_projectile_start_ms = 0
     inspected_cell = Vector2i(-1, -1)
     set_process(false)
     queue_redraw()
@@ -65,10 +108,21 @@ func reset_presentation() -> void:
 
 func _process(_delta: float) -> void:
     var now := Time.get_ticks_msec()
+    for i in range(_projectiles.size() - 1, -1, -1):
+        var projectile: Dictionary = _projectiles[i]
+        if now - int(projectile["start_ms"]) >= PROJECTILE_DURATION_MS:
+            _effects.append({
+                "kind": str(projectile["kind"]), "amount": int(projectile["amount"]),
+                "source_kind": str(projectile["source_kind"]),
+                "damage_type": str(projectile["damage_type"]),
+                "cell": Vector2i(projectile["to_cell"]),
+                "critical": false, "start_ms": now
+            })
+            _projectiles.remove_at(i)
     for i in range(_effects.size() - 1, -1, -1):
         if now - int(_effects[i]["start_ms"]) >= EFFECT_DURATION_MS:
             _effects.remove_at(i)
-    if _effects.is_empty():
+    if _effects.is_empty() and _projectiles.is_empty():
         set_process(false)
     queue_redraw()
 
@@ -132,15 +186,114 @@ func _draw_effects() -> void:
             -1, label_size, tint)
 
 
+func _draw_projectiles() -> void:
+    var now := Time.get_ticks_msec()
+    for projectile in _projectiles:
+        var age_ms: int = now - int(projectile["start_ms"])
+        if age_ms < 0:
+            continue
+        var p: float = clampf(float(age_ms) / float(PROJECTILE_DURATION_MS), 0.0, 1.0)
+        var begin_cell: Vector2 = projectile["from_cell"]
+        var destination: Vector2 = projectile["to_cell"]
+        var start_pt := (begin_cell + Vector2(0.5, 0.5)) * CELL_SIZE
+        var end_pt := (destination + Vector2(0.5, 0.5)) * CELL_SIZE
+        var pos := start_pt.lerp(end_pt, p)
+        var direction := (end_pt - start_pt).normalized()
+        var tint := _effect_color("hit", str(projectile.get("damage_type", "")))
+        if str(projectile.get("source_kind", "")) == "weapon":
+            # Arrow / sling-bolt silhouette plus a modest warm trail.
+            draw_line(pos - direction * 22.0, pos, Color("#efbd73", 0.85), 3.0, true)
+            var side := Vector2(-direction.y, direction.x)
+            draw_colored_polygon(PackedVector2Array([
+                pos + direction * 11.0,
+                pos - direction * 5.0 + side * 4.0,
+                pos - direction * 5.0 - side * 4.0
+            ]), Color("#f9e6b7"))
+        else:
+            draw_circle(pos - direction * 12.0, 6.0, Color(tint.r, tint.g, tint.b, 0.35))
+            draw_circle(pos - direction * 6.0, 7.0, Color(tint.r, tint.g, tint.b, 0.55))
+            draw_circle(pos, 9.0, tint)
+            draw_circle(pos, 3.5, Color("#f4f0ff"))
+
+
 func set_display_cell_size(value: int) -> void:
     display_cell_size = clampi(value, 38, CELL_SIZE)
-    custom_minimum_size = Vector2(12 * display_cell_size, 10 * display_cell_size)
+    if camera_view_active:
+        custom_minimum_size = camera_viewport
+    else:
+        custom_minimum_size = Vector2(12 * display_cell_size, 10 * display_cell_size)
+    _clamp_camera()
+    queue_redraw()
+
+
+func set_viewport_size(view_size: Vector2) -> void:
+    camera_view_active = true
+    camera_viewport = Vector2(maxf(160.0, view_size.x), maxf(160.0, view_size.y))
+    custom_minimum_size = camera_viewport
+    _clamp_camera()
+    queue_redraw()
+
+
+func _grid_dimensions() -> Vector2i:
+    return engine.grid_size if engine != null else Vector2i(12, 10)
+
+
+func _clamp_camera() -> void:
+    if not camera_view_active:
+        camera_offset = Vector2.ZERO
+        return
+    var grid: Vector2i = _grid_dimensions()
+    var cell_px := float(display_cell_size) * camera_zoom
+    var grid_pixels := Vector2(float(grid.x) * cell_px, float(grid.y) * cell_px)
+    camera_offset.x = clampf(camera_offset.x,
+        minf(0.0, camera_viewport.x - grid_pixels.x), 0.0)
+    camera_offset.y = clampf(camera_offset.y,
+        minf(0.0, camera_viewport.y - grid_pixels.y), 0.0)
+
+
+func pan_by(delta: Vector2) -> void:
+    camera_offset += delta
+    _clamp_camera()
+    queue_redraw()
+
+
+func zoom_at(focal_point: Vector2, magnification: float) -> void:
+    if magnification <= 0.0:
+        return
+    var next_zoom: float = clampf(camera_zoom * magnification, MIN_ZOOM, MAX_ZOOM)
+    var ratio := next_zoom / camera_zoom
+    camera_offset = focal_point - (focal_point - camera_offset) * ratio
+    camera_zoom = next_zoom
+    _clamp_camera()
+    queue_redraw()
+
+
+func reset_camera() -> void:
+    camera_zoom = 1.0
+    camera_offset = Vector2.ZERO
+    _touch_points.clear()
+    _touch_dragged = false
+    _pinch_used = false
+    _mouse_down = false
+    _clamp_camera()
     queue_redraw()
 
 
 func _cell_from_position(position: Vector2) -> Vector2i:
-    return Vector2i(floori(position.x / float(display_cell_size)),
-        floori(position.y / float(display_cell_size)))
+    var pixels := (position - camera_offset) / (float(display_cell_size) * camera_zoom)
+    return Vector2i(floori(pixels.x), floori(pixels.y))
+
+
+func _cell_visible(cell: Vector2i) -> bool:
+    var px := (Vector2(cell) + Vector2(0.5, 0.5)) * float(display_cell_size) * camera_zoom + camera_offset
+    return px.x >= 0 and px.y >= 0 and px.x < camera_viewport.x and px.y < camera_viewport.y
+
+
+func _reveal_keyboard_cell() -> void:
+    if not camera_view_active or _cell_visible(keyboard_cell):
+        return
+    var px := (Vector2(keyboard_cell) + Vector2(0.5, 0.5)) * float(display_cell_size) * camera_zoom + camera_offset
+    pan_by(camera_viewport * 0.5 - px)
 
 
 func _activate_cell(cell: Vector2i) -> void:
@@ -159,6 +312,7 @@ func _ready() -> void:
     texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     mouse_filter = Control.MOUSE_FILTER_STOP
     set_display_cell_size(CELL_SIZE)
+    clip_contents = true
     focus_mode = Control.FOCUS_ALL
     set_process(false)
 
@@ -166,7 +320,7 @@ func _ready() -> void:
 func _draw() -> void:
     if engine == null:
         return
-    draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * (float(display_cell_size) / float(CELL_SIZE)))
+    draw_set_transform(camera_offset, 0.0, Vector2.ONE * (float(display_cell_size) * camera_zoom / float(CELL_SIZE)))
     var current: String = engine.current_id()
     var highlights: Dictionary = get_highlights()
     var reachable: Dictionary = highlights["move"]
@@ -293,6 +447,7 @@ func _draw() -> void:
         draw_rect(Rect2(hp_bar.position, Vector2(hp_bar.size.x * fraction, 4)), Color("#65bd7c"))
 
     _draw_effects()
+    _draw_projectiles()
 
 
 func get_highlights() -> Dictionary:
@@ -347,38 +502,115 @@ func _texture_for(path: String) -> Texture2D:
 
 
 func _gui_input(event: InputEvent) -> void:
-    if event is InputEventScreenTouch and event.pressed and event.index == 0:
-        var cell: Vector2i = _cell_from_position(event.position)
-        _last_touch_cell = cell
+    # Screen gestures are interpreted on release. Dragging never submits a
+    # combat command, and two-finger pinch never selects a tactical tile.
+    if event is InputEventScreenTouch:
         _last_touch_msec = Time.get_ticks_msec()
-        _activate_cell(cell)
+        if event.pressed:
+            _touch_points[event.index] = event.position
+            if _touch_points.size() == 1:
+                _touch_start = event.position
+                _touch_last = event.position
+                _touch_dragged = false
+                _pinch_used = false
+            else:
+                _pinch_used = true
+        else:
+            var should_select: bool = _touch_points.size() == 1 and not _touch_dragged and not _pinch_used
+            _touch_points.erase(event.index)
+            if should_select:
+                _activate_cell(_cell_from_position(event.position))
+            if _touch_points.is_empty():
+                _touch_dragged = false
+                _pinch_used = false
         accept_event()
-    elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-        var cell: Vector2i = _cell_from_position(event.position)
-        # Godot may synthesise a mouse press for the same touchscreen tap.
-        if cell == _last_touch_cell and Time.get_ticks_msec() - _last_touch_msec < 400:
+        return
+
+    if event is InputEventScreenDrag:
+        if not _touch_points.has(event.index):
             return
-        grab_focus()
-        _activate_cell(cell)
+        var old_pos: Vector2 = _touch_points[event.index]
+        if _touch_points.size() >= 2:
+            var touch_ids: Array = _touch_points.keys()
+            var other_id: int = int(touch_ids[0]) if int(touch_ids[0]) != event.index else int(touch_ids[1])
+            var other_pos: Vector2 = _touch_points[other_id]
+            var old_distance := maxf(1.0, old_pos.distance_to(other_pos))
+            var next_distance := maxf(1.0, event.position.distance_to(other_pos))
+            _touch_points[event.index] = event.position
+            _pinch_used = true
+            zoom_at((event.position + other_pos) * 0.5, next_distance / old_distance)
+        else:
+            _touch_points[event.index] = event.position
+            if _touch_dragged or event.position.distance_to(_touch_start) > TOUCH_DRAG_THRESHOLD:
+                _touch_dragged = true
+                pan_by(event.position - _touch_last)
+            _touch_last = event.position
         accept_event()
-    elif event is InputEventKey and event.pressed and not event.echo:
+        return
+
+    if event is InputEventMouseButton:
+        # Godot may synthesise mouse events from physical touches, including
+        # release, so suppress the whole pair briefly after the touch.
+        if Time.get_ticks_msec() - _last_touch_msec < 480:
+            accept_event()
+            return
+        if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+            zoom_at(event.position, 1.12)
+            accept_event()
+            return
+        if event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+            zoom_at(event.position, 1.0 / 1.12)
+            accept_event()
+            return
+        if event.button_index == MOUSE_BUTTON_LEFT:
+            if event.pressed:
+                _mouse_down = true
+                _mouse_dragged = false
+                _mouse_start = event.position
+                _mouse_last = event.position
+                grab_focus()
+            elif _mouse_down:
+                _mouse_down = false
+                if not _mouse_dragged:
+                    _activate_cell(_cell_from_position(event.position))
+            accept_event()
+            return
+
+    if event is InputEventMouseMotion and _mouse_down:
+        if _mouse_dragged or event.position.distance_to(_mouse_start) > TOUCH_DRAG_THRESHOLD:
+            _mouse_dragged = true
+            pan_by(event.position - _mouse_last)
+        _mouse_last = event.position
+        accept_event()
+        return
+
+    if event is InputEventKey and event.pressed and not event.echo:
         var offset := Vector2i.ZERO
         match event.keycode:
-            KEY_LEFT:
-                offset = Vector2i.LEFT
-            KEY_RIGHT:
-                offset = Vector2i.RIGHT
-            KEY_UP:
-                offset = Vector2i.UP
-            KEY_DOWN:
-                offset = Vector2i.DOWN
+            KEY_LEFT: offset = Vector2i.LEFT
+            KEY_RIGHT: offset = Vector2i.RIGHT
+            KEY_UP: offset = Vector2i.UP
+            KEY_DOWN: offset = Vector2i.DOWN
+            KEY_EQUAL, KEY_PLUS:
+                zoom_at(camera_viewport * 0.5, 1.12)
+                accept_event()
+                return
+            KEY_MINUS:
+                zoom_at(camera_viewport * 0.5, 1.0 / 1.12)
+                accept_event()
+                return
             KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
                 _activate_cell(keyboard_cell)
                 accept_event()
                 return
             _:
                 return
-        keyboard_cell = Vector2i(clampi(keyboard_cell.x + offset.x, 0, 11),
-            clampi(keyboard_cell.y + offset.y, 0, 9))
+        if event.shift_pressed:
+            pan_by(-Vector2(offset) * 60.0)
+        else:
+            var grid: Vector2i = _grid_dimensions()
+            keyboard_cell = Vector2i(clampi(keyboard_cell.x + offset.x, 0, grid.x - 1),
+                clampi(keyboard_cell.y + offset.y, 0, grid.y - 1))
+            _reveal_keyboard_cell()
         queue_redraw()
         accept_event()
