@@ -62,3 +62,21 @@ python3 -m http.server 8765 --bind 0.0.0.0 --directory /tmp/azure-mines-combat-w
 Open Codespaces **Ports → 8765 → Open in Browser** on your iPad; keep the port private. Close with Ctrl+C in the terminal. The optional reusable script `scripts/serve_codespaces_web_preview.sh` on the web-touch branch does this with a selected Actions run ID.
 
 The build artifact is not a public Pages website. The forwarded port URL is tied to your Codespace session and authorization.
+
+## iPad-first battle layout
+
+Following the first Safari landscape playtest, the combat interface was revised to keep a **persistent right-hand battle console** in landscape. The battle console has four tabs:
+
+- **Actions** — deployment, formations, combat commands, spell/weapon selection and reactions;
+- **Party** — current party HP and combat states;
+- **Details** — a selected creature's HP, AC, attacks and status, or the selected tile's hazards/cover;
+- **Log** — the combat event record and full log dialogue.
+
+When no action mode is selected, tapping a creature/tile opens Details. During a selected action, tapping still submits the action normally and quietly updates Details; it does not steal focus from combat controls. Reactions return focus to Actions.
+
+**Portrait fallback:** The battle console becomes the second row beneath the grid, rather than being hidden. Menu and control layouts wrap and remain scrollable. The browser title/menu and testing functions remain available on smaller viewports.
+
+The forest edge is now rendered as reduced-opacity decor with visible cell boundaries; it is not a wall and must not conceal target selection. Future biome art should distinguish the playable tile layer from decor outside the arena.
+
+The associated headless layout test checks a 1024×768 landscape, 768×1024 portrait, 1550×1000 desktop layout, default Actions tab and updated selection details. This is a *structural* test, **not** a visual or physical touch pass. The next iPad acceptance run should record actual accessibility of all four tabs, comfortable button sizes, map legibility and orientation behaviour.
+

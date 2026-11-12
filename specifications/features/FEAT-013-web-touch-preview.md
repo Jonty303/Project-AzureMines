@@ -15,7 +15,7 @@ Keep Web export deterministic and single-threaded. Retain mouse and keyboard sup
 ## Scope
 - Adapt CombatBoard to handle `InputEventScreenTouch` and ignore duplicate synthetic mouse activation.
 - Provide board keyboard focus and arrow/Enter selection.
-- Rescale battlefield and wrap menu/action controls on tablet; expose a popup battle log when the right-hand panel is hidden.
+- Keep a permanent right-hand battle console in iPad landscape with Actions, Party, Details and Log tabs. In portrait, stack the same console beneath the grid. The selection tab updates from the chosen cell/creature and never changes authoritative combat state.
 - Godot 4.5.2 Web preset, explicit `variant/thread_support=false` and Compatibility renderer.
 - GitHub Actions verifies full official export archive, imports, runs tests, generates HTML/JS/WASM/PCK and uploads a downloadable build.
 - Publish to GitHub Pages when the owner enables it. Codespaces forwarded-port testing is a supported fallback.
@@ -26,7 +26,7 @@ New spell mechanics, new monster AI, changes to narrative systems, packaged nati
 ## Acceptance criteria
 - **FEAT-013-AC01:** Existing game combat rules and UI smoke regressions pass — **PASS, GitHub Actions**.
 - **FEAT-013-AC02:** Synthetic touch activates the correct tile once; mouse and keyboard remain usable — **PASS, Godot headless tests**.
-- **FEAT-013-AC03:** Compact viewport changes board scale and hides sidebar, still offers event log — **PASS for responsive state; visual review pending**.
+- **FEAT-013-AC03:** Landscape retains the tabbed sidebar, portrait stacks it, selection information updates and the battlefield scales — **PASS for structural state; real-device visual review pending**.
 - **FEAT-013-AC04:** Release web export generates nonempty index.html, WASM, JS and PCK — **PASS, GitHub Actions**.
 - **FEAT-013-AC05:** Public GitHub Pages loads, displays graphics and responds to touch — **BLOCKED: Pages settings; physical Safari test NOT RUN**.
 - **FEAT-013-AC06:** Landscape/portrait, dialogs, deployment, movement, spells, reactions and final log pass a real iPad test — **NOT RUN**.
