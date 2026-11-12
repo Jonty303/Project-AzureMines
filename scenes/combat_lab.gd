@@ -66,6 +66,7 @@ var spell_popup: PanelContainer
 var slot_gems: RichTextLabel
 var weapon_cards: Dictionary = {}
 var spell_cards: Dictionary = {}
+var spell_notes: Dictionary = {}
 var level_picker: OptionButton
 var fourth_picker: OptionButton
 var config_dialog: ConfirmationDialog
@@ -742,6 +743,25 @@ func _make_floating_picker(heading: String) -> PanelContainer:
     return panel
 
 
+func _spell_unavailability_hint(spell_id: String) -> String:
+    var spell: Dictionary = Level1Spells.get_definition(spell_id)
+    var chosen_target: String = engine.current_id()
+    var target_kind: String = str(spell.get("target", ""))
+    if target_kind in ["enemy", "ally"]:
+        var current_team: String = str(engine.current_actor().get("team", ""))
+        for candidate_variant in engine.actors.keys():
+            var candidate_id: String = str(candidate_variant)
+            var candidate: Dictionary = engine.actors[candidate_id]
+            if target_kind == "enemy" and candidate["team"] != current_team and engine.is_combat_capable(candidate_id):
+                chosen_target = candidate_id
+                break
+            if target_kind == "ally" and candidate["team"] == current_team and candidate.get("combat_state", "") != "dead":
+                chosen_target = candidate_id
+                break
+    var message: String = engine.spell_unavailable_reason(spell_id, chosen_target)
+    return message if not message.is_empty() else "No currently legal target."
+
+
 func _hide_selection_menus() -> void:
     if weapon_popup != null:
         weapon_popup.hide()
@@ -793,6 +813,7 @@ func _rebuild_pickers() -> void:
     spell_ids.clear()
     weapon_cards.clear()
     spell_cards.clear()
+    spell_notes.clear()
     attack_picker.clear()
     spell_picker.clear()
     for strip in [weapon_strip, spell_strip]:
@@ -838,6 +859,10 @@ func _rebuild_pickers() -> void:
             card.toggle_mode = true
             _set_button_icon(card, "second_wind" if spell in ["cure_wounds", "healing_word"] else "spell")
             spell_cards[spell] = card
+            var unavailable: Label = _make_label("", spell_strip, 11)
+            unavailable.add_theme_color_override("font_color", Color("#a7adb5"))
+            unavailable.visible = false
+            spell_notes[spell] = unavailable
     if not weapon_ids.is_empty():
         attack_picker.select(0)
     if not spell_ids.is_empty():
@@ -1070,9 +1095,12 @@ func _refresh() -> void:
         spell_card.disabled = not can_act or not engine.can_cast_current_spell(str(sid))
         spell_card.set_pressed_no_signal(not spell_card.disabled and action_mode == "spell"
             and str(sid) == _selected_spell())
-        spell_card.tooltip_text = "Choose spell, then a gold target." if not spell_card.disabled else (
-            engine.spell_unavailable_reason(str(sid), engine.current_id()))
+        var spell_reason: String = _spell_unavailability_hint(str(sid)) if spell_card.disabled else ""
+        spell_card.tooltip_text = "Choose spell, then a gold target." if not spell_card.disabled else spell_reason
         spell_card.modulate = Color("#78818b") if spell_card.disabled else Color.WHITE
+        var note: Label = spell_notes[sid]
+        note.text = "Unavailable: " + spell_reason
+        note.visible = spell_card.disabled
     attack_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
     spell_picker.disabled = not can_act or not engine.can_cast_any_current_spell()
     for index in spell_ids.size():
