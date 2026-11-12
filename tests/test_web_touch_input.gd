@@ -64,14 +64,14 @@ func _run() -> void:
     key.pressed = true
     key.keycode = KEY_RIGHT
     board.call("_gui_input", key)
-    if board.keyboard_cell != Vector2i(8, 6):
+    if board.keyboard_cell != Vector2i(9, 6):
         _fail("Keyboard navigation did not advance the tile cursor")
         return
     key = InputEventKey.new()
     key.pressed = true
     key.keycode = KEY_ENTER
     board.call("_gui_input", key)
-    if pressed.size() != 3 or pressed[2] != Vector2i(8, 6):
+    if pressed.size() != 3 or pressed[2] != Vector2i(9, 6):
         _fail("Keyboard confirmation did not select highlighted tile")
         return
     print("PASS: native touch, duplicate event suppression, mouse, keyboard and responsive battle layout")
