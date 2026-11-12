@@ -5,8 +5,8 @@ extends RefCounted
 const Dice = preload("res://core/dice_roller.gd")
 const RulesMath = preload("res://combat/rules_math.gd")
 const Level1Spells = preload("res://combat/level1_spells.gd")
-const PARTY_FIXTURE := "res://tests/fixtures/party/level_01_v1.json"
-const ENCOUNTER_FIXTURE := "res://adventures/test_adventure/encounters/training_battle.json"
+const PARTY_FIXTURE := "res://combat_lab/fixtures/party/level_01_v1.json"
+const ENCOUNTER_FIXTURE := "res://combat_lab/fixtures/encounters/training_battle.json"
 const FORMATIONS := {
     "line": {"alden": [3, 5], "brunna": [2, 5], "pip": [1, 5], "elyra": [0, 5]},
     "square": {"alden": [3, 4], "brunna": [3, 5], "elyra": [2, 4], "pip": [2, 5]},
@@ -48,14 +48,29 @@ var rng := RandomNumberGenerator.new()
 
 
 func start(seed: int = 42024, with_deployment: bool = false, encounter_path: String = ENCOUNTER_FIXTURE) -> bool:
-    # Only packaged encounter fixtures are accepted; saves cannot inject arbitrary paths.
-    if not encounter_path.begins_with("res://adventures/test_adventure/encounters/") or not encounter_path.ends_with(".json"):
+    if not encounter_path.begins_with("res://combat_lab/fixtures/encounters/") or not encounter_path.ends_with(".json"):
         return false
     var party: Dictionary = _read_json(PARTY_FIXTURE)
     var encounter: Dictionary = _read_json(encounter_path)
-    if party.is_empty() or encounter.is_empty():
+    return _start_from_data(party, encounter, seed, with_deployment)
+
+
+func start_from_setup(setup: Dictionary, with_deployment: bool = true) -> bool:
+    if int(setup.get("schema_version", -1)) != 1:
         return false
+    var party: Variant = setup.get("party", {})
+    var encounter: Variant = setup.get("encounter", {})
+    if not party is Dictionary or not encounter is Dictionary:
+        return false
+    return _start_from_data(party.duplicate(true), encounter.duplicate(true), int(setup.get("seed", 42024)), with_deployment)
+
+
+func _start_from_data(party: Dictionary, encounter: Dictionary, seed: int, with_deployment: bool) -> bool:
     if not party.has("characters") or not encounter.has("enemies"):
+        return false
+    if not party["characters"] is Array or not encounter["enemies"] is Array:
+        return false
+    if party["characters"].size() != 4 or encounter["enemies"].is_empty():
         return false
 
     initiative_disadvantaged_team = ""
@@ -289,7 +304,7 @@ func begin_battle() -> bool:
             return false
         occupied.append(pos)
     deployment_active = false
-    _record("The party is ready. The goblins attack!")
+    _record("Deployment complete; battle begins.")
     _roll_initiative_and_start()
     return true
 
@@ -601,65 +616,6 @@ func _deal_damage(target_id: String, damage: int, critical: bool = false) -> voi
     if target["combat_state"] == "dead" and previous_state != "dead":
         _emit_sound("death")
         _record("%s dies." % target["name"])
-
-
-func stabilize_creature(actor_id: String, medic_id: String) -> Dictionary:
-    # Post-battle Medicine first aid does not revive dead creatures.
-    if not finished or victor != "party" or not actors.has(actor_id) or not actors.has(medic_id):
-        return {"allowed": false}
-    var target: Dictionary = actors[actor_id]
-    var medic: Dictionary = actors[medic_id]
-    if target.get("combat_state", "") not in ["unconscious", "knocked_out"] or bool(target.get("first_aid_attempted", false)) or not is_combat_capable(medic_id) or medic["team"] != "party":
-        return {"allowed": false}
-    var wisdom: int = Dice.ability_modifier(int(medic.get("ability_scores", {}).get("wisdom", 10)))
-    var proficiency: int = int(medic.get("proficiency_bonus", 2)) if medic.get("skill_proficiencies", []).has("medicine") else 0
-    target["first_aid_attempted"] = true
-    actors[actor_id] = target
-    var die: int = Dice.roll_d20(rng)
-    var total: int = die + wisdom + proficiency
-    var ok: bool = total >= 10
-    if ok:
-        target["combat_state"] = "active" if int(target["hp"]) > 0 else "stable"
-        target["short_rest_started"] = false
-        target["death_successes"] = 0
-        target["death_failures"] = 0
-        actors[actor_id] = target
-    _record("%s checks %s: Medicine %d vs DC 10 — %s." % [
-        medic["name"], target["name"], total, "SUCCESS" if ok else "FAILURE"
-    ])
-    return {"allowed": true, "roll": die, "total": total, "success": ok}
-
-
-func heal_survivor(caster_id: String, target_id: String) -> bool:
-    if not finished or victor != "party" or not actors.has(caster_id) or not actors.has(target_id):
-        return false
-    var caster: Dictionary = actors[caster_id]
-    var target: Dictionary = actors[target_id]
-    if caster["team"] != "party" or not is_combat_capable(caster_id):
-        return false
-    if target.get("combat_state", "") not in ["unconscious", "stable", "knocked_out"]:
-        return false
-    var spellcasting: Variant = caster.get("spellcasting")
-    if not spellcasting is Dictionary or not spellcasting.get("prepared_spells", []).has("cure_wounds"):
-        return false
-    if int(caster.get("spell_slots_remaining", 0)) <= 0:
-        return false
-    var spell: Dictionary = Level1Spells.get_definition("cure_wounds")
-    var healing: int = RulesMath.roll_damage(str(spell["healing"]), rng)
-    healing += Dice.ability_modifier(int(caster["ability_scores"][str(spellcasting["ability"])]))
-    var gained: int = mini(maxi(0, healing), int(target["max_hp"]) - int(target["hp"]))
-    caster["spell_slots_remaining"] = int(caster["spell_slots_remaining"]) - 1
-    target["hp"] = int(target["hp"]) + gained
-    if gained > 0 and int(target["hp"]) > 0:
-        target["combat_state"] = "active"
-        target["short_rest_started"] = false
-        target["death_successes"] = 0
-        target["death_failures"] = 0
-    actors[caster_id] = caster
-    actors[target_id] = target
-    _emit_sound("heal")
-    _record("%s heals %s for %d HP after battle (one spell slot spent)." % [caster["name"], target["name"], gained])
-    return true
 
 
 func can_disengage() -> bool:

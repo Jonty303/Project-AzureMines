@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "training_battle",
-  "name": "Wagon Camp — The First Ambush",
+  "name": "Forest Training Camp — Four Goblins",
   "grid_size": [
     12,
     10
@@ -46,7 +46,7 @@
   "enemies": [
     {
       "id": "goblin_blade",
-      "name": "Hesk, Roadwatch",
+      "name": "Goblin Vanguard",
       "max_hp": 9,
       "armor_class": 16,
       "speed_feet": 30,
@@ -68,9 +68,6 @@
         }
       ],
       "role": "melee",
-      "npc_id": "hesk_roadwatch",
-      "special_npc": true,
-      "death_saves": true,
       "equipment": [
         "shortsword",
         "shield"
@@ -261,6 +258,6 @@
       8
     ]
   },
-  "intro": "A broken wagon blocks the trail. A sound in the brush, then movement among the trees: goblins are preparing to strike. Arrange the party before the first exchange.",
+  "intro": "A standalone tactical training encounter.",
   "default_formation": "square"
 }
