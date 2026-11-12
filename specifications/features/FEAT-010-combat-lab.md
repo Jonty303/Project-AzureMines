@@ -1,35 +1,38 @@
 # FEAT-010 — Isolated Combat Lab
 
-**Status:** Proposed detailed spec; parent objective approved 2026-11-12
-**Owner:** Project owner · **Branch:** feature/combat-lab-polish-level2
+**Status:** First implementation committed; automated tests PASS on branch, manual/visual acceptance pending.
+**Owner:** Project owner · **Branch:** feature/standalone-combat-lab
 
 ## Purpose
-Make tactical combat accessible directly for iteration on visuals, usability and future class/monster test fixtures, without playing the opening story.
+Allow deterministic combats to be tested independently of adventure/campaign orchestration.
 
 ## Human instructions
-Review the sandbox entry mechanism, fixture scope, debug visibility and what constitutes a finished independent battle.
+Approve playable UI, art, accessibility, the level-test limitations, debug presentation and any eventual merge.
 
 ## AI agent instructions
-Preserve the existing adventure and combat entry point; reuse authoritative CombatEngine and CombatBoard, not copied rules. Add tests before replacing any existing scene transitions.
+Keep the battle engine authoritative and preserve original level-one fixtures. Use test data and a separate log path; no campaign state writes.
 
-## Specification
-- **Goal:** A developer can launch a dedicated combat-only scene and repeatedly play deterministic encounters.
-- **In scope:** Dedicated test launcher/scene, fixture selection from an explicit allowlist, deployment, play, victory/defeat, restart/new seed, entry feedback, no story/reward writes.
-- **Excluded:** Campaign map, quest progression, persistence, level-two rules, automatic production main-scene changes and arbitrary file-path input.
-- **Inputs:** Approved encounter ID/fixture, seed, standard pointer actions, formation, available spells/weapons.
-- **Outputs:** Reusable combat event log, rendered board, outcome, reset, and optional lightweight developer diagnostics.
-- **State invariant:** A sandbox run owns transient CombatEngine state. No saved game slots, campaign flags, money, XP, NPC attitudes or quest journal are mutated. Restart discards all transient combat, UI and VFX state.
-- **Architecture:** Prefer a separate launcher and UI entry adapter. If the current scenes/combat_ui.gd mixes story and combat, split through the smallest testable seam rather than duplicating a thousand-line controller.
-- **Regression:** The current adventure startup must still open the Old Trade Road story and continue into deployment.
+## Implemented scope
+- Title screen; four-party roster display and test-level selector 1–5, plus optional Hunter fourth-slot fixture.
+- Config dialog: known archetype, count 1–8, four sample arenas, deterministic seed.
+- Start Combat -> deployment -> normal existing rules/AI; replay or return to title.
+- Debug shows CombatSetup and latest CombatResult; last battle report written to `user://combat_lab_last_battle.json`, available on the title after restart.
+- Explicit zero XP/gold/loot in all sandbox outputs.
+- Uses currently implemented spells for matching classes; level-two+ gameplay features not implemented.
 
-## Acceptance and evidence
-- **FEAT-010-AC01:** Developer-only launch opens a deployed-ready four-person combat fixture without stepping through narrative.
-- **FEAT-010-AC02:** Battle initiative, actions, reactions, victory and defeat use the same authoritative engine as existing tests.
-- **FEAT-010-AC03:** Reset twice yields the same actor/turn baseline with fixed seed; changing fixture changes only the chosen battle.
-- **FEAT-010-AC04:** No permanent campaign saves or rewards are written; tests prove unchanged save/flag paths.
-- **FEAT-010-AC05:** Existing opening story/combat/cave tests continue to pass.
-- **FEAT-010-AC06:** Desktop input, restart, targeting and legibility manually checked; real touch/gamepad status explicitly recorded.
-- **Automated checks:** Add focused tests/test_combat_lab.gd; run current Godot smoke suite.
-- **Manual checks:** Full battle, loss/reset, repeat, no visual artifacts, no duplicate SFX or listeners.
-- **Human sign-off:** Pending.
-<!-- [EXAMPLE ONLY] A new detached combat scene is a design option; its exact class name is not preapproved. -->
+## Acceptance
+- **FEAT-010-AC01:** Starts on title, not a narrative scene — automated headless test.
+- **FEAT-010-AC02:** Chosen level/class/enemy/count/arena/seed flows to validated CombatSetup.
+- **FEAT-010-AC03:** Deployment and battle use authoritative CombatEngine and existing rules.
+- **FEAT-010-AC04:** Result records outcome, combatants, action log; rewards are zero and no campaign save is modified.
+- **FEAT-010-AC05:** Last battle log survives application restart.
+- **FEAT-010-AC06:** Existing headless combat rules and new UI/setup tests PASS.
+- **FEAT-010-AC07:** Desktop UI/controls and actual visual presentation reviewed manually — **NOT RUN**.
+- **FEAT-010-AC08:** Real touch/gamepad support or approved exceptions — **NOT RUN**.
+
+## Known prototype limitations
+Hunter's temporary test profile borrows Pip's slot/art, level 2–5 currently adjusts HP and first-level spell capacity only, homogeneous enemy selection, no extra morale/objective outcomes yet. No additional animations until FEAT-011.
+
+## Evidence
+Godot 4.5.2 and governance workflows on the dedicated branch; see `development/VALIDATION_MATRIX.md`. No merge approval recorded.
+<!-- [EXAMPLE ONLY] Interactive screenshots and actual device checks must not be inferred from headless import. -->

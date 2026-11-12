@@ -1,40 +1,31 @@
-# Azure Mines — project context
+# Azure Mines Combat Lab — project context
 
-**Status:** Existing decisions documented; further scope requires owner approval
-**Owner:** Project owner (human) · **Reviewed:** 2026-11-12
+**Status:** Owner-approved combat-only development direction · **Reviewed:** 2026-11-12
 
 ## Purpose
-Preserve a concise, authoritative overview of game intent and current scope for humans and AI agents.
+Define the active scope for the standalone combat test harness, distinct from narrative and campaign work.
 
 ## Human instructions
-Approve material changes to scope, gameplay, technology and player-facing content; distinguish future ideas from committed requirements.
+Approve mechanical progression, class abilities, combat architecture, platform/input support and visual acceptance. Narrative features are outside this branch.
 
 ## AI agent instructions
-Interpret canon and implementation separately. Read the latest approved feature specification and the existing docs/world-bible.md before substantial changes.
+Preserve independent combat simulation and use test fixtures rather than campaign state. Do not invent unavailable level features or any narrative content.
 
-## Game vision
-- **Pitch:** Gold Box-inspired, party-based fantasy role-playing in Erith, beginning in the Dales. Tactical, turn-based combat supports authored narrative choices and consequential exploration.
-- **Genre/audience:** Single-party tactical fantasy RPG, intended for players who enjoy tactical positioning, character abilities, branching decisions, and dangerous journeys.
-- **Pillars:** Meaningful turn-based decisions; characters with fixed but distinctive progression; persistent narrative consequences; exploration/inventory choices grounded in the setting; transparent, testable rules.
-- **Technology:** Godot 4.5.2 standard GDScript. Three layers: reusable game engine, interchangeable ruleset, authored adventures.
-- **Initial party:** Four characters; five fixed-progression classes (Champion, Priest, Thief, Evoker, Hunter); Human, Dwarf, Elf and Halfling; initial progression target levels 1–5; Bard/Lore later.
-- **Exploration:** Authored choice-driven location graph and discovery map, NOT a first-person movement grid. World Bible is author-only.
+## Vision and scope
+- **Pitch:** A standalone, repeatable tactical battle lab for the Azure Mines party-based RPG.
+- **Technology:** Godot 4.5.2 standard GDScript; retain deterministic CombatEngine and CombatBoard.
+- **Design pillars:** A quick test loop, explicit setup, reliable events/results, meaningful positioning, original readable presentation.
+- **Current baseline:** Four character slots (Alden, Elyra, Brunna, Pip; optional Hunter test in fourth slot); levels 1–5 selectable for test scaffolding; first-level implemented abilities and spells.
+- **Battle inputs:** Party level/variant, fixed fixtures, enemy type/count, battlefield, deterministic seed.
+- **Battle outputs:** Full initial setup, combatant final HP/conditions, victory/defeat, events, rounds and explicit zero sandbox rewards.
+- **Testing:** Rules/engine CI + Combat Lab UI smoke; graphical desktop review pending.
 
-## Current verified repository reality
-- main: project bootstrap, core module loader, documentation and consolidated world bible.
-- feature/downed-sprites-action-bar: most developed playable opening, tactical combat, persistent exploration, goblin cave v0.9.1 and extensive tests.
-- feature/adventure-design-tools: separate browser-based overland and dungeon designers; authoring exports are not runtime packages.
-- Do not equate a historical passing headless CI run with current manual playtest acceptance.
+## Exclusions
+No narrative engine, dialogue, quests, lore/spoilers, NPC registry, world map, campaign save/XP/gold/loot, AI-driven story branches or production character progression. Future integration uses reviewed setup/result boundaries.
 
-## Immediate next objective
-Isolate the already implemented tactical experience as a repeatable combat sandbox. Polish sprite readability, action bar, hit feedback and restrained original melee/spell VFX. After stabilising the sandbox, specify character-level-two class features/spell resource changes and a small roster of distinct opponents; keep combat correctness separate from presentation.
-
-## In scope for next slice
-A combat-only entry path, representative repeatable fixtures, event-driven feedback, VFX acceptance and regression tests. See the next-cycle feature spec on the combat development branch.
-
-## Explicitly deferred
-Campaign rewrite, story progression, new dungeon politics, level-3 spells, asset pipeline overhaul, new character creation system, large universal editor, new engine/framework dependencies, and merges into main without approval.
+## Next work
+FEAT-009 structural input/result/event hardening; FEAT-011 sprite/UI/VFX polish; FEAT-012 level-two mechanics, support for broader spell resources and monster variety. FEAT-010 initial lab exists but requires desktop/manual review.
 
 ## Open decisions
-Target input/platform support (keyboard/mouse baseline; physical touch/gamepad requirements need confirmation), visual style/art sign-off, exact level-two feature choices, additional monster roster and progression balance.
-<!-- [EXAMPLE ONLY — NOT AN APPROVED REQUIREMENT] An arcade shooter example from the upstream template is irrelevant to this project. -->
+Real desktop visual signoff, touch/gamepad support and exceptions, canonical Hunter test fixture, mixed monster encounters, detailed level-two class feature rules.
+<!-- [EXAMPLE ONLY — NOT APPROVED] Do not import example arcade-game controllers or narrative systems. -->
