@@ -1,5 +1,5 @@
 extends SceneTree
-const Engine = preload("res://combat/combat_engine.gd")
+const CombatEngine = preload("res://combat/combat_engine.gd")
 const Dice = preload("res://core/dice_roller.gd")
 const SCENE = preload("res://scenes/combat.tscn")
 
@@ -15,7 +15,7 @@ func _seed_for_roll(wanted: int) -> int:
     return 0
 
 func _run() -> void:
-    var fight := Engine.new()
+    var fight := CombatEngine.new()
     if not fight.start(6411):
         _fail("Encounter did not start")
         return
