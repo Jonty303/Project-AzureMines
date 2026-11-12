@@ -122,7 +122,13 @@ func enqueue_combat_event(event: Dictionary) -> void:
     var to_data: Array = event.get("target_cell", [])
     if ranged and from_data.size() == 2 and to_data.size() == 2:
         var now := Time.get_ticks_msec()
+        var source_id: String = str(event.get("actor_id", ""))
+        var target_id: String = str(event.get("target_id", ""))
+        # If an attacker advanced into range before firing, let the movement
+        # complete visually before launching the already-resolved missile.
         var start_time: int = maxi(now, _next_projectile_start_ms)
+        start_time = maxi(start_time, int(_last_motion_end.get(source_id, now)))
+        start_time = maxi(start_time, int(_last_motion_end.get(target_id, now)))
         _next_projectile_start_ms = start_time + PROJECTILE_DURATION_MS + 70
         _projectiles.append({
             "kind": kind, "amount": int(event.get("amount", 0)),
