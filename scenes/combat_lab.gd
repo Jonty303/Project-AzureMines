@@ -615,7 +615,10 @@ func _record_result() -> void:
             "hp": int(actor.get("hp", 0)), "max_hp": int(actor.get("max_hp", 0)),
             "state": str(actor.get("combat_state", "unknown")), "position": [cell.x, cell.y],
             "spell_slots_remaining": int(actor.get("spell_slots_remaining", 0)),
-            "second_wind_remaining": int(actor.get("second_wind_remaining", 0))})
+            "second_wind_remaining": int(actor.get("second_wind_remaining", 0)),
+            "equipment": actor.get("equipment", []).duplicate(true),
+            "inventory": actor.get("inventory", []).duplicate(true),
+            "conditions": actor.get("conditions", []).duplicate(true)})
     last_report = {
         "schema_version": 1, "setup": last_setup.duplicate(true),
         "result": {"outcome": engine.victor, "rounds": engine.round_number,

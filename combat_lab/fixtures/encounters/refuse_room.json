@@ -38,12 +38,8 @@
     "rows": 0
   },
   "id": "cave_midden_grub",
-  "name": "Rubbish Tip — Midden Grub",
-  "intro": "A small plated scavenger wriggles from the midden. The deeper shaft is not a traversable combat tile.",
-  "rewards": {
-    "xp_total": 20,
-    "gold_gp": 0
-  },
+  "name": "Refuse Room — Training",
+  "intro": "An enclosed test battlefield with difficult terrain and a small scavenger.",
   "enemies": [
     {
       "speed_feet": 20,

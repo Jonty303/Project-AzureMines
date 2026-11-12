@@ -2,7 +2,7 @@
 
 **Status:** Planned follow-on — explicit mechanical details **not yet approved**
 **Depends on:** FEAT-010 and satisfactory FEAT-011 review
-**Branch:** feature/combat-lab-polish-level2
+**Branch:** feature/standalone-combat-lab
 
 ## Purpose
 Extend the stable sandbox with differentiated level-two class play and several new opponents, while retaining the level-one fixtures as regression baselines.

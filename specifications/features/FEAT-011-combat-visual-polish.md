@@ -2,7 +2,7 @@
 
 **Status:** Proposed detailed spec; visual polish objective approved 2026-11-12
 **Depends on:** FEAT-010 Combat Lab
-**Branch:** feature/combat-lab-polish-level2
+**Branch:** feature/standalone-combat-lab
 
 ## Purpose
 Improve the tactical board's appearance and legibility, introducing restrained melee and spell animations without changing the outcome of actions.

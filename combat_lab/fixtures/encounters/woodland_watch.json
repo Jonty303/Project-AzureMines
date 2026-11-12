@@ -38,12 +38,8 @@
     "rows": 0
   },
   "id": "cave_watchpost",
-  "name": "Tree Watchpost — Two Lookouts",
-  "intro": "Two goblins keep watch from the trees. Resolve their ambush at the limestone cave.",
-  "rewards": {
-    "xp_total": 100,
-    "gold_gp": 0
-  },
+  "name": "Woodland Watch — Training",
+  "intro": "A wooded battlefield with sight-blocking cover for combat testing.",
   "enemies": [
     {
       "speed_feet": 30,

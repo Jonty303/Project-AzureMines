@@ -38,12 +38,8 @@
     "rows": 0
   },
   "id": "cave_guardroom",
-  "name": "Cave Guardroom — Goblin and Wolf",
-  "intro": "A goblin and a large wolf guard a chamber off the main limestone passage.",
-  "rewards": {
-    "xp_total": 100,
-    "gold_gp": 0
-  },
+  "name": "Stone Chamber — Training",
+  "intro": "A test chamber containing an authored goblin and wolf stat block.",
   "enemies": [
     {
       "speed_feet": 30,

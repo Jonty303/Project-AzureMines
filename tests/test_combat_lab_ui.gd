@@ -16,12 +16,24 @@ func _run() -> void:
     if scene.get("party_level") != 2:
         _fail("Level selection did not update party level")
         return
+    scene.call("_show_config")
+    if not scene.get("config_dialog").visible:
+        _fail("Encounter configuration dialogue did not open")
+        return
+    scene.get("enemy_picker").select(3)
+    scene.get("count_picker").value = 3
+    scene.get("arena_picker").select(1)
+    scene.get("seed_picker").value = 12345
+    scene.call("_apply_config")
+    if scene.get("enemy_kind") != "wolf" or scene.get("enemy_count") != 3 or scene.get("arena_id") != "stone":
+        _fail("Encounter dialogue did not update the selected battle")
+        return
     scene.call("_start_battle")
     var game = scene.get("engine")
     if game == null or not game.deployment_active or not scene.get("battle_panel").visible:
         _fail("Standalone combat could not start deployment")
         return
-    if scene.get("title_panel").visible or game.actors["alden"]["level"] != 2:
+    if scene.get("title_panel").visible or game.actors["alden"]["level"] != 2 or game.actors.size() != 7:
         _fail("Title failed to transition or level did not flow into combat")
         return
     scene.call("_set_formation", "diamond")
@@ -29,7 +41,7 @@ func _run() -> void:
         _fail("Formation selection unavailable in the combat lab")
         return
     scene.call("_begin_battle")
-    if game.deployment_active or game.turn_order.size() != 8:
+    if game.deployment_active or game.turn_order.size() != 7:
         _fail("Combat Lab could not initiate the tactical battle")
         return
     for id in game.actors.keys():
@@ -58,7 +70,13 @@ func _run() -> void:
     if not scene.get("last_view").text.contains("Outcome: party"):
         _fail("Last Battle Log did not display persisted battle result")
         return
-    print("PASS: title, level, deployment, battle, outcome recording and last-battle log")
+    var restored: Node = SCENE.instantiate()
+    root.add_child(restored)
+    await process_frame
+    if restored.get("last_report").get("result", {}).get("outcome", "") != "party":
+        _fail("Last battle did not survive a new application session")
+        return
+    print("PASS: title, configured arena/enemy roster, level, deployment, battle, persisted result and last-battle log")
     quit(0)
 
 func _fail(message: String) -> void:

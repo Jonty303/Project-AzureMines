@@ -35,3 +35,9 @@ Draft a Proposed ADR before material changes. Never mark an unreviewed change Ac
 **Status:** Proposed for next cycle
 **Proposal:** Provide a non-campaign standalone entry fixture using existing CombatEngine and CombatBoard, not a fork of combat algorithms.
 **Revisit:** After a working launcher and tests.
+
+
+### ADR-AM-006 — Isolated Combat Lab branch
+**Status:** Implemented prototype, pending owner acceptance (2026-11-12).
+**Decision:** Run a standalone title/configuration/CombatEngine session with a version-one setup/result dictionary and saved debug report. Do not call narrative, quests, NPC registry or campaign state in this branch.
+**Consequences:** Existing narrative modules remain in their original branches; later integration must use a reviewed external adapter. See FEAT-009.
