@@ -75,7 +75,7 @@ var debug_view: TextEdit
 var sfx_players: Dictionary = {}
 var party_level := 1
 var fourth_class := "thief"
-var enemy_kind := "goblin_melee"
+var enemy_kind := "mixed"
 var enemy_count := 4
 var arena_id := "wide"
 var encounter_seed := 42024
@@ -424,6 +424,7 @@ func _build_dialogs() -> void:
     for kind in ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf",
             "midden_grub", "skeleton", "spider", "kobold", "bandit", "mixed"]:
         enemy_picker.add_item(kind.replace("_", " ").capitalize())
+    enemy_picker.select(9)
     form.add_child(enemy_picker)
     _make_label("Number of enemies (1–8)", form, 15)
     count_picker = SpinBox.new()
