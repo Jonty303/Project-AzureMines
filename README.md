@@ -1,5 +1,19 @@
 # Azure Mines — Standalone Combat Lab
 
+**v0.4.1 gameplay and animation correction:** [FEAT-016](specifications/features/FEAT-016-downed-turns-impact-and-movement.md) documents automatic death saves without downed player turns, deliberate AI policy for active threats, smooth tile movement and impact-synchronised death sprites/audio. The feature is implemented on `feature/combat-lab-v041-downed-turn-impact`; manual iPad acceptance remains pending.
+
+
+**v0.4 playable implementation:** [Expanded battlefield and iPad controls](docs/combat-lab-v04-release.md), aligned to the [owner-agreed art direction](docs/combat-lab-ipad-art-direction-v02.md) and [FEAT-015](specifications/features/FEAT-015-ipad-camera-projectiles-and-card-actions.md). Built on `feature/combat-lab-v04-ipad-camera-cards`; deployment only follows passing Godot CI.
+
+## Web / iPad preview (feature branch)
+
+The web/touch development slice is on `feature/combat-lab-web-touch`, based on this standalone lab. It contains native board touch handling, keyboard tile navigation, tablet-sized controls, and a pinned single-threaded Godot 4.5.2 HTML5 export. See [Web preview and iPad testing](docs/web-touch-preview.md).
+
+**Status (12 November 2026):** [GitHub Pages is live](https://jonty303.github.io/Project-AzureMines/) and the iPad Safari battlefield has been visually reviewed. Development uses a reviewed feature branch plus the configured `feature/combat-lab-web-touch` publishing branch; headless tests do not replace physical touch acceptance.
+
+**v0.3 tactical feedback:** [FEAT-014](specifications/features/FEAT-014-tactical-feedback.md) adds versioned resolved combat events, initial slash/hit/spell/healing VFX, iPad tactical hints/party resources, and moves in-combat Debug I/O into the Actions tab. The top bar no longer duplicates Log/Debug controls.
+
+
 **Prototype branch:** `feature/standalone-combat-lab` · **Engine:** Godot **4.5.2** standard GDScript
 
 This is a combat-only developer test harness. It deliberately contains **no narrative engine**, campaign progression, persistent NPC register, quest system or campaign rewards. All of the original narrative work remains on other branches; nothing is merged or deleted from those branches.

@@ -1,0 +1,79 @@
+name: Build and publish Combat Lab web preview
+
+on:
+  push:
+    branches: ["feature/combat-lab-web-touch"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: combat-lab-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download pinned Godot 4.5.2 editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 -o godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.5.2-stable/Godot_v4.5.2-stable_linux.x86_64.zip
+          echo "87f6e6be292929e363d15ed9052f277b2ba4e95ed994e1e099048097be2dfd03  godot.zip" | sha256sum --check
+          unzip -q godot.zip
+          chmod +x Godot_v4.5.2-stable_linux.x86_64
+          ./Godot_v4.5.2-stable_linux.x86_64 --version
+      - name: Download official verified export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 -o godot_templates.tpz \
+            https://github.com/godotengine/godot/releases/download/4.5.2-stable/Godot_v4.5.2-stable_export_templates.tpz
+          echo "ea50e5183f057d42b22120d0d0340205b98f51f8ff13c33c70fd4ac9077d2019  godot_templates.tpz" | sha256sum --check
+          python3 scripts/install_web_templates.py godot_templates.tpz
+          rm godot_templates.tpz
+      - name: Import, test touch input and export Web
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT=./Godot_v4.5.2-stable_linux.x86_64
+          "$GODOT" --headless --path . --import
+          "$GODOT" --headless --path . --script res://tests/test_web_touch_input.gd
+          mkdir -p build/web
+          "$GODOT" --headless --path . --export-release "Web" build/web/index.html
+          test -s build/web/index.html
+          test -n "$(find build/web -maxdepth 1 -name '*.wasm' -type f -print -quit)"
+          test -n "$(find build/web -maxdepth 1 -name '*.pck' -type f -print -quit)"
+          test -n "$(find build/web -maxdepth 1 -name '*.js' -type f -print -quit)"
+          touch build/web/.nojekyll
+          ls -lh build/web
+      - name: Upload downloadable web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: combat-lab-web-build
+          path: build/web/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload GitHub Pages site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/web/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Combat Lab preview to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

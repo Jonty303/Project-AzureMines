@@ -323,7 +323,9 @@ func current_actor() -> Dictionary:
 
 
 func current_is_party() -> bool:
-    return not deployment_active and not finished and current_actor().get("team", "") == "party"
+    # Downed heroes retain their initiative slot for automatic death saves,
+    # but never become a controllable character or receive action buttons.
+    return not deployment_active and not finished and not current_id().is_empty()         and current_actor().get("team", "") == "party" and is_combat_capable(current_id())
 
 
 func is_combat_capable(id: String) -> bool:
@@ -457,6 +459,9 @@ func _advance_move() -> void:
         _record("%s moves from (%d,%d) to (%d,%d)." % [
             mover["name"], from_cell.x, from_cell.y, next_cell.x, next_cell.y
         ])
+        _event("move", mover_id, "", {
+            "from": [from_cell.x, from_cell.y], "to": [next_cell.x, next_cell.y]
+        })
         _emit_sound("footstep")
         _trigger_hazards(mover_id, next_cell, "enter")
         if finished or int(actors[mover_id]["hp"]) <= 0:
@@ -524,12 +529,25 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
         _record("%s Opportunity Attack against %s: %d — MISS." % [
             reactor["name"], target["name"], result["total"]
         ])
+        _event("miss", reactor_id, target_id, {
+            "action_id": str(weapon.get("id", "")), "source_kind": "weapon", "reaction": true,
+            "attack_kind": str(weapon.get("kind", ""))
+        })
         return
     var damage: int = RulesMath.roll_damage(str(weapon["damage"]), rng, bool(result["critical"]))
+    var before_hp: int = int(target["hp"])
     _emit_sound("melee_hit")
     _emit_sound("damage")
     _record("%s Opportunity Attack hits %s for %d damage." % [reactor["name"], target["name"], damage])
     _deal_damage(target_id, damage)
+    _event("hit", reactor_id, target_id, {
+        "amount": damage, "action_id": str(weapon.get("id", "")),
+        "damage_type": str(weapon.get("damage_type", "physical")), "source_kind": "weapon",
+        "critical": bool(result["critical"]), "reaction": true,
+        "attack_kind": str(weapon.get("kind", "")), "hp_before": before_hp,
+        "hp_after": int(actors[target_id]["hp"]),
+        "state_after": str(actors[target_id]["combat_state"])
+    })
     _check_victory()
 
 
@@ -555,10 +573,15 @@ func resolve_reaction(accept: bool) -> bool:
             _record("%s casts Shield! AC rises to %d until the start of their next turn." % [
                 defender["name"], int(defender["armor_class"]) + 5
             ])
+            _event("cast", defender_id, defender_id, {"action_id": "shield", "effect": "shield"})
         var result: Dictionary = decision["roll"]
         if int(result["total"]) < effective_ac(actors[defender_id]):
             _emit_sound("miss")
             _record("Shield deflects the incoming attack on %s." % defender["name"])
+            _event("miss", str(decision["source"]), defender_id, {
+                "action_id": str(decision["weapon"].get("id", "")),
+                "source_kind": "weapon", "blocked_by": "shield"
+            })
         else:
             _resolve_hit(str(decision["source"]), defender_id,
                 decision["weapon"], result, bool(decision["disadvantage"]), bool(decision.get("nonlethal", false)))
@@ -616,6 +639,7 @@ func _deal_damage(target_id: String, damage: int, critical: bool = false) -> voi
     if target["combat_state"] == "dead" and previous_state != "dead":
         _emit_sound("death")
         _record("%s dies." % target["name"])
+        _event("death", target_id, target_id)
 
 
 func can_disengage() -> bool:
@@ -712,6 +736,11 @@ func attack(target_id: String, weapon_id: String = "", nonlethal: bool = false) 
         _record("%s uses %s against %s: %d vs AC %d — MISS%s." % [
             source["name"], attack_name, target["name"], roll["total"], target["armor_class"], disadvantage_label
         ])
+        _event("miss", source_id, target_id, {
+            "action_id": str(weapon.get("id", "")), "source_kind": "weapon",
+            "damage_type": str(weapon.get("damage_type", "physical")),
+            "attack_kind": str(weapon.get("kind", ""))
+        })
         return true
     if not bool(roll["critical"]) and _can_shield(target_id):
         pending_reaction = {
@@ -762,6 +791,13 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
         source["name"], attack_name, target["name"], roll["total"], target["armor_class"],
         critical_label, damage, weapon.get("damage_type", ""), old_hp, target["hp"], disadvantage_label
     ])
+    _event("hit", source_id, target_id, {
+        "amount": damage, "action_id": str(weapon.get("id", "")),
+        "damage_type": str(weapon.get("damage_type", "physical")),
+        "source_kind": "weapon", "critical": bool(roll["critical"]), "nonlethal": knocked_out,
+        "attack_kind": str(weapon.get("kind", "")), "hp_before": old_hp,
+        "hp_after": int(target["hp"]), "state_after": str(target["combat_state"])
+    })
     _emit_sound("damage")
     if knocked_out:
         _record("%s is knocked unconscious nonlethally (1 HP)." % target["name"])
@@ -774,16 +810,31 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
 func end_turn() -> void:
     if deployment_active or finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
-    _record("%s ends their turn." % current_actor()["name"])
+    if is_combat_capable(current_id()):
+        _record("%s ends their turn." % current_actor()["name"])
+    _advance_initiative()
+
+
+func _advance_initiative() -> void:
+    # Process downed heroes' death saves *within* initiative, but never pause
+    # for user actions or End Turn on an unconscious/stable/dead creature.
+    # An unconscious hero recovering on natural 20 becomes playable immediately.
     for offset in range(1, turn_order.size() + 1):
         turn_index = (turn_index + 1) % turn_order.size()
         if turn_index == 0:
             round_number += 1
             _record("--- Round %d ---" % round_number)
-        var next_actor: Dictionary = actors[turn_order[turn_index]]
-        if int(next_actor["hp"]) > 0 or next_actor.get("combat_state", "") == "unconscious":
+        var id: String = turn_order[turn_index]
+        var state: String = str(actors[id].get("combat_state", "active"))
+        if state == "unconscious" or is_combat_capable(id):
             _begin_turn()
-            return
+            if finished:
+                return
+            if is_combat_capable(id):
+                return
+            # Failed save, stabilisation, death or start-of-turn hazard:
+            # continue to the next combat-capable creature automatically.
+    _check_victory()
 
 
 func _ai_weapon_id(actor: Dictionary, distance: int) -> String:
@@ -804,13 +855,20 @@ func take_ai_turn() -> void:
     if deployment_active or finished or current_is_party() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
     var actor_id: String = current_id()
+    if actor_id.is_empty():
+        return
+    if not is_combat_capable(actor_id):
+        # Also covers a hero becoming downed during their own turn.
+        # The AI does not act on their behalf; simply move initiative forward.
+        end_turn()
+        return
     var source: Dictionary = current_actor()
     var role: String = str(source.get("role", "melee"))
     var enemy_ids: Array[String] = []
     for target_id_variant in actors.keys():
         var id: String = str(target_id_variant)
         var target: Dictionary = actors[id]
-        if target["team"] != source["team"] and int(target["hp"]) > 0:
+        if target["team"] != source["team"] and is_combat_capable(id):
             enemy_ids.append(id)
     if enemy_ids.is_empty():
         _check_victory()
@@ -941,7 +999,7 @@ func _nearest_opponent(source_id: String) -> String:
     for id_variant in actors.keys():
         var id: String = str(id_variant)
         var target: Dictionary = actors[id]
-        if target["team"] == source["team"] or int(target["hp"]) <= 0:
+        if target["team"] == source["team"] or not is_combat_capable(id):
             continue
         var distance := _distance(source["position"], target["position"])
         if distance < best_distance:
@@ -1005,6 +1063,8 @@ func _roll_death_save(actor_id: String) -> void:
             actor["death_failures"] = 0
             _record("%s is stable but unconscious." % actor["name"])
     actors[actor_id] = actor
+    if actor.get("combat_state", "") == "dead":
+        _event("death", actor_id, actor_id, {"source_kind": "death_save"})
 
 
 func _check_victory() -> void:
@@ -1111,6 +1171,7 @@ func use_second_wind() -> bool:
     _record("%s uses Second Wind, healing %d HP (%d/%d); %d use(s) left." % [
         actor["name"], restored, actor["hp"], actor["max_hp"], actor["second_wind_remaining"]
     ])
+    _event("heal", actor_id, actor_id, {"amount": restored, "action_id": "second_wind"})
     return true
 
 
@@ -1182,6 +1243,10 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
         actors[caster_id] = caster
     var target: Dictionary = actors[target_id]
     var effect: String = str(spell["effect"])
+    _event("cast", caster_id, target_id, {
+        "action_id": spell_id, "effect": effect,
+        "damage_type": str(spell.get("damage_type", ""))
+    })
     if effect != "heal":
         _emit_sound("magic")
     var title: String = spell_id.replace("_", " ").capitalize()
@@ -1208,6 +1273,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
             _record("%s casts %s on %s for %d HP (%d/%d)." % [
                 caster["name"], title, target["name"], gained, target["hp"], target["max_hp"]
             ])
+            _event("heal", caster_id, target_id, {"amount": gained, "action_id": spell_id})
         "automatic_damage":
             var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
             _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
@@ -1217,6 +1283,10 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
             var dc: int = int(caster["spellcasting"]["save_dc"])
             if roll >= dc:
                 _record("%s resists %s (Dex save %d vs DC %d)." % [target["name"], title, roll, dc])
+                _event("miss", caster_id, target_id, {
+                    "action_id": spell_id, "source_kind": "spell",
+                    "damage_type": str(spell.get("damage_type", ""))
+                })
             else:
                 var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
                 _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
@@ -1233,17 +1303,28 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
                 _record("%s casts %s at %s: %d vs AC %d — MISS." % [
                     caster["name"], title, target["name"], hit["total"], target["armor_class"]
                 ])
+                _event("miss", caster_id, target_id, {
+                    "action_id": spell_id, "source_kind": "spell",
+                    "damage_type": str(spell.get("damage_type", ""))
+                })
     return true
 
 
 func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: String, damage: int, damage_type: String) -> void:
     var target: Dictionary = actors[target_id]
+    var before_hp: int = int(target["hp"])
     _deal_damage(target_id, damage)
     target = actors[target_id]
     _emit_sound("damage")
     _record("%s casts %s on %s: %d %s damage (%d HP left)." % [
         caster["name"], spell_name, target["name"], damage, damage_type, target["hp"]
     ])
+    _event("hit", str(caster.get("id", "")), target_id, {
+        "amount": damage, "action_id": spell_name.to_snake_case(),
+        "damage_type": damage_type, "source_kind": "spell",
+        "hp_before": before_hp, "hp_after": int(target["hp"]),
+        "state_after": str(target["combat_state"])
+    })
     if not is_combat_capable(target_id):
         _record("%s is %s." % [target["name"], target["combat_state"]])
     _check_victory()
@@ -1360,12 +1441,34 @@ func _check_concentration_after_damage(actor_id: String, damage: int) -> void:
         _stop_concentration(actor_id)
 
 
+func _event(kind: String, actor_id: String = "", target_id: String = "",
+        payload: Dictionary = {}) -> void:
+    # Versioned, deterministic combat facts. UI must not parse _record() prose for VFX.
+    # Each resolved event gets a stable sequence ID in this encounter session.
+    var entry: Dictionary = {
+        "schema_version": 1, "event_id": "%s:%06d" % [encounter_id, events.size()],
+        "round": round_number, "kind": kind, "actor_id": actor_id,
+        "target_id": target_id, "text": "", "sound": ""
+    }
+    # Position snapshots are captured when combat resolves, before the UI
+    # receives events. Presentation must not query moving actors for endpoints.
+    if actors.has(actor_id):
+        var source_cell: Vector2i = actors[actor_id]["position"]
+        entry["source_cell"] = [source_cell.x, source_cell.y]
+    if actors.has(target_id):
+        var target_cell: Vector2i = actors[target_id]["position"]
+        entry["target_cell"] = [target_cell.x, target_cell.y]
+    for key in payload.keys():
+        entry[key] = payload[key]
+    events.append(entry)
+
+
 func _record(line: String) -> void:
-    events.append({"round": round_number, "text": line, "sound": ""})
+    _event("log", "", "", {"text": line})
 
 
 func _emit_sound(sound_id: String) -> void:
-    events.append({"round": round_number, "text": "", "sound": sound_id})
+    _event("audio", "", "", {"sound": sound_id})
 
 
 func _read_json(path: String) -> Dictionary:

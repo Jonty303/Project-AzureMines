@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "id": "wide_training_camp",
+  "name": "Wide Forest Training Camp",
+  "grid_size": [
+    17,
+    10
+  ],
+  "party_positions": {
+    "alden": [
+      2,
+      3
+    ],
+    "elyra": [
+      1,
+      5
+    ],
+    "brunna": [
+      2,
+      6
+    ],
+    "pip": [
+      1,
+      7
+    ]
+  },
+  "walls": [],
+  "difficult_terrain": [
+    [
+      3,
+      8
+    ],
+    [
+      4,
+      8
+    ],
+    [
+      6,
+      8
+    ],
+    [
+      8,
+      8
+    ],
+    [
+      12,
+      6
+    ],
+    [
+      14,
+      7
+    ],
+    [
+      15,
+      8
+    ]
+  ],
+  "enemies": [
+    {
+      "id": "goblin_blade",
+      "name": "Goblin Vanguard",
+      "max_hp": 9,
+      "armor_class": 16,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        14,
+        2
+      ],
+      "attacks": [
+        {
+          "id": "shortsword",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "slashing",
+          "reach_feet": 5
+        }
+      ],
+      "role": "melee",
+      "equipment": [
+        "shortsword",
+        "shield"
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/goblin_front_64.png"
+      }
+    },
+    {
+      "id": "goblin_blade_two",
+      "name": "Goblin Cutpurse",
+      "max_hp": 7,
+      "armor_class": 15,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        12,
+        3
+      ],
+      "attacks": [
+        {
+          "id": "knife",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "role": "melee"
+    },
+    {
+      "id": "goblin_bow",
+      "name": "Goblin Archer",
+      "max_hp": 7,
+      "armor_class": 15,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        15,
+        6
+      ],
+      "attacks": [
+        {
+          "id": "shortbow",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "role": "ranged"
+    },
+    {
+      "id": "goblin_bow_two",
+      "name": "Goblin Bowshot",
+      "max_hp": 7,
+      "armor_class": 15,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "position": [
+        14,
+        8
+      ],
+      "attacks": [
+        {
+          "id": "shortbow",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "role": "ranged"
+    }
+  ],
+  "note": "Combat Lab only: no narrative identities, scripted rewards, or named NPC persistence.",
+  "obstacles": [
+    {
+      "id": "covered_wagon",
+      "kind": "wagon",
+      "position": [
+        5,
+        3
+      ],
+      "size": [
+        3,
+        2
+      ],
+      "blocks_movement": true,
+      "blocks_sight": true,
+      "cover": "total",
+      "art": "res://assets/environment/covered_wagon_192x128.svg"
+    },
+    {
+      "id": "supply_chest_west",
+      "kind": "chest",
+      "position": [
+        4,
+        5
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "blocks_movement": true,
+      "blocks_sight": false,
+      "cover": "half",
+      "art": "res://assets/environment/supply_chest_64.svg"
+    },
+    {
+      "id": "supply_chest_east",
+      "kind": "chest",
+      "position": [
+        8,
+        6
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "blocks_movement": true,
+      "blocks_sight": false,
+      "cover": "half",
+      "art": "res://assets/environment/supply_chest_64.svg"
+    },
+    {
+      "id": "east_stone",
+      "kind": "boulder",
+      "position": [
+        13,
+        4
+      ],
+      "size": [
+        1,
+        2
+      ],
+      "blocks_movement": true,
+      "blocks_sight": true,
+      "cover": "total"
+    }
+  ],
+  "hazards": [
+    {
+      "id": "campfire",
+      "kind": "fire",
+      "position": [
+        7,
+        7
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "damage": "1d4",
+      "damage_type": "fire",
+      "trigger": [
+        "enter",
+        "start_turn"
+      ],
+      "art": "res://assets/environment/campfire_64.svg"
+    }
+  ],
+  "backdrop": {
+    "kind": "forest",
+    "edge": "north",
+    "art": "res://assets/environment/forest_treeline_768x128.svg",
+    "rows": 2
+  },
+  "deployment_zone": {
+    "min": [
+      0,
+      3
+    ],
+    "max": [
+      3,
+      8
+    ]
+  },
+  "intro": "A 17-column tactical arena for camera and mixed-archetype tests.",
+  "default_formation": "square"
+}

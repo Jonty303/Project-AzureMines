@@ -14,12 +14,31 @@ var engine: CombatEngine
 var board: CombatBoard
 var title_panel: VBoxContainer
 var battle_panel: VBoxContainer
+var title_scroll: ScrollContainer
+var battle_scroll: ScrollContainer
+var sidebar: VBoxContainer
+var main_grid: GridContainer
+var sidebar_panel: PanelContainer
+var bottom_action_panel: PanelContainer
+var bottom_action_layout: VBoxContainer
+var tabs: TabContainer
+var actions_tab: VBoxContainer
+var party_tab: VBoxContainer
+var details_tab: VBoxContainer
+var log_tab: VBoxContainer
+var selection_details: RichTextLabel
+var sidebar_summary: Label
+var action_hint: Label
+var debug_action_button: Button
+var selected_cell := Vector2i(-1, -1)
+var log_dialog: AcceptDialog
+var log_view: TextEdit
 var title_status: Label
 var party_roster: RichTextLabel
 var battle_status: Label
 var party_status: RichTextLabel
 var event_log: RichTextLabel
-var formation_panel: HBoxContainer
+var formation_panel: HFlowContainer
 var actions_panel: VBoxContainer
 var reaction_panel: HBoxContainer
 var reaction_text: Label
@@ -37,6 +56,11 @@ var begin_button: Button
 var self_button: Button
 var attack_picker: OptionButton
 var spell_picker: OptionButton
+var weapon_strip: HBoxContainer
+var spell_scroll: ScrollContainer
+var spell_strip: HBoxContainer
+var weapon_cards: Dictionary = {}
+var spell_cards: Dictionary = {}
 var level_picker: OptionButton
 var fourth_picker: OptionButton
 var config_dialog: ConfirmationDialog
@@ -51,9 +75,9 @@ var debug_view: TextEdit
 var sfx_players: Dictionary = {}
 var party_level := 1
 var fourth_class := "thief"
-var enemy_kind := "goblin_melee"
+var enemy_kind := "mixed"
 var enemy_count := 4
-var arena_id := "camp"
+var arena_id := "wide"
 var encounter_seed := 42024
 var action_mode := ""
 var deployment_actor := ""
@@ -71,6 +95,7 @@ func _ready() -> void:
     _load_last_report()
     _build_ui()
     _show_title()
+    _apply_responsive_layout(get_viewport_rect().size)
 
 
 func _make_label(content: String, parent: Node, size: int = 16) -> Label:
@@ -85,16 +110,24 @@ func _make_label(content: String, parent: Node, size: int = 16) -> Label:
 func _make_button(content: String, parent: Node, callback: Callable, min_width: float = 120.0) -> Button:
     var item := Button.new()
     item.text = content
-    item.custom_minimum_size = Vector2(min_width, 43)
+    item.custom_minimum_size = Vector2(min_width, 48)
     item.pressed.connect(callback)
     parent.add_child(item)
+    _set_button_icon(item, content.to_snake_case())
     return item
+
+
+func _set_button_icon(item: Button, icon_name: String) -> void:
+    var resource: String = "res://assets/ui/icons/%s.svg" % icon_name
+    if ResourceLoader.exists(resource):
+        item.icon = load(resource) as Texture2D
+        item.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 
 func _make_text_view(dialog: AcceptDialog) -> TextEdit:
     var item := TextEdit.new()
     item.editable = false
-    item.custom_minimum_size = Vector2(760, 400)
+    item.custom_minimum_size = Vector2(300, 250)
     item.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     item.size_flags_vertical = Control.SIZE_EXPAND_FILL
     dialog.add_child(item)
@@ -128,17 +161,22 @@ func _build_ui() -> void:
     var content := VBoxContainer.new()
     content.add_theme_constant_override("separation", 12)
     margin.add_child(content)
+    title_scroll = ScrollContainer.new()
+    title_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    title_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    content.add_child(title_scroll)
     title_panel = VBoxContainer.new()
+    title_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     title_panel.add_theme_constant_override("separation", 14)
-    content.add_child(title_panel)
+    title_scroll.add_child(title_panel)
     _make_label("AZURE MINES  /  COMBAT LAB", title_panel, 32)
     _make_label("Standalone tactical encounters · No narrative engine · No campaign rewards", title_panel, 16)
-    var level_row := HBoxContainer.new()
+    var level_row := HFlowContainer.new()
     level_row.add_theme_constant_override("separation", 10)
     title_panel.add_child(level_row)
     _make_label("Test party level", level_row, 20)
     level_picker = OptionButton.new()
-    level_picker.custom_minimum_size = Vector2(100, 42)
+    level_picker.custom_minimum_size = Vector2(100, 48)
     for level in range(1, 6):
         level_picker.add_item(str(level), level)
     level_picker.select(0)
@@ -148,7 +186,7 @@ func _build_ui() -> void:
     fourth_picker = OptionButton.new()
     fourth_picker.add_item("Pip — Thief")
     fourth_picker.add_item("Rowan — Hunter (test fixture)")
-    fourth_picker.custom_minimum_size = Vector2(255, 42)
+    fourth_picker.custom_minimum_size = Vector2(255, 48)
     fourth_picker.item_selected.connect(_set_fourth_class)
     level_row.add_child(fourth_picker)
     party_roster = RichTextLabel.new()
@@ -156,7 +194,7 @@ func _build_ui() -> void:
     party_roster.fit_content = true
     title_panel.add_child(party_roster)
     _make_label("The lab exposes every currently implemented class spell for testing. Higher-level class features and higher-level spell slots are not yet implemented.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    var menu := HBoxContainer.new()
+    var menu := HFlowContainer.new()
     menu.add_theme_constant_override("separation", 12)
     title_panel.add_child(menu)
     _make_button("Configure Encounter...", menu, _show_config, 210)
@@ -166,46 +204,132 @@ func _build_ui() -> void:
     title_status = _make_label("", title_panel, 16)
     _make_label("Test mode only: levels 1–5 provide scaled HP and available first-level resources. Unimplemented progression features are not simulated.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+    battle_scroll = ScrollContainer.new()
+    battle_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    battle_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    content.add_child(battle_scroll)
     battle_panel = VBoxContainer.new()
     battle_panel.add_theme_constant_override("separation", 8)
+    battle_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     battle_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    content.add_child(battle_panel)
+    battle_scroll.add_child(battle_panel)
     battle_panel.visible = false
-    var heading := HBoxContainer.new()
+    var heading := HFlowContainer.new()
     heading.add_theme_constant_override("separation", 12)
     battle_panel.add_child(heading)
     _make_label("COMBAT LAB", heading, 26)
     battle_status = _make_label("Preparing battle...", heading, 17)
-    _make_button("Debug I/O", heading, _show_debug, 120)
     _make_button("Retry Battle", heading, _start_battle, 145)
     _make_button("Return to Title", heading, _show_title, 175)
-    var main := HBoxContainer.new()
-    main.add_theme_constant_override("separation", 14)
-    main.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    battle_panel.add_child(main)
+    _make_button("Zoom +", heading, _zoom_in, 90)
+    _make_button("Zoom -", heading, _zoom_out, 90)
+    _make_button("Reset View", heading, _reset_view, 125)
+    main_grid = GridContainer.new()
+    main_grid.columns = 2
+    main_grid.add_theme_constant_override("h_separation", 14)
+    main_grid.add_theme_constant_override("v_separation", 14)
+    main_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    main_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    battle_panel.add_child(main_grid)
+
     var board_panel := PanelContainer.new()
-    main.add_child(board_panel)
+    board_panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+    main_grid.add_child(board_panel)
     board = CombatBoard.new()
     board.cell_clicked.connect(_on_cell_clicked)
+    board.projectile_impact.connect(_on_projectile_impact)
     board_panel.add_child(board)
-    var sidebar := VBoxContainer.new()
-    sidebar.custom_minimum_size = Vector2(370, 0)
-    sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+    # Landscape: this is a permanent right-hand panel.
+    # Portrait: the same tabbed panel is the second row under the map.
+    sidebar_panel = PanelContainer.new()
+    sidebar_panel.custom_minimum_size = Vector2(330, 0)
+    sidebar_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    sidebar_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    var side_style := StyleBoxFlat.new()
+    side_style.bg_color = Color("#141c28")
+    side_style.border_color = Color("#596578")
+    side_style.set_border_width_all(1)
+    side_style.set_content_margin_all(10)
+    sidebar_panel.add_theme_stylebox_override("panel", side_style)
+    main_grid.add_child(sidebar_panel)
+    sidebar = VBoxContainer.new()
     sidebar.add_theme_constant_override("separation", 8)
-    main.add_child(sidebar)
-    _make_label("PARTY / TURN", sidebar, 18)
+    sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    sidebar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    sidebar_panel.add_child(sidebar)
+    _make_label("BATTLE CONSOLE", sidebar, 18)
+    sidebar_summary = _make_label("Waiting for deployment", sidebar, 14)
+    sidebar_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+    tabs = TabContainer.new()
+    tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    tabs.custom_minimum_size = Vector2(0, 420)
+    sidebar.add_child(tabs)
+
+    actions_tab = VBoxContainer.new()
+    actions_tab.name = "Debug"
+    actions_tab.add_theme_constant_override("separation", 8)
+    tabs.add_child(actions_tab)
+    _make_label("DEVELOPER TOOLS", actions_tab, 18)
+    var debug_note := _make_label("Combat inputs, results and diagnostics. Character actions are in the bottom bar.", actions_tab, 14)
+    debug_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    party_tab = VBoxContainer.new()
+    party_tab.name = "Party"
+    party_tab.add_theme_constant_override("separation", 8)
+    tabs.add_child(party_tab)
+    details_tab = VBoxContainer.new()
+    details_tab.name = "Details"
+    details_tab.add_theme_constant_override("separation", 8)
+    tabs.add_child(details_tab)
+    log_tab = VBoxContainer.new()
+    log_tab.name = "Log"
+    log_tab.add_theme_constant_override("separation", 8)
+    tabs.add_child(log_tab)
+
+    _make_label("PARTY STATUS", party_tab, 18)
     party_status = RichTextLabel.new()
-    party_status.custom_minimum_size = Vector2(0, 180)
-    sidebar.add_child(party_status)
-    _make_label("COMBAT EVENT LOG", sidebar, 18)
+    party_status.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    party_status.custom_minimum_size = Vector2(0, 160)
+    party_tab.add_child(party_status)
+
+    _make_label("SELECTED TILE OR CREATURE", details_tab, 18)
+    selection_details = RichTextLabel.new()
+    selection_details.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    selection_details.custom_minimum_size = Vector2(0, 160)
+    selection_details.text = "Tap a creature or battlefield tile to inspect it."
+    details_tab.add_child(selection_details)
+
+    _make_label("COMBAT EVENTS", log_tab, 18)
     event_log = RichTextLabel.new()
     event_log.scroll_following = true
     event_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    sidebar.add_child(event_log)
+    event_log.custom_minimum_size = Vector2(0, 160)
+    log_tab.add_child(event_log)
+    _make_button("Open Full Battle Log", log_tab, _show_live_log, 200)
 
-    formation_panel = HBoxContainer.new()
+    # Player commands belong below the battlefield; the right-hand tabs remain
+    # informational and contain developer-only controls.
+    bottom_action_panel = PanelContainer.new()
+    bottom_action_panel.name = "BottomActionBar"
+    bottom_action_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    var action_style := StyleBoxFlat.new()
+    action_style.bg_color = Color("#1b2836")
+    action_style.border_color = Color("#657185")
+    action_style.set_border_width_all(1)
+    action_style.set_content_margin_all(8)
+    bottom_action_panel.add_theme_stylebox_override("panel", action_style)
+    # Sibling of the scrollable battle region: commands stay docked to the viewport
+    # even when a portrait player scrolls the map and information console.
+    content.add_child(bottom_action_panel)
+    bottom_action_layout = VBoxContainer.new()
+    bottom_action_layout.add_theme_constant_override("separation", 6)
+    bottom_action_panel.add_child(bottom_action_layout)
+
+    formation_panel = HFlowContainer.new()
     formation_panel.add_theme_constant_override("separation", 8)
-    battle_panel.add_child(formation_panel)
+    bottom_action_layout.add_child(formation_panel)
     _make_label("Deployment:", formation_panel, 15)
     for formation in ["line", "square", "diamond"]:
         _make_button(formation.capitalize(), formation_panel, _set_formation.bind(formation), 100)
@@ -213,38 +337,77 @@ func _build_ui() -> void:
 
     actions_panel = VBoxContainer.new()
     actions_panel.add_theme_constant_override("separation", 5)
-    battle_panel.add_child(actions_panel)
+    bottom_action_layout.add_child(actions_panel)
     var command_row := HBoxContainer.new()
-    command_row.add_theme_constant_override("separation", 6)
+    command_row.add_theme_constant_override("separation", 8)
+    command_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     actions_panel.add_child(command_row)
-    move_button = _make_button("Move", command_row, _select_mode.bind("move"), 72)
-    attack_button = _make_button("Attack", command_row, _select_mode.bind("attack"), 72)
-    spell_button = _make_button("Spell", command_row, _select_mode.bind("spell"), 72)
-    wind_button = _make_button("Second Wind", command_row, _use_second_wind, 122)
-    dash_button = _make_button("Dash", command_row, _use_dash, 72)
-    dodge_button = _make_button("Dodge", command_row, _use_dodge, 72)
-    disengage_button = _make_button("Disengage", command_row, _use_disengage, 110)
-    end_turn_button = _make_button("End Turn", command_row, _end_turn, 110)
-    var select_row := HBoxContainer.new()
-    select_row.add_theme_constant_override("separation", 12)
+    var player_commands := HFlowContainer.new()
+    player_commands.add_theme_constant_override("h_separation", 6)
+    player_commands.add_theme_constant_override("v_separation", 5)
+    player_commands.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    command_row.add_child(player_commands)
+    move_button = _make_button("Move", player_commands, _select_mode.bind("move"), 78)
+    attack_button = _make_button("Attack", player_commands, _select_mode.bind("attack"), 90)
+    spell_button = _make_button("Spell", player_commands, _select_mode.bind("spell"), 85)
+    for choice in [move_button, attack_button, spell_button]:
+        choice.toggle_mode = true
+    wind_button = _make_button("Second Wind", player_commands, _use_second_wind, 120)
+    dash_button = _make_button("Dash", player_commands, _use_dash, 76)
+    dodge_button = _make_button("Dodge", player_commands, _use_dodge, 85)
+    disengage_button = _make_button("Disengage", player_commands, _use_disengage, 118)
+    end_turn_button = _make_button("END TURN", command_row, _end_turn, 155)
+    end_turn_button.custom_minimum_size.y = 98
+    _set_button_icon(end_turn_button, "end_turn")
+    var end_style := StyleBoxFlat.new()
+    end_style.bg_color = Color("#7b2926")
+    end_style.border_color = Color("#e6b16c")
+    end_style.set_border_width_all(3)
+    end_style.set_corner_radius_all(8)
+    end_style.set_content_margin_all(8)
+    end_turn_button.add_theme_stylebox_override("normal", end_style)
+    var end_hot := end_style.duplicate() as StyleBoxFlat
+    end_hot.bg_color = Color("#a63b30")
+    end_turn_button.add_theme_stylebox_override("hover", end_hot)
+    end_turn_button.add_theme_font_size_override("font_size", 18)
+    var select_row := HFlowContainer.new()
+    select_row.add_theme_constant_override("h_separation", 8)
+    select_row.add_theme_constant_override("v_separation", 5)
     actions_panel.add_child(select_row)
-    _make_label("Weapon", select_row, 14)
+    _make_label("WEAPONS", select_row, 14)
+    weapon_strip = HBoxContainer.new()
+    weapon_strip.add_theme_constant_override("separation", 5)
+    select_row.add_child(weapon_strip)
     attack_picker = OptionButton.new()
-    attack_picker.custom_minimum_size = Vector2(170, 36)
-    attack_picker.item_selected.connect(_on_weapon_change)
+    attack_picker.visible = false
     select_row.add_child(attack_picker)
-    _make_label("Spell", select_row, 14)
+    _make_label("SPELLS", select_row, 14)
+    _make_button("◀", select_row, _scroll_spells.bind(-1), 46)
+    spell_scroll = ScrollContainer.new()
+    spell_scroll.custom_minimum_size = Vector2(350, 54)
+    spell_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    spell_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+    spell_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    spell_scroll.scroll_deadzone = 8
+    select_row.add_child(spell_scroll)
+    spell_strip = HBoxContainer.new()
+    spell_strip.add_theme_constant_override("separation", 6)
+    spell_scroll.add_child(spell_strip)
+    _make_button("▶", select_row, _scroll_spells.bind(1), 46)
     spell_picker = OptionButton.new()
-    spell_picker.custom_minimum_size = Vector2(230, 36)
-    spell_picker.item_selected.connect(_on_spell_change)
+    spell_picker.visible = false
     select_row.add_child(spell_picker)
-    self_button = _make_button("Cast on Self", select_row, _cast_self, 140)
+    self_button = _make_button("Cast on Self", select_row, _cast_self, 135)
     reaction_panel = HBoxContainer.new()
     reaction_panel.add_theme_constant_override("separation", 12)
-    battle_panel.add_child(reaction_panel)
+    bottom_action_layout.add_child(reaction_panel)
     reaction_text = _make_label("", reaction_panel, 16)
     reaction_accept = _make_button("React", reaction_panel, _resolve_reaction.bind(true), 100)
     reaction_decline = _make_button("Decline", reaction_panel, _resolve_reaction.bind(false), 100)
+    action_hint = _make_label("Choose a command, then tap a highlighted tile.", bottom_action_layout, 14)
+    action_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    debug_action_button = _make_button("Debug Input / Output", actions_tab, _show_debug, 200)
+    debug_action_button.tooltip_text = "View the versioned CombatSetup and last recorded CombatResult"
 
     _build_dialogs()
     _update_title()
@@ -259,8 +422,10 @@ func _build_dialogs() -> void:
     config_dialog.add_child(form)
     _make_label("Enemy archetype", form, 15)
     enemy_picker = OptionButton.new()
-    for kind in ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf", "midden_grub"]:
+    for kind in ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf",
+            "midden_grub", "skeleton", "spider", "kobold", "bandit", "mixed"]:
         enemy_picker.add_item(kind.replace("_", " ").capitalize())
+    enemy_picker.select(9)
     form.add_child(enemy_picker)
     _make_label("Number of enemies (1–8)", form, 15)
     count_picker = SpinBox.new()
@@ -271,8 +436,9 @@ func _build_dialogs() -> void:
     form.add_child(count_picker)
     _make_label("Battle location", form, 15)
     arena_picker = OptionButton.new()
-    for location in ["Forest camp", "Stone chamber", "Woodland watch", "Refuse room"]:
+    for location in ["Forest camp", "Stone chamber", "Woodland watch", "Refuse room", "Wide forest (17 columns)"]:
         arena_picker.add_item(location)
+    arena_picker.select(4)
     form.add_child(arena_picker)
     _make_label("Deterministic seed", form, 15)
     seed_picker = SpinBox.new()
@@ -291,6 +457,10 @@ func _build_dialogs() -> void:
     debug_dialog.title = "Combat Lab — input and result JSON"
     add_child(debug_dialog)
     debug_view = _make_text_view(debug_dialog)
+    log_dialog = AcceptDialog.new()
+    log_dialog.title = "Current battle events"
+    add_child(log_dialog)
+    log_view = _make_text_view(log_dialog)
 
 
 func _set_party_level() -> void:
@@ -304,12 +474,13 @@ func _set_fourth_class(index: int) -> void:
 
 
 func _show_config() -> void:
-    config_dialog.popup_centered(Vector2i(520, 490))
+    config_dialog.popup_centered(_dialog_size(Vector2i(520, 490)))
 
 
 func _apply_config() -> void:
-    var kinds := ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf", "midden_grub"]
-    var arenas := ["camp", "stone", "woodland", "refuse"]
+    var kinds := ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf",
+        "midden_grub", "skeleton", "spider", "kobold", "bandit", "mixed"]
+    var arenas := ["camp", "stone", "woodland", "refuse", "wide"]
     enemy_kind = kinds[enemy_picker.get_selected()]
     arena_id = arenas[arena_picker.get_selected()]
     enemy_count = int(count_picker.value)
@@ -351,7 +522,10 @@ func _show_title() -> void:
     if title_panel == null:
         return
     title_panel.visible = true
+    title_scroll.visible = true
     battle_panel.visible = false
+    battle_scroll.visible = false
+    bottom_action_panel.visible = false
     _update_title()
 
 
@@ -367,13 +541,21 @@ func _start_battle() -> void:
     last_setup = setup.duplicate(true)
     engine = instance
     board.engine = engine
+    board.reset_presentation()
+    board.reset_camera()
+    _apply_responsive_layout(get_viewport_rect().size)
     recorded = false
     heard_events = 0
     picker_actor = ""
     action_mode = ""
     deployment_actor = ""
+    selected_cell = Vector2i(-1, -1)
+    tabs.current_tab = 1
     title_panel.visible = false
+    title_scroll.visible = false
     battle_panel.visible = true
+    battle_scroll.visible = true
+    bottom_action_panel.visible = true
     event_log.text = ""
     _refresh()
 
@@ -424,6 +606,8 @@ func _selected_spell() -> String:
 func _on_cell_clicked(cell: Vector2i) -> void:
     if engine == null or engine.finished:
         return
+    selected_cell = cell
+    _update_selection_details()
     if engine.deployment_active:
         var actor_id: String = engine.actor_at(cell)
         if not actor_id.is_empty() and engine.actors[actor_id]["team"] == "party":
@@ -433,6 +617,10 @@ func _on_cell_clicked(cell: Vector2i) -> void:
         _refresh()
         return
     if not engine.current_is_party() or not engine.pending_reaction.is_empty():
+        return
+    if action_mode.is_empty():
+        tabs.current_tab = 2
+        _refresh()
         return
     var target_id: String = engine.target_at(cell)
     if action_mode == "move" and target_id.is_empty():
@@ -508,22 +696,111 @@ func _rebuild_pickers() -> void:
     picker_actor = actor_id
     weapon_ids.clear()
     spell_ids.clear()
+    weapon_cards.clear()
+    spell_cards.clear()
     attack_picker.clear()
     spell_picker.clear()
+    for strip in [weapon_strip, spell_strip]:
+        for child in strip.get_children():
+            strip.remove_child(child)
+            child.queue_free()
     if not engine.current_is_party():
         return
     for attack in engine.current_actor().get("attacks", []):
         var kind: String = str(attack.get("kind", ""))
         if kind in ["melee_weapon", "ranged_weapon"]:
-            weapon_ids.append(str(attack["id"]))
-            attack_picker.add_item(str(attack["id"]).replace("_", " ").capitalize())
+            var wid: String = str(attack["id"])
+            weapon_ids.append(wid)
+            attack_picker.add_item(wid.replace("_", " ").capitalize())
+            var card := _make_button(wid.replace("_", " ").capitalize(),
+                weapon_strip, _select_weapon_card.bind(wid), 108)
+            card.toggle_mode = true
+            _set_button_icon(card, "bow" if kind == "ranged_weapon"
+                else ("dagger" if wid.contains("dagger") else "sword"))
+            weapon_cards[wid] = card
     for spell in engine.get_current_spells():
         spell_ids.append(spell)
         spell_picker.add_item(spell.replace("_", " ").capitalize())
+        var card := _make_button(spell.replace("_", " ").capitalize(),
+            spell_strip, _select_spell_card.bind(spell), 128)
+        card.toggle_mode = true
+        _set_button_icon(card, "second_wind" if spell in ["cure_wounds", "healing_word"] else "spell")
+        spell_cards[spell] = card
     if not weapon_ids.is_empty():
         attack_picker.select(0)
     if not spell_ids.is_empty():
         spell_picker.select(0)
+    spell_scroll.scroll_horizontal = 0
+
+
+func _select_weapon_card(weapon_id: String) -> void:
+    var index: int = weapon_ids.find(weapon_id)
+    if index < 0:
+        return
+    attack_picker.select(index)
+    action_mode = "attack"
+    _refresh()
+
+
+func _select_spell_card(spell_id: String) -> void:
+    var index: int = spell_ids.find(spell_id)
+    if index < 0:
+        return
+    spell_picker.select(index)
+    action_mode = "spell"
+    _refresh()
+
+
+func _scroll_spells(direction: int) -> void:
+    spell_scroll.scroll_horizontal = maxi(0, spell_scroll.scroll_horizontal + direction * 275)
+
+
+func _zoom_in() -> void:
+    board.zoom_at(board.camera_viewport * 0.5, 1.2)
+
+
+func _zoom_out() -> void:
+    board.zoom_at(board.camera_viewport * 0.5, 1.0 / 1.2)
+
+
+func _reset_view() -> void:
+    board.reset_camera()
+
+
+func _death_waits_for_projectile(event_index: int) -> bool:
+    # The engine emits death before its resolved hit fact. Keep the resulting
+    # corpse frame and visual DOWN cue until the matched projectile lands.
+    var death_event: Dictionary = engine.events[event_index]
+    var dead_id: String = str(death_event.get("actor_id", ""))
+    for next_index in range(event_index + 1, engine.events.size()):
+        var followup: Dictionary = engine.events[next_index]
+        if str(followup.get("kind", "")) != "hit" or str(followup.get("target_id", "")) != dead_id:
+            continue
+        var projectile: bool = str(followup.get("attack_kind", "")) == "ranged_weapon" or (
+            str(followup.get("source_kind", "")) == "spell" and str(followup.get("action_id", "")) in [
+                "fire_bolt", "ray_of_frost", "magic_missile"])
+        if projectile and str(followup.get("state_after", "")) == "dead":
+            return true
+    return false
+
+
+func _death_sound_waits_for_projectile(event_index: int) -> bool:
+    # The combat rules produce death audio immediately, but the player should
+    # hear the collapse only after a fatal missile visually lands.
+    for next_index in range(event_index + 1, engine.events.size()):
+        var followup: Dictionary = engine.events[next_index]
+        if str(followup.get("kind", "")) == "death":
+            return _death_waits_for_projectile(next_index)
+        if str(followup.get("sound", "")) == "death":
+            return false
+    return false
+
+
+func _on_projectile_impact(_target_id: String, final_state: String) -> void:
+    if final_state == "dead" and sfx_players.has("death"):
+        var player: AudioStreamPlayer = sfx_players["death"]
+        if player.stream != null:
+            player.play()
 
 
 func _play_events() -> void:
@@ -533,10 +810,16 @@ func _play_events() -> void:
     var sound_ids: Array[String] = []
     for i in range(heard_events, engine.events.size()):
         var event: Dictionary = engine.events[i]
+        var kind: String = str(event.get("kind", ""))
+        if kind in ["hit", "miss", "cast", "heal", "death", "move"]:
+            if kind != "death" or not _death_waits_for_projectile(i):
+                board.enqueue_combat_event(event)
         var line: String = str(event.get("text", ""))
         if not line.is_empty():
             lines.append(line)
         var sound: String = str(event.get("sound", ""))
+        if sound == "death" and _death_sound_waits_for_projectile(i):
+            sound = ""
         if not sound.is_empty() and not sound_ids.has(sound) and sound_ids.size() < 3:
             sound_ids.append(sound)
     if not lines.is_empty():
@@ -576,14 +859,55 @@ func _refresh() -> void:
     var lines: PackedStringArray = []
     for id in ["alden", "elyra", "brunna", "pip"]:
         var a: Dictionary = engine.actors[id]
-        lines.append("%s: %d/%d HP (%s)" % [a["name"], a["hp"], a["max_hp"], a["combat_state"]])
+        var actor_status: String = "%s: %d/%d HP • AC %d (%s)" % [
+            a["name"], a["hp"], a["max_hp"], a.get("armor_class", 10), a["combat_state"]]
+        var resources: PackedStringArray = []
+        if a.get("spellcasting") is Dictionary:
+            resources.append("slots: %d" % int(a.get("spell_slots_remaining", 0)))
+        if a.get("class_id", "") == "champion":
+            resources.append("Second Wind: %d" % int(a.get("second_wind_remaining", 0)))
+        if not str(a.get("blessed_by", "")).is_empty():
+            resources.append("Blessed")
+        if bool(a.get("mage_armor_active", false)):
+            resources.append("Mage Armor")
+        if bool(a.get("dodging", false)):
+            resources.append("Dodging")
+        if str(a.get("combat_state", "")) == "unconscious":
+            resources.append("Death saves: %d passed / %d failed" % [
+                int(a.get("death_successes", 0)), int(a.get("death_failures", 0))])
+        elif str(a.get("combat_state", "")) == "stable":
+            resources.append("Stabilised: no further death saves")
+        if not resources.is_empty():
+            actor_status += "  |  " + ", ".join(resources)
+        lines.append(actor_status)
     if not engine.deployment_active and not engine.finished:
         var current: Dictionary = engine.current_actor()
         lines.append("\nActive: %s  |  Action: %s  |  Bonus: %s" % [
             current.get("name", ""), "used" if engine.action_used else "ready",
             "used" if engine.bonus_action_used else "ready"])
     party_status.text = "\n".join(lines)
+    if engine.deployment_active:
+        sidebar_summary.text = "Deploy your party • choose a formation"
+    elif engine.finished:
+        sidebar_summary.text = "Finished • " + engine.victor.capitalize()
+    else:
+        sidebar_summary.text = "Round %d • %s" % [engine.round_number, str(engine.current_actor().get("name", ""))]
+    _update_selection_details()
     var can_act: bool = engine.current_is_party() and not pending and not engine.finished
+    if engine.deployment_active:
+        action_hint.text = "Select a party member, then choose a highlighted starting tile."
+    elif pending:
+        action_hint.text = "Resolve the reaction above before continuing."
+    elif engine.finished:
+        action_hint.text = "Battle ended. Review Party, Details or Log; Retry to test again."
+    elif action_mode == "move":
+        action_hint.text = "Blue cells are reachable. Tap a blue cell to move."
+    elif action_mode == "attack":
+        action_hint.text = "Red cells indicate valid weapon targets. Tap a target to attack."
+    elif action_mode == "spell":
+        action_hint.text = "Gold cells indicate legal spell targets. Choose a spell, then tap."
+    else:
+        action_hint.text = "Choose Move, Attack or Spell to highlight legal destinations and targets."
     move_button.disabled = not can_act or not engine.can_move_current()
     attack_button.disabled = not can_act or engine.action_used
     spell_button.disabled = not can_act or not engine.can_cast_any_current_spell()
@@ -592,11 +916,26 @@ func _refresh() -> void:
     disengage_button.disabled = not can_act or not engine.can_disengage()
     wind_button.disabled = not can_act or not engine.can_use_second_wind()
     end_turn_button.disabled = not can_act
+    end_turn_button.modulate = Color(1.0, 0.95, 0.7) if can_act and (
+        engine.action_used or not engine.can_move_current()) else Color.WHITE
+    for wid in weapon_cards.keys():
+        var weapon_card: Button = weapon_cards[wid]
+        weapon_card.disabled = not can_act or engine.action_used
+        weapon_card.set_pressed_no_signal(str(wid) == _selected_weapon())
+    for sid in spell_cards.keys():
+        var spell_card: Button = spell_cards[sid]
+        var definition: Dictionary = Level1Spells.get_definition(str(sid))
+        spell_card.disabled = not can_act or (
+            int(definition.get("level", 0)) > 0 and
+            int(engine.current_actor().get("spell_slots_remaining", 0)) <= 0)
+        spell_card.set_pressed_no_signal(str(sid) == _selected_spell())
     attack_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
     spell_picker.disabled = not can_act or spell_ids.is_empty()
     var selected_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
     self_button.disabled = not can_act or selected_spell.get("target", "") != "self" or (
         not engine.can_cast_spell(_selected_spell(), engine.current_id()))
+    for choice in [move_button, attack_button, spell_button]:
+        choice.set_pressed_no_signal(not choice.disabled and action_mode == choice.text.to_lower())
     _play_events()
     if engine.finished and not recorded:
         _record_result()
@@ -644,7 +983,7 @@ func _show_debug() -> void:
     debug_view.text = "COMBAT INPUT / SETUP\n" + JSON.stringify(request, "  ")
     debug_view.text += "\n\nLAST COMPLETED RESULT\n" + (
         JSON.stringify(last_report.get("result", {}), "  ") if not last_report.is_empty() else "No completed battle yet.")
-    debug_dialog.popup_centered(Vector2i(840, 520))
+    debug_dialog.popup_centered(_dialog_size(Vector2i(840, 520)))
 
 
 func _show_last_battle() -> void:
@@ -666,4 +1005,90 @@ func _show_last_battle() -> void:
             if not line.is_empty():
                 lines.append(line)
         last_view.text = "\n".join(lines)
-    last_dialog.popup_centered(Vector2i(840, 520))
+    last_dialog.popup_centered(_dialog_size(Vector2i(840, 520)))
+
+# Layout-only logic; does not modify encounter state or combat actions.
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_RESIZED and is_node_ready():
+        _apply_responsive_layout(size)
+
+
+func _apply_responsive_layout(view_size: Vector2) -> void:
+    if board == null or sidebar_panel == null:
+        return
+    var landscape: bool = view_size.x >= view_size.y and view_size.x >= 900.0
+    main_grid.columns = 2 if landscape else 1
+    sidebar.visible = true
+    sidebar_panel.visible = true
+    var horizontal_margin := 68.0
+    var available_width: float = view_size.x - horizontal_margin
+    var sidebar_width := 0
+    if landscape:
+        sidebar_width = clampi(roundi(view_size.x * 0.28), 310, 380)
+        available_width -= float(sidebar_width + 18)
+    sidebar_panel.custom_minimum_size.x = float(sidebar_width) if landscape else 0.0
+    # Reserve vertical space for the always-visible player action bar.
+    var available_height: float = view_size.y - (300.0 if landscape else 250.0)
+    # Use a clipped camera viewport rather than fitting all 17 columns at once.
+    var map_width: float = maxf(290.0, available_width)
+    var map_height: float = maxf(280.0, available_height)
+    var cell: int = clampi(floori(minf(map_width / 11.0, map_height / 8.0)), 38, 68)
+    board.set_display_cell_size(cell)
+    board.set_viewport_size(Vector2(map_width, map_height))
+
+
+func _update_selection_details() -> void:
+    if selection_details == null or engine == null:
+        return
+    var tile: Vector2i = selected_cell
+    if tile.x < 0 or tile.y < 0:
+        if engine.deployment_active:
+            selection_details.text = "Select a party member, then tap a legal starting tile."
+        elif engine.finished:
+            selection_details.text = "Battle complete. View the Party or Log tab for results."
+        else:
+            selection_details.text = "Tap a creature to inspect its statistics, or a tile to inspect terrain."
+        return
+    var parts: PackedStringArray = ["CELL (%d, %d)" % [tile.x, tile.y]]
+    var actor_id: String = engine.actor_at(tile)
+    if not actor_id.is_empty() and engine.actors.has(actor_id):
+        var creature: Dictionary = engine.actors[actor_id]
+        parts.append("%s • %s" % [str(creature.get("name", actor_id)), str(creature.get("team", "")).capitalize()])
+        parts.append("HP %d / %d   AC %d" % [
+            int(creature.get("hp", 0)), int(creature.get("max_hp", 0)), int(creature.get("armor_class", 0))])
+        parts.append("Status: " + str(creature.get("combat_state", "unknown")))
+        parts.append("Role: " + str(creature.get("role", creature.get("class_id", ""))))
+        var attacks: Array = creature.get("attacks", [])
+        if not attacks.is_empty():
+            parts.append("Attacks:")
+            for attack in attacks:
+                parts.append("  %s • %s" % [str(attack.get("id", "unknown")).replace("_", " ").capitalize(),
+                    str(attack.get("damage", ""))])
+    else:
+        parts.append("Empty tile")
+    if tile in engine.walls:
+        parts.append("Wall • impassable")
+    elif tile in engine.difficult_terrain:
+        parts.append("Difficult terrain")
+    for obstacle in engine.obstacles:
+        var corner: Vector2i = obstacle["position"]
+        var extent: Vector2i = obstacle["size"]
+        if tile.x >= corner.x and tile.x < corner.x + extent.x and tile.y >= corner.y and tile.y < corner.y + extent.y:
+            parts.append("Obstacle: " + str(obstacle.get("kind", "")))
+            parts.append("Cover: " + str(obstacle.get("cover", "none")))
+            break
+    for hazard in engine.hazards:
+        if hazard["position"] == tile:
+            parts.append("Hazard: " + str(hazard.get("kind", "")))
+    selection_details.text = "\n".join(parts)
+
+
+func _dialog_size(preferred: Vector2i) -> Vector2i:
+    var view: Vector2 = get_viewport_rect().size
+    return Vector2i(mini(preferred.x, maxi(320, int(view.x) - 32)),
+        mini(preferred.y, maxi(240, int(view.y) - 32)))
+
+
+func _show_live_log() -> void:
+    log_view.text = event_log.text
+    log_dialog.popup_centered(_dialog_size(Vector2i(840, 520)))
