@@ -73,7 +73,7 @@
         "shield"
       ],
       "art": {
-        "combat_sprite": "assets/characters/sprites/hesk_sword_shield_64.svg"
+        "combat_sprite": "assets/characters/sprites/goblin_front_64.png"
       }
     },
     {

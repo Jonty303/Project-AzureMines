@@ -23,8 +23,8 @@ func _run() -> void:
                 melee += 1
             if actor.get("npc_id", "") == "hesk_roadwatch" and actor.get("death_saves", false):
                 named += 1
-    if melee != 2 or ranged != 2 or named != 1:
-        _fail("Expected two melee, two shortbow and exactly one named survivor-eligible goblin")
+    if melee != 2 or ranged != 2 or named != 0:
+        _fail("Expected two melee/two ranged goblins and no persistent named NPCs")
         return
     for cell in [Vector2i(5, 3), Vector2i(6, 3), Vector2i(7, 4), Vector2i(4, 5), Vector2i(8, 6)]:
         if game._is_open("alden", cell):

@@ -95,7 +95,7 @@ func _make_text_view(dialog: AcceptDialog) -> TextEdit:
     item.custom_minimum_size = Vector2(760, 400)
     item.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     item.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    dialog.get_vbox().add_child(item)
+    dialog.add_child(item)
     return item
 
 
@@ -254,7 +254,7 @@ func _build_dialogs() -> void:
     add_child(config_dialog)
     var form := VBoxContainer.new()
     form.add_theme_constant_override("separation", 10)
-    config_dialog.get_vbox().add_child(form)
+    config_dialog.add_child(form)
     _make_label("Enemy archetype", form, 15)
     enemy_picker = OptionButton.new()
     for kind in ["goblin_melee", "goblin_archer", "goblin_vanguard", "wolf", "midden_grub"]:

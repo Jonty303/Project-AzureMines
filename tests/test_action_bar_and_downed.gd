@@ -93,8 +93,8 @@ func _run() -> void:
     root.add_child(scene_root)
     await process_frame
     await process_frame
-    for name in ["board", "attack_button", "move_button", "spells_button",
-            "second_wind_button", "dash_button", "dodge_button", "end_turn_button"]:
+    for name in ["board", "attack_button", "move_button", "spell_button",
+            "wind_button", "dash_button", "dodge_button", "end_turn_button"]:
         if scene_root.get(name) == null:
             _fail("Action-bar UI is missing %s" % name)
             return
