@@ -26,6 +26,8 @@ var details_tab: VBoxContainer
 var log_tab: VBoxContainer
 var selection_details: RichTextLabel
 var sidebar_summary: Label
+var action_hint: Label
+var debug_action_button: Button
 var selected_cell := Vector2i(-1, -1)
 var log_dialog: AcceptDialog
 var log_view: TextEdit
@@ -202,8 +204,6 @@ func _build_ui() -> void:
     battle_panel.add_child(heading)
     _make_label("COMBAT LAB", heading, 26)
     battle_status = _make_label("Preparing battle...", heading, 17)
-    _make_button("Debug I/O", heading, _show_debug, 120)
-    _make_button("Battle Log", heading, _show_live_log, 120)
     _make_button("Retry Battle", heading, _start_battle, 145)
     _make_button("Return to Title", heading, _show_title, 175)
     main_grid = GridContainer.new()
@@ -304,6 +304,8 @@ func _build_ui() -> void:
     move_button = _make_button("Move", command_row, _select_mode.bind("move"), 72)
     attack_button = _make_button("Attack", command_row, _select_mode.bind("attack"), 72)
     spell_button = _make_button("Spell", command_row, _select_mode.bind("spell"), 72)
+    for choice in [move_button, attack_button, spell_button]:
+        choice.toggle_mode = true
     wind_button = _make_button("Second Wind", command_row, _use_second_wind, 122)
     dash_button = _make_button("Dash", command_row, _use_dash, 72)
     dodge_button = _make_button("Dodge", command_row, _use_dodge, 72)
@@ -329,6 +331,10 @@ func _build_ui() -> void:
     reaction_text = _make_label("", reaction_panel, 16)
     reaction_accept = _make_button("React", reaction_panel, _resolve_reaction.bind(true), 100)
     reaction_decline = _make_button("Decline", reaction_panel, _resolve_reaction.bind(false), 100)
+    action_hint = _make_label("Choose a command, then tap a highlighted tile.", actions_tab, 14)
+    action_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    debug_action_button = _make_button("Debug Input / Output", actions_tab, _show_debug, 200)
+    debug_action_button.tooltip_text = "View the versioned CombatSetup and last recorded CombatResult"
 
     _build_dialogs()
     _update_title()
@@ -457,6 +463,7 @@ func _start_battle() -> void:
     last_setup = setup.duplicate(true)
     engine = instance
     board.engine = engine
+    board.reset_presentation()
     recorded = false
     heard_events = 0
     picker_actor = ""
@@ -633,6 +640,8 @@ func _play_events() -> void:
     var sound_ids: Array[String] = []
     for i in range(heard_events, engine.events.size()):
         var event: Dictionary = engine.events[i]
+        if str(event.get("kind", "")) in ["hit", "miss", "cast", "heal", "death"]:
+            board.enqueue_combat_event(event)
         var line: String = str(event.get("text", ""))
         if not line.is_empty():
             lines.append(line)
@@ -678,7 +687,22 @@ func _refresh() -> void:
     var lines: PackedStringArray = []
     for id in ["alden", "elyra", "brunna", "pip"]:
         var a: Dictionary = engine.actors[id]
-        lines.append("%s: %d/%d HP (%s)" % [a["name"], a["hp"], a["max_hp"], a["combat_state"]])
+        var actor_status: String = "%s: %d/%d HP • AC %d (%s)" % [
+            a["name"], a["hp"], a["max_hp"], a.get("armor_class", 10), a["combat_state"]]
+        var resources: PackedStringArray = []
+        if a.get("spellcasting") is Dictionary:
+            resources.append("slots: %d" % int(a.get("spell_slots_remaining", 0)))
+        if a.get("class_id", "") == "champion":
+            resources.append("Second Wind: %d" % int(a.get("second_wind_remaining", 0)))
+        if not str(a.get("blessed_by", "")).is_empty():
+            resources.append("Blessed")
+        if bool(a.get("mage_armor_active", false)):
+            resources.append("Mage Armor")
+        if bool(a.get("dodging", false)):
+            resources.append("Dodging")
+        if not resources.is_empty():
+            actor_status += "  |  " + ", ".join(resources)
+        lines.append(actor_status)
     if not engine.deployment_active and not engine.finished:
         var current: Dictionary = engine.current_actor()
         lines.append("\nActive: %s  |  Action: %s  |  Bonus: %s" % [
@@ -693,6 +717,20 @@ func _refresh() -> void:
         sidebar_summary.text = "Round %d • %s" % [engine.round_number, str(engine.current_actor().get("name", ""))]
     _update_selection_details()
     var can_act: bool = engine.current_is_party() and not pending and not engine.finished
+    if engine.deployment_active:
+        action_hint.text = "Select a party member, then choose a highlighted starting tile."
+    elif pending:
+        action_hint.text = "Resolve the reaction above before continuing."
+    elif engine.finished:
+        action_hint.text = "Battle ended. Review Party, Details or Log; Retry to test again."
+    elif action_mode == "move":
+        action_hint.text = "Blue cells are reachable. Tap a blue cell to move."
+    elif action_mode == "attack":
+        action_hint.text = "Red cells indicate valid weapon targets. Tap a target to attack."
+    elif action_mode == "spell":
+        action_hint.text = "Gold cells indicate legal spell targets. Choose a spell, then tap."
+    else:
+        action_hint.text = "Choose Move, Attack or Spell to highlight legal destinations and targets."
     move_button.disabled = not can_act or not engine.can_move_current()
     attack_button.disabled = not can_act or engine.action_used
     spell_button.disabled = not can_act or not engine.can_cast_any_current_spell()
@@ -706,6 +744,8 @@ func _refresh() -> void:
     var selected_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
     self_button.disabled = not can_act or selected_spell.get("target", "") != "self" or (
         not engine.can_cast_spell(_selected_spell(), engine.current_id()))
+    for choice in [move_button, attack_button, spell_button]:
+        choice.set_pressed_no_signal(not choice.disabled and action_mode == choice.text.to_lower())
     _play_events()
     if engine.finished and not recorded:
         _record_result()
