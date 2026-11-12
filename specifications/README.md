@@ -15,3 +15,7 @@ Draft -> owner review/approval -> implementation -> automated/manual evidence ->
 
 ## Current feature planning
 The combat isolation/polish plan is prepared for the dedicated combat development branch. Further class-level-two mechanics and monster roster will be separately specified before implementation.
+
+## Newly agreed presentation work
+
+- [FEAT-015 — iPad map camera, touch gestures, projectile VFX and weapon/spell cards](features/FEAT-015-ipad-camera-projectiles-and-card-actions.md) records the owner-approved provisional composition and an implementation/test checklist. Recording this specification is not equivalent to implementing the features.

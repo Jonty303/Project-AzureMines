@@ -41,3 +41,10 @@ Draft a Proposed ADR before material changes. Never mark an unreviewed change Ac
 **Status:** Implemented prototype, pending owner acceptance (2026-11-12).
 **Decision:** Run a standalone title/configuration/CombatEngine session with a version-one setup/result dictionary and saved debug report. Do not call narrative, quests, NPC registry or campaign state in this branch.
 **Consequences:** Existing narrative modules remain in their original branches; later integration must use a reviewed external adapter. See FEAT-009.
+
+### ADR-AM-007 — iPad-first battlefield interaction and touch command surfaces
+**Status:** Owner-agreed provisional presentation direction (2026-11-12); implementation pending.
+**Decision:** Use a wider, pannable/zoomable tactical board; retain an informational right sidebar; place character commands in the bottom icon+label deck with large right-aligned End Turn; use direct weapon cards and a horizontal swipeable spell strip; animate ranged/spell projectiles from resolved event data.
+**Consequences:** UI needs a shared camera input/coordinate transform, gesture arbitration, portable artwork and additive visual events. Existing CombatEngine remains rules authority. Maintain keyboard/mouse alternatives.
+**Scope:** Presentation only. The generated reference's class labels, MP and damage/hit percentages are noncanonical illustrative content.
+**Detail:** docs/combat-lab-ipad-art-direction-v02.md and FEAT-015.

@@ -2,6 +2,8 @@
 
 **Status:** Approved visual direction from the 28 October 2026 Gold Box-inspired battle mock-up. This document is binding on upcoming **presentation** work; it does not change the Classic 5E mechanics.
 
+> **Update — 12 November 2026:** The owner agreed a newer, provisional **iPad-first combat composition**. See [iPad art/interaction direction v0.2](combat-lab-ipad-art-direction-v02.md). Its larger pan/zoom map, permanent information sidebar, bottom icon-based commands, prominent End Turn and swipeable spell cards take precedence over the older layout sketch below. Preserve this document's underlying pixel-art aesthetic and colour identity; do not treat the new mockup's fictional stat values as rules.
+
 ## Visual identity
 
 - High-detail, deliberately retro **pixel art**, consistent scale and lighting; dark, weathered stone and warm torch/fire illumination.

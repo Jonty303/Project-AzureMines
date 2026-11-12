@@ -1,5 +1,7 @@
 # Azure Mines — Standalone Combat Lab
 
+**Next agreed design direction:** [iPad-first combat art v0.2](docs/combat-lab-ipad-art-direction-v02.md) and [FEAT-015 implementation checklist](specifications/features/FEAT-015-ipad-camera-projectiles-and-card-actions.md). These are design records only on `feature/combat-lab-ipad-art-direction`; the working GitHub Pages build is unchanged.
+
 ## Web / iPad preview (feature branch)
 
 The web/touch development slice is on `feature/combat-lab-web-touch`, based on this standalone lab. It contains native board touch handling, keyboard tile navigation, tablet-sized controls, and a pinned single-threaded Godot 4.5.2 HTML5 export. See [Web preview and iPad testing](docs/web-touch-preview.md).
