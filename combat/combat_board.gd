@@ -105,7 +105,13 @@ func _draw() -> void:
     var forest: Texture2D = _texture_for(forest_path)
     if forest != null:
         var forest_height: int = int(engine.backdrop.get("rows", 2)) * CELL_SIZE
-        draw_texture_rect(forest, Rect2(Vector2.ZERO, Vector2(engine.grid_size.x * CELL_SIZE, forest_height)), false)
+        # Scenery must not conceal tactical terrain or targeting information.
+        draw_texture_rect(forest, Rect2(Vector2.ZERO, Vector2(engine.grid_size.x * CELL_SIZE, forest_height)), false,
+            Color(1.0, 1.0, 1.0, 0.28))
+        for top_y in range(mini(int(engine.backdrop.get("rows", 2)), engine.grid_size.y)):
+            for top_x in range(engine.grid_size.x):
+                var top_cell := Rect2(Vector2(top_x * CELL_SIZE, top_y * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
+                draw_rect(top_cell, Color("#d0baa0", 0.45), false, 1.5)
 
     for obstacle in engine.obstacles:
         var art_path: String = str(obstacle.get("art", "")).trim_prefix("res://")

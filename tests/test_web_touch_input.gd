@@ -17,16 +17,31 @@ func _run() -> void:
         return
 
     lab.call("_apply_responsive_layout", Vector2(1024, 768))
-    if int(board.get("display_cell_size")) >= 68 or lab.get("sidebar").visible:
-        _fail("Tablet-sized viewport did not activate compact board/layout")
+    if int(board.get("display_cell_size")) >= 68 or not lab.get("sidebar").visible:
+        _fail("Tablet landscape must keep the tabbed side panel visible")
+        return
+    if lab.get("main_grid").columns != 2 or lab.get("tabs").get_tab_count() != 4:
+        _fail("Landscape must have side-by-side board and four information tabs")
+        return
+    lab.call("_apply_responsive_layout", Vector2(768, 1024))
+    if lab.get("main_grid").columns != 1 or not lab.get("sidebar_panel").visible:
+        _fail("Portrait must stack the board and tab panel")
         return
     lab.call("_apply_responsive_layout", Vector2(1550, 1000))
-    if not lab.get("sidebar").visible or int(board.get("display_cell_size")) != 68:
-        _fail("Wide desktop viewport did not restore full board/sidebar")
+    if lab.get("main_grid").columns != 2 or int(board.get("display_cell_size")) != 68:
+        _fail("Wide desktop viewport did not restore two-column board/sidebar")
         return
     lab.call("_start_battle")
+    if lab.get("tabs").current_tab != 0:
+        _fail("Actions must be the default tab for battle")
+        return
     if lab.get("engine") == null:
         _fail("Combat Lab session did not load")
+        return
+
+    lab.call("_on_cell_clicked", Vector2i(9, 2))
+    if not lab.get("selection_details").text.contains("CELL (9, 2)"):
+        _fail("Selection Details did not update when the battlefield was tapped")
         return
 
     board.set_display_cell_size(48)
