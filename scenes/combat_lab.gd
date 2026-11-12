@@ -23,6 +23,8 @@ var formation_panel: HBoxContainer
 var actions_panel: VBoxContainer
 var reaction_panel: HBoxContainer
 var reaction_text: Label
+var reaction_accept: Button
+var reaction_decline: Button
 var end_turn_button: Button
 var move_button: Button
 var attack_button: Button
@@ -241,8 +243,8 @@ func _build_ui() -> void:
     reaction_panel.add_theme_constant_override("separation", 12)
     battle_panel.add_child(reaction_panel)
     reaction_text = _make_label("", reaction_panel, 16)
-    _make_button("React", reaction_panel, _resolve_reaction.bind(true), 100)
-    _make_button("Decline", reaction_panel, _resolve_reaction.bind(false), 100)
+    reaction_accept = _make_button("React", reaction_panel, _resolve_reaction.bind(true), 100)
+    reaction_decline = _make_button("Decline", reaction_panel, _resolve_reaction.bind(false), 100)
 
     _build_dialogs()
     _update_title()
