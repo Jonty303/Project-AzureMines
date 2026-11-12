@@ -20,17 +20,45 @@ var selected_weapon := ""
 var selected_spell := ""
 var selected_deployment_actor := ""
 var _sprite_cache: Dictionary = {}
+var display_cell_size: int = CELL_SIZE
+var keyboard_cell := Vector2i(2, 5)
+var _last_touch_cell := Vector2i(-1, -1)
+var _last_touch_msec := -10000
+
+
+func set_display_cell_size(value: int) -> void:
+    display_cell_size = clampi(value, 38, CELL_SIZE)
+    custom_minimum_size = Vector2(12 * display_cell_size, 10 * display_cell_size)
+    queue_redraw()
+
+
+func _cell_from_position(position: Vector2) -> Vector2i:
+    return Vector2i(floori(position.x / float(display_cell_size)),
+        floori(position.y / float(display_cell_size)))
+
+
+func _activate_cell(cell: Vector2i) -> void:
+    if engine == null or cell.x < 0 or cell.y < 0:
+        return
+    if cell.x >= engine.grid_size.x or cell.y >= engine.grid_size.y:
+        return
+    keyboard_cell = cell
+    cell_clicked.emit(cell)
+    queue_redraw()
+
 
 
 func _ready() -> void:
     texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     mouse_filter = Control.MOUSE_FILTER_STOP
-    custom_minimum_size = Vector2(12 * CELL_SIZE, 10 * CELL_SIZE)
+    set_display_cell_size(CELL_SIZE)
+    focus_mode = Control.FOCUS_ALL
 
 
 func _draw() -> void:
     if engine == null:
         return
+    draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * (float(display_cell_size) / float(CELL_SIZE)))
     var current: String = engine.current_id()
     var highlights: Dictionary = get_highlights()
     var reachable: Dictionary = highlights["move"]
@@ -67,6 +95,10 @@ func _draw() -> void:
                 draw_rect(dest.grow(-3), Color("#399bd5", 0.18))
                 draw_rect(dest.grow(-3), Color("#65b3df", 0.65), false, 1.5)
             draw_rect(dest, Color("#1c232b", 0.58), false, 1.0)
+
+    if has_focus():
+        var cursor := Rect2(Vector2(keyboard_cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
+        draw_rect(cursor, Color("#f0da86"), false, 3.0)
 
     # Layered scene art: forest backdrop first, then persistent physical props.
     var forest_path: String = str(engine.backdrop.get("art", "")).trim_prefix("res://")
@@ -197,11 +229,38 @@ func _texture_for(path: String) -> Texture2D:
 
 
 func _gui_input(event: InputEvent) -> void:
-    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-        var cell := Vector2i(
-            floori(event.position.x / float(CELL_SIZE)),
-            floori(event.position.y / float(CELL_SIZE))
-        )
-        if engine != null and cell.x >= 0 and cell.y >= 0:
-            if cell.x < engine.grid_size.x and cell.y < engine.grid_size.y:
-                cell_clicked.emit(cell)
+    if event is InputEventScreenTouch and event.pressed and event.index == 0:
+        var cell: Vector2i = _cell_from_position(event.position)
+        _last_touch_cell = cell
+        _last_touch_msec = Time.get_ticks_msec()
+        _activate_cell(cell)
+        accept_event()
+    elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+        var cell: Vector2i = _cell_from_position(event.position)
+        # Godot may synthesise a mouse press for the same touchscreen tap.
+        if cell == _last_touch_cell and Time.get_ticks_msec() - _last_touch_msec < 400:
+            return
+        grab_focus()
+        _activate_cell(cell)
+        accept_event()
+    elif event is InputEventKey and event.pressed and not event.echo:
+        var offset := Vector2i.ZERO
+        match event.keycode:
+            KEY_LEFT:
+                offset = Vector2i.LEFT
+            KEY_RIGHT:
+                offset = Vector2i.RIGHT
+            KEY_UP:
+                offset = Vector2i.UP
+            KEY_DOWN:
+                offset = Vector2i.DOWN
+            KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
+                _activate_cell(keyboard_cell)
+                accept_event()
+                return
+            _:
+                return
+        keyboard_cell = Vector2i(clampi(keyboard_cell.x + offset.x, 0, 11),
+            clampi(keyboard_cell.y + offset.y, 0, 9))
+        queue_redraw()
+        accept_event()
