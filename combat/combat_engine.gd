@@ -157,7 +157,14 @@ func _start_from_data(party: Dictionary, encounter: Dictionary, seed: int, with_
         actor["blessed_by"] = ""
         actor["max_hp"] = int(actor.get("max_hp", 1))
         var casting: Variant = actor.get("spellcasting")
-        actor["spell_slots_remaining"] = int(casting.get("spell_slots", {}).get("1", 0)) if casting is Dictionary else 0
+        var slots_by_level: Dictionary = {}
+        if casting is Dictionary:
+            for tier_variant in casting.get("spell_slots", {}).keys():
+                var tier: String = str(tier_variant)
+                slots_by_level[tier] = maxi(0, int(casting["spell_slots"][tier_variant]))
+        actor["spell_slots_by_level"] = slots_by_level
+        # Compatibility mirror for all existing level-one spell code and tests.
+        actor["spell_slots_remaining"] = int(slots_by_level.get("1", 0))
         actor["second_wind_remaining"] = int(actor.get("resource_limits", {}).get("second_wind", 0))
         actor["mage_armor_active"] = false
         actor["vex_target"] = ""
@@ -1279,6 +1286,24 @@ func _sneak_attack_eligible(source_id: String, target_id: String, weapon: Dictio
     return false
 
 
+func spell_slots_left(actor_id: String, slot_level: int) -> int:
+    if not actors.has(actor_id) or slot_level <= 0:
+        return 0
+    var actor: Dictionary = actors[actor_id]
+    if slot_level == 1:
+        return maxi(0, int(actor.get("spell_slots_remaining", 0)))
+    return maxi(0, int(actor.get("spell_slots_by_level", {}).get(str(slot_level), 0)))
+
+
+func spell_slot_capacity(actor_id: String, slot_level: int) -> int:
+    if not actors.has(actor_id) or slot_level <= 0:
+        return 0
+    var casting: Variant = actors[actor_id].get("spellcasting")
+    if not casting is Dictionary:
+        return 0
+    return maxi(0, int(casting.get("spell_slots", {}).get(str(slot_level), 0)))
+
+
 func can_cast_spell(spell_id: String, target_id: String) -> bool:
     return spell_unavailable_reason(spell_id, target_id).is_empty()
 
@@ -1316,8 +1341,10 @@ func spell_unavailable_reason(spell_id: String, target_id: String) -> String:
     if int(spell["level"]) > 0:
         if slotted_cast_this_turn:
             return "A slotted spell was already cast this turn."
-        if int(caster.get("spell_slots_remaining", 0)) <= 0:
-            return "No spell slots remaining."
+        # v0.5.1: only defined level-one spells can be cast. No implicit
+        # higher-slot upcasting until spell-specific scaling is implemented.
+        if spell_slots_left(current_id(), int(spell["level"])) <= 0:
+            return "No level %d spell slots remaining." % int(spell["level"])
     if spell["effect"] == "mage_armor":
         if bool(caster.get("mage_armor_active", false)):
             return "Mage Armor is already active."
@@ -1350,7 +1377,12 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
     else:
         bonus_action_used = true
     if int(spell["level"]) > 0:
-        caster["spell_slots_remaining"] = int(caster["spell_slots_remaining"]) - 1
+        var tier: String = str(int(spell["level"]))
+        var slots: Dictionary = caster.get("spell_slots_by_level", {}).duplicate()
+        slots[tier] = maxi(0, spell_slots_left(caster_id, int(spell["level"])) - 1)
+        caster["spell_slots_by_level"] = slots
+        if tier == "1":
+            caster["spell_slots_remaining"] = int(slots[tier])
         slotted_cast_this_turn = true
         actors[caster_id] = caster
     var target: Dictionary = actors[target_id]
