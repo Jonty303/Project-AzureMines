@@ -1,5 +1,10 @@
 # Project Azure Mines
 
+## Next development cycle — Combat Lab (planning)
+
+The next branch focuses on a **separate repeatable combat sandbox**, clearer existing sprites/UI and simple event-driven melee/spell VFX, followed by **character-level-two** rules and a small number of new monsters. The gameplay changes are **not implemented yet**. See [combat cycle overview](docs/combat-polish-cycle.md) and the [FEAT-010](specifications/features/FEAT-010-combat-lab.md), [FEAT-011](specifications/features/FEAT-011-combat-visual-polish.md) and [FEAT-012](specifications/features/FEAT-012-level2-and-monsters.md) specifications. The game still starts in its existing story/campaign scene.
+
+
 ## Goblin Hideout v0.9.1 — The branching cave and three tactical battles
 
 The goblin hideout has grown into a **playable, revisitable limestone cave**. Follow the ravine into the wooded valley, **hail the hidden two-goblin watchpost and try Persuasion or Deception for guarded entry**, sneak past, or confront the lookouts in tactical combat, then enter the branching main passage and fight **a goblin and large wolf** in the guardroom. The rubbish tip includes a small original **Midden Grub**, an optional third fight, and a **hole in the floor** where goblins discard waste. Its destination deliberately remains a mystery.

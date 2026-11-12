@@ -65,3 +65,8 @@ The next major cave milestone is now implemented: [v0.9.1 build notes](goblin-hi
 **Three actual tactical encounters** are live and reconnect to the correct narrative scene: **two tree watchpost goblins (100 XP)**, **guardroom goblin + large wolf (100 XP)** and optional **Midden Grub (20 XP)**. Distinct enemy art and AI attacks, party injury and spell slot retention, unique rewards, no enemy respawns on revisits and save/reload are covered by Godot CI. A genuine prebattle outflank can give the unalerted tree sentries **Disadvantage on initiative** (2024 Surprise).
 
 **Next v0.9.2:** Add real goblin politics/faction consequences, waterfall-guard combat, and access through the guarded tunnel. **v0.9.3:** Bugbear lord fight and freeing/recovering the captive mage. **v0.9.4:** Level-one difficulty tuning, full illustrated dungeon, world-time and retreat consequences. The full conspiracy, targeted dwarven abductions and high-moor tower remain later author-only story material.
+
+
+## Next combat-focused development cycle — 2026-11-12
+
+Planning branch: `feature/combat-lab-polish-level2` (derived from `feature/development-governance`). The approved direction is an isolated repeatable Combat Lab, followed by visual polish (existing art, melee and spell VFX), then separately reviewed character-level-two features, spell resources and a small roster of monsters. Nothing in the present planning PR implements these mechanics. See `docs/combat-polish-cycle.md` and `specifications/features/FEAT-010..012`. Existing adventure and cave milestones remain separate.
