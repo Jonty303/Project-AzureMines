@@ -890,27 +890,24 @@ func take_ai_turn() -> void:
         attack(chosen_id, chosen_weapon)
     else:
         var reachable: Dictionary = get_reachable(actor_id)
-        var best_cell: Vector2i = source["position"]
-        var best_score: int = 999999
-        for cell_variant in reachable.keys():
-            var cell: Vector2i = cell_variant
-            if cell == source["position"]:
-                continue
-            for id in enemy_ids:
-                var target: Dictionary = actors[id]
-                var distance: int = _distance(cell, target["position"])
-                if distance <= 0:
+        var origin: Vector2i = source["position"]
+        var best_cell: Vector2i = origin
+        # Pick a stable tactical objective instead of changing target for each
+        # evaluated square; changing targets mid-search causes oscillation.
+        var focus_id: String = _nearest_opponent(actor_id)
+        if not focus_id.is_empty():
+            var best_score: int = _ai_position_score(source, actors[focus_id], origin, 0)
+            for cell_variant in reachable.keys():
+                var cell: Vector2i = cell_variant
+                if cell == origin:
                     continue
-                var clear: bool = _line_clear(cell, target["position"])
-                var score: int = 0
-                if role == "ranged":
-                    score = (0 if clear else 400) + absi(distance - 4) * 10
-                else:
-                    score = distance * 15 + (0 if clear else 50)
-                score += int(reachable[cell]["cost"])
+                var score: int = _ai_position_score(source, actors[focus_id], cell,
+                    int(reachable[cell]["cost"]))
                 if score < best_score:
                     best_score = score
                     best_cell = cell
+        # Never move merely because movement is available. An archer on good
+        # ground can hold position if it has already spent its action.
         if best_cell != source["position"]:
             move_to(best_cell)
             if not pending_reaction.is_empty() or not pending_move.is_empty() or finished:
@@ -925,6 +922,34 @@ func take_ai_turn() -> void:
                     break
     if not finished and pending_reaction.is_empty() and pending_move.is_empty():
         end_turn()
+
+
+func _ai_position_score(source: Dictionary, target: Dictionary, cell: Vector2i,
+        move_cost: int) -> int:
+    # Lower is better. Current tile is compared first so equal/worse reachable
+    # tiles do not trigger gratuitous movement or two-turn zig-zags.
+    var distance: int = _distance(cell, target["position"])
+    var clear: bool = _line_clear(cell, target["position"])
+    var role: String = str(source.get("role", "melee"))
+    var score: int = 0
+    if role == "ranged":
+        var normal_range := 6
+        for weapon_variant in source.get("attacks", []):
+            var weapon: Dictionary = weapon_variant
+            if weapon.get("kind", "") == "ranged_weapon":
+                normal_range = maxi(1, int(weapon.get("normal_range_feet", 30)) / 5)
+                break
+        score = (0 if clear else 450) + maxi(0, distance - normal_range) * 60
+        score += absi(distance - mini(4, normal_range)) * 20
+        if distance <= 1:
+            score += 500
+    else:
+        score = distance * 100 + (0 if clear else 25)
+    score += move_cost * 6
+    for hazard in hazards:
+        if hazard.get("position", Vector2i(-1, -1)) == cell:
+            score += 800
+    return score
 
 
 func target_at(cell: Vector2i) -> String:
