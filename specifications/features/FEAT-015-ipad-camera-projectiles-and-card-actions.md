@@ -1,17 +1,17 @@
 # FEAT-015 — iPad battlefield navigation, projectiles and card-based controls
 
-**Status:** READY FOR IMPLEMENTATION PLANNING — owner agreed to provisional visual direction; no gameplay code changed by this spec.
+**Status:** FIRST PLAYABLE IMPLEMENTATION — core functionality implemented, manual iPad visual/touch acceptance pending. See [v0.4 notes](../../docs/combat-lab-v04-release.md).
 **Branch for agreed design:** `feature/combat-lab-ipad-art-direction`.
 **Reference:** [iPad-first art direction v0.2](../../docs/combat-lab-ipad-art-direction-v02.md). The rendered mockup is retained in the 12 November 2026 project conversation; it is a reference, not a canonical game-state screenshot.
-**Build objective:** Combat Lab v0.4 presentation & touch interaction; **no narrative engine or combat-rule rewrite**.
+**Build objective:** Combat Lab v0.4 presentation & touch interaction; **no narrative engine or combat-rule rewrite**. Numeric defaults remain provisional.
 
 ## Work breakdown / implementation checklist
 
 ### P0 — viewport and battlefield foundation
-- [ ] **Camera transform** in presentation layer: camera centre/offset and zoom are authoritative for drawing and hit-testing, not for combat rules. Mouse drag, one-finger drag, keyboard pan and optional +/- controls share one transform.
-- [ ] **Tap versus pan**: movement threshold (initial proposal ~8 display pixels, subject to device test); capture touch ID; on drag consume the gesture without executing a cell action. Use two touches for pinch; calculate scale around pinch focal point, clamp proposed range (e.g. 0.65× to 1.6×) until real iPad testing selects bounds. Handle browser touch-to-mouse synthesis exactly once.
-- [ ] **Expand arena data** from 12 to **16–17 columns** in at least one new Combat Lab fixture without overwriting the old 12-column tests. Ensure obstacles, party deployment, enemies, AI pathfinding, line of sight, hazards and cover work across the enlarged grid.
-- [ ] **No fixed 12×10 UI assumptions**: CombatBoard minimum size, mouse hit test, keyboard cell cursor and layout respond to `engine.grid_size`. Test panning and zoom with actors on edge columns. Do not force larger maps to fit the screen.
+- [x] **Camera transform** in presentation layer: camera centre/offset and zoom are authoritative for drawing and hit-testing, not for combat rules. Mouse drag, one-finger drag, keyboard pan and optional +/- controls share one transform.
+- [x] **Tap versus pan**: movement threshold (initial proposal ~8 display pixels, subject to device test); capture touch ID; on drag consume the gesture without executing a cell action. Use two touches for pinch; calculate scale around pinch focal point, clamp proposed range (e.g. 0.65× to 1.6×) until real iPad testing selects bounds. Handle browser touch-to-mouse synthesis exactly once.
+- [x] **Expand arena data** from 12 to **16–17 columns** in at least one new Combat Lab fixture without overwriting the old 12-column tests. Ensure obstacles, party deployment, enemies, AI pathfinding, line of sight, hazards and cover work across the enlarged grid.
+- [x] **No fixed 12×10 UI assumptions**: CombatBoard minimum size, mouse hit test, keyboard cell cursor and layout respond to `engine.grid_size`. Test panning and zoom with actors on edge columns. Do not force larger maps to fit the screen.
 - [ ] Optional **zoomed-out tactical overview/minimap** with actual locations and the visible viewport rectangle; any minimap taps must pan without issuing an attack/move.
 
 ### P0 — icon + text command bar and End Turn
@@ -76,3 +76,7 @@
 ## Owner decisions
 
 The **visual direction and basic gestures are agreed** as of 12 November 2026. Proposed numeric zoom limits, touch thresholds, animation durations, exact icon artwork and card counts are **implementation defaults pending iPad testing**, not permanently approved balance or accessibility rules.
+
+## Implementation and review note (2026-11-12)
+
+The code-level prototype is implemented on `feature/combat-lab-v04-ipad-camera-cards`. The initially optional minimap, full class-ability icons, richer skill metadata, projectile death-state staging and physical iPad acceptance are deferred. Real Safari swipe gesture and camera comfort remain **NOT RUN**; don't interpret headless gesture injection as a physical test. Original standalone 12-column fixtures remain testable.

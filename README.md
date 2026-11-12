@@ -1,6 +1,6 @@
 # Azure Mines — Standalone Combat Lab
 
-**Next agreed design direction:** [iPad-first combat art v0.2](docs/combat-lab-ipad-art-direction-v02.md) and [FEAT-015 implementation checklist](specifications/features/FEAT-015-ipad-camera-projectiles-and-card-actions.md). These are design records only on `feature/combat-lab-ipad-art-direction`; the working GitHub Pages build is unchanged.
+**v0.4 playable implementation:** [Expanded battlefield and iPad controls](docs/combat-lab-v04-release.md), aligned to the [owner-agreed art direction](docs/combat-lab-ipad-art-direction-v02.md) and [FEAT-015](specifications/features/FEAT-015-ipad-camera-projectiles-and-card-actions.md). Built on `feature/combat-lab-v04-ipad-camera-cards`; deployment only follows passing Godot CI.
 
 ## Web / iPad preview (feature branch)
 
