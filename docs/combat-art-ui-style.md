@@ -86,3 +86,9 @@ The newly generated comprehensive sheet additionally illustrates directional pos
 4. **QA:** contrast, scale at window resizing, 64px hitboxes, correct click/hover states, legible combat log and visual consistency.
 
 Do not compromise combat rules and accessibility simply to reproduce the picture literally.
+
+## Proposed oversized creature art contract (FEAT-017)
+
+The eventual dragon, giant, ogre and mount art may extend beyond a combatant's base. **Never infer occupied squares from rendered sprite bounds.** Large = 2×2 tactical squares, Huge = 3×3, Gargantuan = 4×4 or more as individually authored; Small/Medium remain 1×1. Draw an unambiguous ground footprint outline/shadow, anchor the visual body at its feet, and depth-sort at the body's ground contact. Wings, tails, horns and weapons can overhang nearby squares without blocking those squares or expanding melee reach. Tapping any *occupied* tile selects the creature; decorative overhang alone should not steal touches from neighbouring tiles. Selection, reach, projectiles, health bars and death poses must remain legible across iPad camera pan/zoom.
+
+A future 2×2 test sprite is preferable before producing a large boss atlas. Facing, flying and breath weapon visuals are distinct later art/mechanics work. See [FEAT-017](../specifications/features/FEAT-017-multi-tile-creatures.md). **Art guidance only; no multi-tile actor renderer exists yet.**

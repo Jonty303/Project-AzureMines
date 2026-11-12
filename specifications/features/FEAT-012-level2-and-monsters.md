@@ -48,3 +48,7 @@ Aim for two or three newly tested archetypes before adding a wider bestiary. All
 - **FEAT-012-AC06:** Human playtest documents ease, lethality, tactical variety and UI comprehension at level two.
 - **Human approval of exact rules and roster:** Pending.
 <!-- [EXAMPLE ONLY] A spell's numeric damage is not approved just because its name appears in a draft. -->
+
+## Larger creatures (planned, independent of level-two work)
+
+A later monster/encounter milestone must not implement a giant or dragon by drawing a large sprite over a 1×1 tile. The owner has requested real size-category footprints: Large 2×2, Huge 3×3, Gargantuan 4×4+ (with individual dragon/giant sizes explicitly authored). First prove a Large 2×2 fixture using the [generic footprint specification](FEAT-017-multi-tile-creatures.md), then a Huge 3×3 fixture and collision/attack/AI tests. Flying, breath effects, squeezing and advanced boss behaviour are separate reviewed rules features. **No giant, dragon, or multi-tile collision is implemented by this document.**

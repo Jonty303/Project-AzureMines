@@ -36,3 +36,7 @@ The combat lab does NOT own persistent NPC identity, whereabouts, trust, quests 
 ## Exclusions
 Campaign state migration, narrative decisions, NPC registry implementation, full level-2 mechanics and animations.
 <!-- [EXAMPLE ONLY] An NPC 'Hesk' data example is not a command to implement story content in this branch. -->
+
+## Future footprint contract (FEAT-017)
+
+Generic combatant definitions will need explicit **size category and authoritative occupied-square footprint**, separate from artistic texture dimensions and with a versioned migration policy. Proposed instance position remains a top-left grid anchor; existing single-square actors must default to 1×1. Structured combat events should include suitable snapshots of actual source/impact geometry for projectiles and animation. See [FEAT-017](FEAT-017-multi-tile-creatures.md). These are **proposals**, not existing schema fields.

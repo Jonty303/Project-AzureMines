@@ -25,3 +25,7 @@ A combat sandbox must not write the campaign save, award permanent XP or expose 
 ## Acceptance
 Round-trip persistence tests must preserve established state and reject invalid/unsupported records. Repeat battle runs must not duplicate rewards or alter narrative flags.
 <!-- [EXAMPLE ONLY] EnemyInstance and EnemyDefinition separation illustrates concepts, not a new mandatory format. -->
+
+## Proposed combatant space and sprite separation
+
+Future typed `CombatantDefinition` records should contain a size category and a validated grid footprint. `CombatantInstance.position` should remain a stable grid anchor; occupied cells are derived from the footprint. Sprite size, visual hit region and ground-contact anchor are **presentation metadata**, never the source of collision or reach. Existing definitions without footprint metadata must continue to occupy 1×1; any schema version change needs migration and deterministic serialization tests. See [FEAT-017](../features/FEAT-017-multi-tile-creatures.md). **Not yet implemented.**

@@ -47,3 +47,9 @@ This branch is intentionally **not** the Azure Mines narrative game.
 - Resolved movement animates per tile (~115ms) and projectile launching follows queued attacker movement.
 - A fatal ranged projectile keeps the target's battlefield sprite upright until impact, then plays collapse and death sound, while the engine state remains authoritative throughout.
 - Formal acceptance/tests: [FEAT-016](../specifications/features/FEAT-016-downed-turns-impact-and-movement.md). Physical iPad animation review remains outstanding.
+
+## Proposed engine foundation — multi-tile creature footprints (FEAT-017)
+
+The owner requested real tactical sizes for giants, dragons and other oversized creatures. Design intent: Small/Medium 1×1; Large 2×2; Huge 3×3; Gargantuan 4×4 or more, while allowing individual creatures of a family to differ in size. First add backward-compatible footprint definitions, occupied-cell geometry and validation; next implement collision/pathfinding, reach/AoO, line of sight, area effects, AI and camera-aligned sprites; finally prove 2×2 and 3×3 test creatures before a 4×4 boss. Flying/altitude, breath templates and advanced monster features are separate milestones.
+
+**Status:** Proposed/documented, **NOT IMPLEMENTED**. See [FEAT-017](../specifications/features/FEAT-017-multi-tile-creatures.md) and ADR-AM-010. Preserve the current 1×1 Combat Lab behaviour until tests and owner review are complete.

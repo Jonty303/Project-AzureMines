@@ -43,3 +43,7 @@ No campaign mutations, gold/XP/loot, story loads or named NPC fate decisions in 
 ## Risks
 Temporary Hunter fixture reuses the 'pip' slot and sprite; no complete higher-level features. Enemy type is homogeneous per encounter and current outcome is victory/defeat, not surrender or escape.
 <!-- [EXAMPLE ONLY — NOT APPROVED] Do not import cross-project secrets or campaign fixtures. -->
+
+## Proposed geometry seam — multi-tile combatants
+
+Before adding genuinely Large/Huge/Gargantuan actors, define a single engine-owned footprint/occupancy interface. All player pathfinding, AI search, target lookup, distance/reach, line of sight, cover, AoO and area intersection should consume this shared geometry. `CombatBoard` remains presentation only: it draws a footprint base and a separately anchored oversized sprite, and maps iPad touch cells to the existing actor ID. `CombatSetup` validates size/footprint definitions, with 1×1 backward compatibility. Resolved projectile/movement events capture suitable source/impact geometry; do not infer combat range from sprite pixels. See [FEAT-017](../specifications/features/FEAT-017-multi-tile-creatures.md) and ADR-AM-010. **Design only; not implemented.**
