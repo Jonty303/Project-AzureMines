@@ -4,7 +4,9 @@
 
 The web/touch development slice is on `feature/combat-lab-web-touch`, based on this standalone lab. It contains native board touch handling, keyboard tile navigation, tablet-sized controls, and a pinned single-threaded Godot 4.5.2 HTML5 export. See [Web preview and iPad testing](docs/web-touch-preview.md).
 
-**Status (12 November 2026):** Web export and Godot tests PASSED; publishing to GitHub Pages is BLOCKED until the repository owner enables **Settings → Pages → Source: GitHub Actions**. The successful [web build workflow](https://github.com/Jonty303/Project-AzureMines/actions/runs/43226257758) contains the `combat-lab-web-build` artifact.
+**Status (12 November 2026):** [GitHub Pages is live](https://jonty303.github.io/Project-AzureMines/) and the iPad Safari battlefield has been visually reviewed. Development uses a reviewed feature branch plus the configured `feature/combat-lab-web-touch` publishing branch; headless tests do not replace physical touch acceptance.
+
+**v0.3 tactical feedback:** [FEAT-014](specifications/features/FEAT-014-tactical-feedback.md) adds versioned resolved combat events, initial slash/hit/spell/healing VFX, iPad tactical hints/party resources, and moves in-combat Debug I/O into the Actions tab. The top bar no longer duplicates Log/Debug controls.
 
 
 **Prototype branch:** `feature/standalone-combat-lab` · **Engine:** Godot **4.5.2** standard GDScript

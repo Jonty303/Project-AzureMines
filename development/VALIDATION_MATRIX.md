@@ -39,3 +39,15 @@ When Codespaces is chosen as a runtime, verify actual Codespaces inventory, bran
 | Real keyboard navigation | NOT RUN | Automated synthetic test passed only |
 | Safari local storage and audio | NOT RUN | Requires actual browser check |
 
+
+## v0.3 tactical feedback — 2026-11-12
+
+| Test | Status | Evidence |
+| --- | --- | --- |
+| Godot 4.5.2 Combat Lab rules and added event/VFX/UI integration | PASS, automated | https://github.com/Jonty303/Project-AzureMines/actions/runs/43234701118 |
+| Governance/toolchain | PASS | https://github.com/Jonty303/Project-AzureMines/actions/runs/43234700937 |
+| Versioned event IDs and hit/heal/cast data | PASS, headless | `tests/test_combat_lab_v03_feedback.gd` |
+| In-combat Debug I/O in Actions; redundant battle-header buttons removed | PASS, headless hierarchy test | `tests/test_combat_lab_v03_feedback.gd` |
+| Initial visual effects playback | Implemented, test event enqueue PASS | Real GPU/browser animation quality NOT RUN |
+| Real iPad Safari v0.3 animation, targeting and text legibility | NOT RUN | Owner to playtest new published build |
+

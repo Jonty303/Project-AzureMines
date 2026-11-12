@@ -80,3 +80,9 @@ The forest edge is now rendered as reduced-opacity decor with visible cell bound
 
 The associated headless layout test checks a 1024×768 landscape, 768×1024 portrait, 1550×1000 desktop layout, default Actions tab and updated selection details. This is a *structural* test, **not** a visual or physical touch pass. The next iPad acceptance run should record actual accessibility of all four tabs, comfortable button sizes, map legibility and orientation behaviour.
 
+
+## Combat Lab v0.3 review
+
+The iPad battle-console arrangement remains permanent in landscape (Actions / Party / Details / Log). The battle header now has status, Retry and Return to Title only. A developer Debug Input/Output control lives within Actions, while the full battle log remains in Log. Tooling should not duplicate these controls.
+
+Before v0.3 acceptance on iPad, inspect a melee hit, ranged miss, spell damage and healing effect; verify target overlays and resource status; test that tapping the board never accidentally fires the same action twice. Initial non-blocking VFX use procedurally drawn overlays, not sprite animation. Test against a real browser and record device and Safari version.
