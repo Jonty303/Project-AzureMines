@@ -76,6 +76,9 @@ func _run() -> void:
     if not lab.get("end_turn_button").disabled or not lab.get("attack_button").disabled:
         _fail("Downed hero still has active bottom-bar commands")
         return
+    if not lab.get("party_status").text.contains("Death saves"):
+        _fail("The Party tab does not show automatic death-save progress")
+        return
     print("PASS: auto death saves, skip stable/downed turns, natural-20 recovery, AI threat choice, disabled downed controls")
     quit(0)
 

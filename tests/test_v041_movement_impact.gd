@@ -35,13 +35,17 @@ func _run() -> void:
     target["hp"] = 0
     target["combat_state"] = "dead"
     engine.actors[victim] = target
+    engine._emit_sound("death")
     engine._event("death", victim, victim)
     engine._event("hit", "elyra", victim, {
         "action_id": "fire_bolt", "source_kind": "spell", "damage_type": "fire",
         "amount": 7, "hp_before": 7, "hp_after": 0, "state_after": "dead"
     })
     var new_events_start: int = int(lab.get("heard_events"))
-    if not lab._death_waits_for_projectile(new_events_start):
+    if not lab._death_sound_waits_for_projectile(new_events_start):
+        _fail("Fatal impact sound was not deferred until projectile arrival")
+        return
+    if not lab._death_waits_for_projectile(new_events_start + 1):
         _fail("Death was not matched to the subsequent projectile")
         return
     lab.call("_refresh")
