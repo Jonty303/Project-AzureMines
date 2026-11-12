@@ -3,6 +3,7 @@ extends Control
 ## The approved mock-up drives the warm stone palette and strong target highlights.
 
 signal cell_clicked(cell: Vector2i)
+signal projectile_impact(target_id: String, final_state: String)
 
 const CombatEngine = preload("res://combat/combat_engine.gd")
 const CELL_SIZE := 68
@@ -195,6 +196,7 @@ func _process(_delta: float) -> void:
                     "damage_type": "", "cell": Vector2i(projectile["to_cell"]),
                     "critical": false, "start_ms": now
                 })
+                projectile_impact.emit(str(projectile.get("target_id", "")), "dead")
             _projectiles.remove_at(i)
     for i in range(_movement_queue.size() - 1, -1, -1):
         var motion: Dictionary = _movement_queue[i]

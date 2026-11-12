@@ -237,6 +237,7 @@ func _build_ui() -> void:
     main_grid.add_child(board_panel)
     board = CombatBoard.new()
     board.cell_clicked.connect(_on_cell_clicked)
+    board.projectile_impact.connect(_on_projectile_impact)
     board_panel.add_child(board)
 
     # Landscape: this is a permanent right-hand panel.
@@ -783,6 +784,25 @@ func _death_waits_for_projectile(event_index: int) -> bool:
     return false
 
 
+func _death_sound_waits_for_projectile(event_index: int) -> bool:
+    # The combat rules produce death audio immediately, but the player should
+    # hear the collapse only after a fatal missile visually lands.
+    for next_index in range(event_index + 1, engine.events.size()):
+        var followup: Dictionary = engine.events[next_index]
+        if str(followup.get("kind", "")) == "death":
+            return _death_waits_for_projectile(next_index)
+        if str(followup.get("sound", "")) == "death":
+            return false
+    return false
+
+
+func _on_projectile_impact(_target_id: String, final_state: String) -> void:
+    if final_state == "dead" and sfx_players.has("death"):
+        var player: AudioStreamPlayer = sfx_players["death"]
+        if player.stream != null:
+            player.play()
+
+
 func _play_events() -> void:
     if engine == null:
         return
@@ -798,6 +818,8 @@ func _play_events() -> void:
         if not line.is_empty():
             lines.append(line)
         var sound: String = str(event.get("sound", ""))
+        if sound == "death" and _death_sound_waits_for_projectile(i):
+            sound = ""
         if not sound.is_empty() and not sound_ids.has(sound) and sound_ids.size() < 3:
             sound_ids.append(sound)
     if not lines.is_empty():
