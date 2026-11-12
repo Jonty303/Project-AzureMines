@@ -1,0 +1,371 @@
+{
+  "schema_version": 1,
+  "fixture_id": "canonical_party",
+  "snapshot_id": "level_01_v1",
+  "version": 1,
+  "immutable_baseline": true,
+  "ruleset_id": "classic_5e",
+  "target_level": 1,
+  "party_size": 4,
+  "design_note": "Four deliberately predefined characters. Stats are deterministic; rolls in tests are independently seeded. Descriptions of not-yet-implemented features are informational only.",
+  "characters": [
+    {
+      "id": "alden",
+      "name": "Alden",
+      "race_id": "human",
+      "class_id": "champion",
+      "level": 1,
+      "ability_scores": {
+        "strength": 17,
+        "dexterity": 13,
+        "constitution": 15,
+        "intelligence": 8,
+        "wisdom": 12,
+        "charisma": 10
+      },
+      "applied_ability_increases": {
+        "strength": 2,
+        "constitution": 1
+      },
+      "proficiency_bonus": 2,
+      "speed_feet": 30,
+      "max_hp": 12,
+      "starting_hp": 12,
+      "armor_class": 19,
+      "armor": {
+        "id": "chain_mail",
+        "base_ac": 16
+      },
+      "shield": {
+        "id": "shield",
+        "ac_bonus": 2
+      },
+      "fighting_style": "defense",
+      "combat_loadout": {
+        "primary_weapon": "longsword",
+        "off_hand": "shield",
+        "weapon_mastery": "sap"
+      },
+      "attacks": [
+        {
+          "id": "longsword",
+          "kind": "melee_weapon",
+          "ability": "strength",
+          "to_hit": 5,
+          "damage": "1d8+3",
+          "damage_type": "slashing",
+          "reach_feet": 5,
+          "mastery": "sap"
+        },
+        {
+          "id": "javelin",
+          "kind": "ranged_weapon",
+          "ability": "strength",
+          "to_hit": 5,
+          "damage": "1d6+3",
+          "damage_type": "piercing",
+          "normal_range_feet": 30,
+          "long_range_feet": 120,
+          "quantity": 8
+        }
+      ],
+      "skill_proficiencies": [
+        "athletics",
+        "perception",
+        "insight",
+        "investigation",
+        "persuasion",
+        "survival"
+      ],
+      "skill_expertise": [],
+      "origin_feat": "skilled",
+      "abilities_available": [
+        "second_wind",
+        "weapon_mastery"
+      ],
+      "resource_limits": {
+        "second_wind": 2
+      },
+      "spellcasting": null,
+      "art": {
+        "portrait": "assets/characters/portraits/alden.png",
+        "combat_sprite": "assets/characters/sprites/alden_front_32.png",
+        "accent_color": "blue"
+      }
+    },
+    {
+      "id": "elyra",
+      "name": "Elyra",
+      "race_id": "elf",
+      "lineage_id": "high_elf",
+      "class_id": "evoker",
+      "level": 1,
+      "ability_scores": {
+        "strength": 8,
+        "dexterity": 15,
+        "constitution": 13,
+        "intelligence": 17,
+        "wisdom": 12,
+        "charisma": 10
+      },
+      "applied_ability_increases": {
+        "intelligence": 2,
+        "dexterity": 1
+      },
+      "proficiency_bonus": 2,
+      "speed_feet": 30,
+      "max_hp": 7,
+      "starting_hp": 7,
+      "armor_class": 12,
+      "conditional_armor_classes": [
+        {
+          "condition": "mage_armor_active",
+          "ac": 15
+        }
+      ],
+      "armor": null,
+      "shield": null,
+      "combat_loadout": {
+        "primary_weapon": "dagger",
+        "spell_focus": "quarterstaff_arcane_focus"
+      },
+      "attacks": [
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "ability": "dexterity",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        },
+        {
+          "id": "fire_bolt",
+          "kind": "spell_attack",
+          "ability": "intelligence",
+          "to_hit": 5,
+          "damage": "1d10",
+          "damage_type": "fire",
+          "normal_range_feet": 120,
+          "requires_spell_engine": true
+        }
+      ],
+      "skill_proficiencies": [
+        "arcana",
+        "investigation"
+      ],
+      "skill_expertise": [],
+      "abilities_available": [
+        "spellcasting",
+        "ritual_adept",
+        "arcane_recovery",
+        "trance"
+      ],
+      "spellcasting": {
+        "ability": "intelligence",
+        "save_dc": 13,
+        "spell_attack_bonus": 5,
+        "spell_slots": {
+          "1": 2
+        },
+        "wizard_cantrips": [
+          "fire_bolt",
+          "ray_of_frost",
+          "mage_hand"
+        ],
+        "lineage_cantrip": "prestidigitation",
+        "spellbook": [
+          "magic_missile",
+          "mage_armor",
+          "shield",
+          "sleep",
+          "detect_magic",
+          "burning_hands"
+        ],
+        "prepared_spells": [
+          "magic_missile",
+          "mage_armor",
+          "shield",
+          "sleep"
+        ]
+      },
+      "art": {
+        "portrait": "assets/characters/portraits/elyra.png",
+        "combat_sprite": "assets/characters/sprites/elyra_front_32.png",
+        "accent_color": "red"
+      }
+    },
+    {
+      "id": "brunna",
+      "name": "Brunna",
+      "race_id": "dwarf",
+      "class_id": "priest",
+      "level": 1,
+      "ability_scores": {
+        "strength": 14,
+        "dexterity": 10,
+        "constitution": 14,
+        "intelligence": 12,
+        "wisdom": 17,
+        "charisma": 8
+      },
+      "applied_ability_increases": {
+        "wisdom": 2,
+        "constitution": 1
+      },
+      "proficiency_bonus": 2,
+      "speed_feet": 30,
+      "max_hp": 11,
+      "starting_hp": 11,
+      "armor_class": 15,
+      "armor": {
+        "id": "chain_shirt",
+        "base_ac": 13
+      },
+      "shield": {
+        "id": "shield",
+        "ac_bonus": 2
+      },
+      "divine_order": "protector",
+      "combat_loadout": {
+        "primary_weapon": "mace",
+        "off_hand": "shield",
+        "spell_focus": "holy_symbol"
+      },
+      "attacks": [
+        {
+          "id": "mace",
+          "kind": "melee_weapon",
+          "ability": "strength",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "bludgeoning",
+          "reach_feet": 5
+        }
+      ],
+      "skill_proficiencies": [
+        "insight",
+        "religion"
+      ],
+      "skill_expertise": [],
+      "abilities_available": [
+        "spellcasting",
+        "dwarven_toughness",
+        "dwarven_resilience",
+        "stonecunning"
+      ],
+      "spellcasting": {
+        "ability": "wisdom",
+        "save_dc": 13,
+        "spell_attack_bonus": 5,
+        "spell_slots": {
+          "1": 2
+        },
+        "cantrips": [
+          "sacred_flame",
+          "guidance",
+          "spare_the_dying"
+        ],
+        "prepared_spells": [
+          "cure_wounds",
+          "healing_word",
+          "bless",
+          "guiding_bolt"
+        ]
+      },
+      "art": {
+        "portrait": "assets/characters/portraits/brunna.png",
+        "combat_sprite": "assets/characters/sprites/brunna_front_32.png",
+        "accent_color": "gold_white"
+      }
+    },
+    {
+      "id": "pip",
+      "name": "Pip",
+      "race_id": "halfling",
+      "class_id": "thief",
+      "level": 1,
+      "ability_scores": {
+        "strength": 8,
+        "dexterity": 17,
+        "constitution": 15,
+        "intelligence": 12,
+        "wisdom": 13,
+        "charisma": 10
+      },
+      "applied_ability_increases": {
+        "dexterity": 2,
+        "constitution": 1
+      },
+      "proficiency_bonus": 2,
+      "speed_feet": 30,
+      "max_hp": 10,
+      "starting_hp": 10,
+      "armor_class": 14,
+      "armor": {
+        "id": "leather_armor",
+        "base_ac": 11
+      },
+      "shield": null,
+      "combat_loadout": {
+        "primary_weapon": "shortbow",
+        "secondary_weapon": "dagger",
+        "masteries": [
+          "vex",
+          "nick"
+        ]
+      },
+      "attacks": [
+        {
+          "id": "shortbow",
+          "kind": "ranged_weapon",
+          "ability": "dexterity",
+          "to_hit": 5,
+          "damage": "1d6+3",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320,
+          "mastery": "vex"
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "ability": "dexterity",
+          "to_hit": 5,
+          "damage": "1d4+3",
+          "damage_type": "piercing",
+          "reach_feet": 5,
+          "mastery": "nick"
+        }
+      ],
+      "conditional_attack_bonus": {
+        "feature": "sneak_attack",
+        "damage": "1d6",
+        "limit": "once_per_turn"
+      },
+      "skill_proficiencies": [
+        "sleight_of_hand",
+        "stealth",
+        "investigation",
+        "perception"
+      ],
+      "skill_expertise": [
+        "sleight_of_hand",
+        "stealth"
+      ],
+      "abilities_available": [
+        "sneak_attack",
+        "thieves_cant",
+        "weapon_mastery",
+        "halfling_luck",
+        "brave",
+        "naturally_stealthy"
+      ],
+      "art": {
+        "portrait": "assets/characters/portraits/pip.png",
+        "combat_sprite": "assets/characters/sprites/pip_front_32.png",
+        "accent_color": "green"
+      }
+    }
+  ]
+}
