@@ -40,3 +40,25 @@ Use the Codespaces **Ports** tab to open port **8765**. Never open the generated
 9. Record device/iPadOS/Safari versions and the exact deployed commit, with screenshots if something fails.
 
 Known web risks: WebGL 2 support in Safari, reduced WebAssembly performance, browser audio restrictions, and browser-local storage longevity. The lab remains a **test application**, not a publicly released game.
+
+## Verified workflow results (12 November 2026)
+
+- Godot 4.5.2 native-touch/keyboard and existing combat tests: **PASS** — https://github.com/Jonty303/Project-AzureMines/actions/runs/43226257801
+- HTML5 export, pinned official editor/templates, downloadable Web artifact: **PASS** — https://github.com/Jonty303/Project-AzureMines/actions/runs/43226257758
+- Pages publish: **BLOCKED** with GitHub 404 until the owner enables Pages at https://github.com/Jonty303/Project-AzureMines/settings/pages and permits the feature branch if an environment rule blocks it.
+- Physical iPad Safari testing: **NOT RUN**.
+
+## Test immediately through Codespaces (without GitHub Pages)
+
+From an authenticated Codespaces terminal with GitHub CLI available, even if its checked-out branch is still `feature/standalone-combat-lab`:
+
+```bash
+mkdir -p /tmp/azure-mines-combat-web
+gh run download 43226257758 --repo Jonty303/Project-AzureMines \
+  --name combat-lab-web-build --dir /tmp/azure-mines-combat-web
+python3 -m http.server 8765 --bind 0.0.0.0 --directory /tmp/azure-mines-combat-web
+```
+
+Open Codespaces **Ports → 8765 → Open in Browser** on your iPad; keep the port private. Close with Ctrl+C in the terminal. The optional reusable script `scripts/serve_codespaces_web_preview.sh` on the web-touch branch does this with a selected Actions run ID.
+
+The build artifact is not a public Pages website. The forwarded port URL is tied to your Codespace session and authorization.

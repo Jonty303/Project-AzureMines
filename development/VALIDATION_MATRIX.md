@@ -27,3 +27,15 @@ Never represent simulated/headless input as physical touch/gamepad evidence. Mar
 ## Codespaces
 When Codespaces is chosen as a runtime, verify actual Codespaces inventory, branch, worktree status, terminal readiness and engine install before claiming acceptance. Do not create or rebuild a billable environment without owner approval.
 <!-- [EXAMPLE ONLY] A fake playtest record is not evidence. -->
+
+## Web preview slice — 2026-11-12
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Standalone Godot regression + touch/keyboard injection | PASS (automated) | https://github.com/Jonty303/Project-AzureMines/actions/runs/43226257801 |
+| Official Godot 4.5.2 HTML5 single-thread export | PASS; downloaded artifact exists | https://github.com/Jonty303/Project-AzureMines/actions/runs/43226257758 |
+| GitHub Pages deployment | BLOCKED: Pages returned 404 (not enabled) | Same workflow deploy job; enable Settings → Pages → GitHub Actions |
+| Real iPad Safari tapping/rotation | NOT RUN | Requires actual device test |
+| Real keyboard navigation | NOT RUN | Automated synthetic test passed only |
+| Safari local storage and audio | NOT RUN | Requires actual browser check |
+
