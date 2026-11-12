@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "definition_type": "combat_lab_archetypes",
+  "enemies": [
+    {
+      "id": "skeleton",
+      "name": "Skeleton Guard",
+      "max_hp": 13,
+      "armor_class": 13,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "role": "melee",
+      "attacks": [
+        {
+          "id": "rusted_sword",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "slashing",
+          "reach_feet": 5
+        }
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/skeleton_guard_64.svg"
+      }
+    },
+    {
+      "id": "spider",
+      "name": "Giant Spider",
+      "max_hp": 14,
+      "armor_class": 12,
+      "speed_feet": 40,
+      "ability_scores": {
+        "dexterity": 16
+      },
+      "role": "melee",
+      "attacks": [
+        {
+          "id": "fangs",
+          "kind": "melee_weapon",
+          "to_hit": 5,
+          "damage": "1d6+3",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/giant_spider_64.svg"
+      }
+    },
+    {
+      "id": "kobold",
+      "name": "Kobold Slingmaster",
+      "max_hp": 9,
+      "armor_class": 13,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 15
+      },
+      "role": "ranged",
+      "attacks": [
+        {
+          "id": "sling",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "bludgeoning",
+          "normal_range_feet": 30,
+          "long_range_feet": 120
+        },
+        {
+          "id": "dagger",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d4+2",
+          "damage_type": "piercing",
+          "reach_feet": 5
+        }
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/kobold_slinger_64.svg"
+      }
+    },
+    {
+      "id": "bandit",
+      "name": "Bandit Crossbowman",
+      "max_hp": 12,
+      "armor_class": 12,
+      "speed_feet": 30,
+      "ability_scores": {
+        "dexterity": 14
+      },
+      "role": "ranged",
+      "attacks": [
+        {
+          "id": "light_crossbow",
+          "kind": "ranged_weapon",
+          "to_hit": 4,
+          "damage": "1d8+2",
+          "damage_type": "piercing",
+          "normal_range_feet": 80,
+          "long_range_feet": 320
+        },
+        {
+          "id": "shortsword",
+          "kind": "melee_weapon",
+          "to_hit": 4,
+          "damage": "1d6+2",
+          "damage_type": "slashing",
+          "reach_feet": 5
+        }
+      ],
+      "art": {
+        "combat_sprite": "assets/characters/sprites/bandit_crossbow_64.svg"
+      }
+    }
+  ]
+}
