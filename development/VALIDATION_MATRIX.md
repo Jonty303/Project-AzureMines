@@ -1,34 +1,29 @@
-# Azure Mines — validation matrix
+# Combat Lab — validation matrix
 
-**Status:** Baseline evidence and outstanding verification; updated 2026-11-12
+**Updated:** 2026-11-12 · **Scope:** feature/standalone-combat-lab
 
 ## Purpose
-Track actual executed tests and environment readiness independently; avoid claiming that documentation checks prove playable graphics.
+Distinguish automated runs from actual visual/device testing.
 
 ## Human instructions
-Record manual visual/audio, balancing and physical-device observations with environment, build, date, tester and screenshots or video when available.
+Verify title, setup dialog, board, input latency and readability on a desktop Godot 4.5.2 session. Record actual tester/date/platform and provide captured evidence if possible.
 
 ## AI agent instructions
-Only mark PASS after actual execution with evidence. Keep NOT RUN and NOT VERIFIED distinct from FAIL. Note when historical evidence predates this branch.
+Never represent simulated/headless input as physical touch/gamepad evidence. Mark absent tests NOT RUN. Update the CI links after commit results.
 
-## Historical CI baseline
-| Surface | Result | Evidence |
+| Check | Status | Evidence |
 | --- | --- | --- |
-| Godot 4.5.2 headless suite on feature/downed-sprites-action-bar | PASS **historically**, 2026-10-29 | https://github.com/Jonty303/Project-AzureMines/actions/runs/40862763511 |
-| Governance docs validation on feature/development-governance | **PASS 2026-11-12** | https://github.com/Jonty303/Project-AzureMines/actions/runs/43209745016 |
-| Godot 4.5.2 headless suite with SHA-256 integrity gate on feature/development-governance | **PASS 2026-11-12** | https://github.com/Jonty303/Project-AzureMines/actions/runs/43209744933 |
-| Godot release archive digest | Recorded from official GitHub release 4.5.2-stable asset metadata | SHA-256 in development/toolchain.json |
-| Combat sandbox isolation | NOT IMPLEMENTED / NOT RUN | To be specified on next branch |
-| Desktop art/layout/animation inspection | NOT RUN for next cycle | Human review needed |
-| Physical touchscreen | NOT RUN | Target/device not yet approved |
-| Physical gamepad | NOT RUN | Target/device not yet approved |
-| Keyboard-only navigation | NOT RUN | Input mapping to be specified |
-| Desktop export and installed build launch | NOT RUN | Platform target remains open |
-| Codespaces inventory, instance and Godot readiness | NOT VERIFIED | GitHub Code → Codespaces or authenticated CLI needed |
+| Godot 4.5.2 title-screen import/start and combat regression suite | PASS, 2026-11-12 | https://github.com/Jonty303/Project-AzureMines/actions/runs/43217179001 |
+| Project governance documentation/toolchain checks | PASS, 2026-11-12 | https://github.com/Jonty303/Project-AzureMines/actions/runs/43217179423 |
+| Lab level/party/encounter construction tests | PASS within Godot suite | Same Godot Actions run |
+| Lab result export and last battle log test | PASS within Godot suite | Same Godot Actions run |
+| Desktop graphical/animation/layout test | NOT RUN | Manual owner review required |
+| Keyboard-only navigation | NOT RUN | Manual check required |
+| Physical touchscreen | NOT RUN | Target platform/access not yet confirmed |
+| Physical gamepad | NOT RUN | Controller suitability/access not yet confirmed |
+| Export and packaged build | NOT RUN | Only headless game import/start verified |
+| Codespaces instance and readiness | NOT VERIFIED | A committed devcontainer is not an existing Codespace |
 
-## Record template for future results
-Date, repository/branch/commit, platform/OS, exact Godot version, test command, expected behavior, observed PASS/FAIL/NOT RUN/NOT APPLICABLE, artifact/link, reviewer. Record each input device separately; mouse emulation is not actual touch verification.
-
-## Codespaces precondition
-A devcontainer configuration exists only as Git-tracked source; it cannot prove an instance exists. Do not begin Codespaces-dependent install claims until inventory, branch and terminal readiness are verified and any paid resource action is approved.
-<!-- [EXAMPLE ONLY] Fake example test results must never be recorded as PASS. -->
+## Codespaces
+When Codespaces is chosen as a runtime, verify actual Codespaces inventory, branch, worktree status, terminal readiness and engine install before claiming acceptance. Do not create or rebuild a billable environment without owner approval.
+<!-- [EXAMPLE ONLY] A fake playtest record is not evidence. -->

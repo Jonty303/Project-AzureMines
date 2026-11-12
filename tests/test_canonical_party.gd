@@ -1,7 +1,7 @@
 extends SceneTree
 
 const Dice = preload("res://core/dice_roller.gd")
-const FIXTURE_PATH := "res://tests/fixtures/party/level_01_v1.json"
+const FIXTURE_PATH := "res://combat_lab/fixtures/party/level_01_v1.json"
 
 func _initialize() -> void:
     if not FileAccess.file_exists(FIXTURE_PATH):

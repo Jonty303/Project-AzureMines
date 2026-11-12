@@ -1,9 +1,9 @@
-; Project Azure Mines - Godot 4.5.2 combat prototype.
+; Azure Mines: isolated combat lab (Godot 4.5.2)
 config_version=5
 
 [application]
 
-config/name="Project Azure Mines"
+config/name="Azure Mines — Combat Lab"
 run/main_scene="res://scenes/combat.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 

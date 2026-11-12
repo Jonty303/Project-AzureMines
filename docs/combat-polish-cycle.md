@@ -1,17 +1,17 @@
 # Next development cycle — Combat Lab, visual polish and level-two expansion
 
 **Recorded:** 2026-11-12
-**Branch:** feature/combat-lab-polish-level2
-**State:** Owner-approved direction, feature acceptance details proposed; **no new gameplay has been implemented by this plan**.
-**Baseline:** feature/development-governance, derived from feature/downed-sprites-action-bar.
+**Current isolated branch:** feature/standalone-combat-lab
+**State:** FEAT-010 prototype implemented on the isolated branch; later graphics and progression features remain planned.
+**Baseline:** feature/combat-lab-polish-level2, which inherits the template and earlier combat development.
 
 ## Purpose
 Make the already playable tactical encounter flow independently repeatable and visually appealing before expanding its rules. Preserve the narrative campaign and avoid copying the combat engine.
 
 ## Ordered delivery
-1. **FEAT-010 — Combat Lab launcher**: a separate development/test entry point for loading a selectable encounter fixture, deployment/turns, defeat/victory and restart. Reuse CombatEngine and CombatBoard. No campaign persistence or rewards.
-2. **FEAT-011 — Combat visual polish**: improve 64px sprite readability, board/action feedback, layering and restrained event-driven melee/spell effects. Add an optional reduced-effects setting or equivalent accessibility accommodation. Do not gate resolution on animation.
-3. **FEAT-012 — Level-two and enemy variety**: after the sandbox is stable and the VFX pass is reviewed, add a separate level-two fixture, approved class features/spell resources and a small number of tactically distinct enemies with tests.
+1. **FEAT-010 — Combat Lab launcher (prototype implemented)**: a separate development/test entry point for loading a selectable encounter fixture, deployment/turns, defeat/victory and restart. Reuse CombatEngine and CombatBoard. No campaign persistence or rewards.
+2. **FEAT-011 — Combat visual polish (planned)**: improve 64px sprite readability, board/action feedback, layering and restrained event-driven melee/spell effects. Add an optional reduced-effects setting or equivalent accessibility accommodation. Do not gate resolution on animation.
+3. **FEAT-012 — Level-two and enemy variety (planned)**: after the sandbox is stable and the VFX pass is reviewed, add a separate level-two fixture, approved class features/spell resources and a small number of tactically distinct enemies with tests.
 
 ## Design constraints
 - Preserve `scenes/combat.tscn` and the opening adventure as production startup until reviewed; a combat test launcher must be optional.
