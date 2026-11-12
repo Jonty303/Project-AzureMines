@@ -323,7 +323,9 @@ func current_actor() -> Dictionary:
 
 
 func current_is_party() -> bool:
-    return not deployment_active and not finished and current_actor().get("team", "") == "party"
+    # Downed heroes retain their initiative slot for automatic death saves,
+    # but never become a controllable character or receive action buttons.
+    return not deployment_active and not finished and not current_id().is_empty()         and current_actor().get("team", "") == "party" and is_combat_capable(current_id())
 
 
 func is_combat_capable(id: String) -> bool:
@@ -804,16 +806,31 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
 func end_turn() -> void:
     if deployment_active or finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
-    _record("%s ends their turn." % current_actor()["name"])
+    if is_combat_capable(current_id()):
+        _record("%s ends their turn." % current_actor()["name"])
+    _advance_initiative()
+
+
+func _advance_initiative() -> void:
+    # Process downed heroes' death saves *within* initiative, but never pause
+    # for user actions or End Turn on an unconscious/stable/dead creature.
+    # An unconscious hero recovering on natural 20 becomes playable immediately.
     for offset in range(1, turn_order.size() + 1):
         turn_index = (turn_index + 1) % turn_order.size()
         if turn_index == 0:
             round_number += 1
             _record("--- Round %d ---" % round_number)
-        var next_actor: Dictionary = actors[turn_order[turn_index]]
-        if int(next_actor["hp"]) > 0 or next_actor.get("combat_state", "") == "unconscious":
+        var id: String = turn_order[turn_index]
+        var state: String = str(actors[id].get("combat_state", "active"))
+        if state == "unconscious" or is_combat_capable(id):
             _begin_turn()
-            return
+            if finished:
+                return
+            if is_combat_capable(id):
+                return
+            # Failed save, stabilisation, death or start-of-turn hazard:
+            # continue to the next combat-capable creature automatically.
+    _check_victory()
 
 
 func _ai_weapon_id(actor: Dictionary, distance: int) -> String:
@@ -834,13 +851,20 @@ func take_ai_turn() -> void:
     if deployment_active or finished or current_is_party() or not pending_reaction.is_empty() or not pending_move.is_empty():
         return
     var actor_id: String = current_id()
+    if actor_id.is_empty():
+        return
+    if not is_combat_capable(actor_id):
+        # Also covers a hero becoming downed during their own turn.
+        # The AI does not act on their behalf; simply move initiative forward.
+        end_turn()
+        return
     var source: Dictionary = current_actor()
     var role: String = str(source.get("role", "melee"))
     var enemy_ids: Array[String] = []
     for target_id_variant in actors.keys():
         var id: String = str(target_id_variant)
         var target: Dictionary = actors[id]
-        if target["team"] != source["team"] and int(target["hp"]) > 0:
+        if target["team"] != source["team"] and is_combat_capable(id):
             enemy_ids.append(id)
     if enemy_ids.is_empty():
         _check_victory()
@@ -971,7 +995,7 @@ func _nearest_opponent(source_id: String) -> String:
     for id_variant in actors.keys():
         var id: String = str(id_variant)
         var target: Dictionary = actors[id]
-        if target["team"] == source["team"] or int(target["hp"]) <= 0:
+        if target["team"] == source["team"] or not is_combat_capable(id):
             continue
         var distance := _distance(source["position"], target["position"])
         if distance < best_distance:
@@ -1035,6 +1059,8 @@ func _roll_death_save(actor_id: String) -> void:
             actor["death_failures"] = 0
             _record("%s is stable but unconscious." % actor["name"])
     actors[actor_id] = actor
+    if actor.get("combat_state", "") == "dead":
+        _event("death", actor_id, actor_id, {"source_kind": "death_save"})
 
 
 func _check_victory() -> void:
