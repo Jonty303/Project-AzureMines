@@ -627,7 +627,11 @@ func _on_cell_clicked(cell: Vector2i) -> void:
         engine.move_to(cell)
     elif action_mode == "attack" and not target_id.is_empty():
         engine.attack(target_id, _selected_weapon())
-    elif action_mode == "spell" and not target_id.is_empty():
+    elif action_mode == "spell":
+        if not engine.can_cast_spell(_selected_spell(), target_id):
+            _refresh()
+            action_hint.text = engine.spell_unavailable_reason(_selected_spell(), target_id)
+            return
         engine.cast_spell(_selected_spell(), target_id)
     _run_ai()
     _refresh()
@@ -744,7 +748,7 @@ func _select_weapon_card(weapon_id: String) -> void:
 
 func _select_spell_card(spell_id: String) -> void:
     var index: int = spell_ids.find(spell_id)
-    if index < 0:
+    if index < 0 or not engine.current_is_party() or not engine.can_cast_current_spell(spell_id):
         return
     spell_picker.select(index)
     action_mode = "spell"
@@ -835,6 +839,7 @@ func _play_events() -> void:
 func _refresh() -> void:
     if engine == null:
         return
+    _rebuild_pickers()
     board.action_mode = action_mode if not engine.deployment_active else ""
     board.selected_deployment_actor = deployment_actor
     board.selected_weapon = _selected_weapon()
@@ -849,7 +854,6 @@ func _refresh() -> void:
         reaction_text.text = "%s: %s?" % [
             str(engine.actors[reaction["reactor"]]["name"]),
             "Cast Shield" if reaction["kind"] == "shield" else "Opportunity Attack"]
-    _rebuild_pickers()
     if engine.deployment_active:
         battle_status.text = "DEPLOY PARTY — choose formation or click hero + blue tile"
     elif engine.finished:
@@ -905,12 +909,17 @@ func _refresh() -> void:
     elif action_mode == "attack":
         action_hint.text = "Red cells indicate valid weapon targets. Tap a target to attack."
     elif action_mode == "spell":
-        action_hint.text = "Gold cells indicate legal spell targets. Choose a spell, then tap."
+        var target_id: String = engine.target_at(selected_cell)
+        var reason: String = engine.spell_unavailable_reason(_selected_spell(), target_id)
+        if not target_id.is_empty() or not engine.can_cast_current_spell(_selected_spell()):
+            action_hint.text = reason if not reason.is_empty() else "Legal spell target. Tap a gold cell to cast."
+        else:
+            action_hint.text = "Gold cells indicate legal targets for the selected spell. Tap to cast."
     else:
         action_hint.text = "Choose Move, Attack or Spell to highlight legal destinations and targets."
     move_button.disabled = not can_act or not engine.can_move_current()
     attack_button.disabled = not can_act or engine.action_used
-    spell_button.disabled = not can_act or not engine.can_cast_any_current_spell()
+    spell_button.disabled = not can_act or not engine.can_cast_current_spell(_selected_spell())
     dash_button.disabled = not can_act or not engine.can_dash()
     dodge_button.disabled = not can_act or not engine.can_dodge()
     disengage_button.disabled = not can_act or not engine.can_disengage()
@@ -924,13 +933,15 @@ func _refresh() -> void:
         weapon_card.set_pressed_no_signal(str(wid) == _selected_weapon())
     for sid in spell_cards.keys():
         var spell_card: Button = spell_cards[sid]
-        var definition: Dictionary = Level1Spells.get_definition(str(sid))
-        spell_card.disabled = not can_act or (
-            int(definition.get("level", 0)) > 0 and
-            int(engine.current_actor().get("spell_slots_remaining", 0)) <= 0)
-        spell_card.set_pressed_no_signal(str(sid) == _selected_spell())
+        spell_card.disabled = not can_act or not engine.can_cast_current_spell(str(sid))
+        spell_card.set_pressed_no_signal(not spell_card.disabled and action_mode == "spell"
+            and str(sid) == _selected_spell())
+        spell_card.tooltip_text = "Choose spell, then a gold target." if not spell_card.disabled else (
+            engine.spell_unavailable_reason(str(sid), engine.current_id()))
     attack_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
-    spell_picker.disabled = not can_act or spell_ids.is_empty()
+    spell_picker.disabled = not can_act or not engine.can_cast_any_current_spell()
+    for index in spell_ids.size():
+        spell_picker.set_item_disabled(index, not can_act or not engine.can_cast_current_spell(spell_ids[index]))
     var selected_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
     self_button.disabled = not can_act or selected_spell.get("target", "") != "self" or (
         not engine.can_cast_spell(_selected_spell(), engine.current_id()))
