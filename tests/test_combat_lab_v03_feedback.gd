@@ -87,14 +87,29 @@ func _run() -> void:
     var actions: VBoxContainer = lab.get("actions_tab")
     var debug_button: Button = lab.get("debug_action_button")
     if debug_button == null or debug_button.get_parent() != actions:
-        _fail("Debug I/O must live inside the Actions tab")
+        _fail("Debug I/O must live inside the sidebar Debug tab")
         return
+    if actions.name != "Debug":
+        _fail("The first sidebar tab should be Debug, not player actions")
+        return
+    var bottom: PanelContainer = lab.get("bottom_action_panel")
+    var controls: VBoxContainer = lab.get("bottom_action_layout")
+    if bottom.get_parent() != lab.get("battle_panel") or controls.get_parent() != bottom:
+        _fail("The bottom action bar is not below the battlefield")
+        return
+    for control in [lab.get("formation_panel"), lab.get("actions_panel"), lab.get("reaction_panel"), lab.get("action_hint")]:
+        if control.get_parent() != controls:
+            _fail("Character actions, deployment and reactions must all be in the bottom bar")
+            return
     var heading: Control = lab.get("battle_panel").get_child(0)
     for child in heading.get_children():
         if child is Button and str(child.text) in ["Battle Log", "Debug I/O"]:
             _fail("Top bar still has a redundant Log or Debug button")
             return
     lab.call("_start_battle")
+    if lab.get("tabs").current_tab != 1:
+        _fail("Party info should be the initial sidebar tab")
+        return
     var lab_engine = lab.get("engine")
     var board = lab.get("board")
     if lab_engine == null or board == null:
@@ -117,7 +132,7 @@ func _run() -> void:
         _fail("Retry did not reset transient visual effects")
         return
 
-    print("PASS: versioned combat events, weapon/spell/healing facts, VFX routing, iPad Actions/Log/Debug placement")
+    print("PASS: versioned combat events, weapon/spell/healing facts, VFX routing, iPad bottom action bar and sidebar Debug placement")
     quit(0)
 
 

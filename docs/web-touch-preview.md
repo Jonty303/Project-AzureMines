@@ -86,3 +86,10 @@ The associated headless layout test checks a 1024×768 landscape, 768×1024 port
 The iPad battle-console arrangement remains permanent in landscape (Actions / Party / Details / Log). The battle header now has status, Retry and Return to Title only. A developer Debug Input/Output control lives within Actions, while the full battle log remains in Log. Tooling should not duplicate these controls.
 
 Before v0.3 acceptance on iPad, inspect a melee hit, ranged miss, spell damage and healing effect; verify target overlays and resource status; test that tapping the board never accidentally fires the same action twice. Initial non-blocking VFX use procedurally drawn overlays, not sprite animation. Test against a real browser and record device and Safari version.
+
+
+## v0.3.1 — Bottom character action bar (2026-11-12)
+
+To match iPad touch habits, the **player action bar is below the battlefield**. It contains deployment, Move, Attack, Spell, Second Wind, Dash, Dodge, Disengage, End Turn, spell/weapon selectors, reactions and targeting instructions. The sidebar is now exclusively for **Debug, Party, Details and Log**, with Party selected when entering combat. The Debug I/O action is preserved within Debug.
+
+Landscape retains map-left/sidebar-right and the bottom bar across the game area. Portrait stacks the map and sidebar, followed by the bottom bar within the scrollable battle screen. The underlying combat engine remains unchanged. Headless tests verify control hierarchy; actual iPad visual/touch comfort needs a playtest.

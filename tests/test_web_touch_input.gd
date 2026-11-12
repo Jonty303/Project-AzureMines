@@ -32,8 +32,8 @@ func _run() -> void:
         _fail("Wide desktop viewport did not restore two-column board/sidebar")
         return
     lab.call("_start_battle")
-    if lab.get("tabs").current_tab != 0:
-        _fail("Actions must be the default tab for battle")
+    if lab.get("tabs").current_tab != 1:
+        _fail("Party info should be the default sidebar tab for battle")
         return
     if lab.get("engine") == null:
         _fail("Combat Lab session did not load")

@@ -33,3 +33,10 @@ Give players clear touch-first tactical feedback and a clean event contract for 
 
 ## Excluded
 No new narrative, NPC registry, campaign saves, reward grants or game-engine rewrite.
+
+
+## v0.3.1 — iPad command-bar correction
+
+The owner found character actions in the right-hand sidebar unintuitive. The design now makes the **bottom action bar** the single location for deployment, formations, combat actions, weapon/spell selection, reactions and contextual hints. The right-hand sidebar provides **Debug, Party, Details and Log** tabs; the initial tab is Party. Debug Input/Output remains in Debug. This is purely presentation reparenting and does not change CombatEngine action rules or event payloads.
+
+Acceptance: board occupies the upper play area, bottom action bar remains available on iPad landscape, contextual effects and highlighting work, and sidebar tabs stay informational. Automated tests verify the hierarchy; physical Safari acceptance remains pending.
