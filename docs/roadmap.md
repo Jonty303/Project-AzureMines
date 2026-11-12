@@ -47,3 +47,14 @@ This branch is intentionally **not** the Azure Mines narrative game.
 - Resolved movement animates per tile (~115ms) and projectile launching follows queued attacker movement.
 - A fatal ranged projectile keeps the target's battlefield sprite upright until impact, then plays collapse and death sound, while the engine state remains authoritative throughout.
 - Formal acceptance/tests: [FEAT-016](../specifications/features/FEAT-016-downed-turns-impact-and-movement.md). Physical iPad animation review remains outstanding.
+
+
+## Combat Lab v0.5 — Magic & Tactical Effects (in development)
+
+- **Design authority:** `specifications/features/FEAT-018-magic-and-tactical-effects.md`, scope confirmed by owner 12 November 2026. Implementation of additional spells is recorded in issue #16.
+- **v0.5.1 implementation branch:** `feature/combat-lab-v051-magic-controls-slots`, rooted at the preserved PR #15 head. Work includes separate first-/second-/third-level slot resource data in test fixtures, first-level compatibility, spell-slot gem display, and two chip-anchored roll-up menus. This does **not** implement second-level spell effects or higher-slot upcasting.
+- **UX:** Attack/Spell select targeting mode; the secondary weapon/spell chip underneath opens the corresponding selection panel upward. Known but temporarily unavailable spells remain visible and greyed out. Rank symbols and slot-tier colours indicate levels independently of status.
+- **v0.5.2 planned:** persistent effect areas, reusable conditions/concentration, terrain occupancy and deterministic lifecycle hooks.
+- **v0.5.3 planned:** Web first, then Misty Step, Mirror Image, Aid, Hold Person and Lesser Restoration, with documented SRD rules and per-spell tests.
+- **v0.5.4 planned:** remaining first-level spells and rules corrections; monster tactical responses to persistent magical effects, accessible area targeting and physical iPad signoff.
+- **Release boundary:** Existing live Pages game and separate PR #15 test preview remain untouched. No merge or deployment until owner review. Headless tests do not prove iPad usability.

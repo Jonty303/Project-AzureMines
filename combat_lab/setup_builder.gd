@@ -83,7 +83,15 @@ static func _set_test_spells(hero: Dictionary, level: int) -> void:
         first_level_slots = 2 if level == 1 else (3 if level == 2 else 4)
     elif class_id == "hunter":
         first_level_slots = 2 if level <= 2 else (3 if level <= 4 else 4)
-    casting["spell_slots"] = {"1": first_level_slots}
+    # Resource tiers mirror full-caster progression; higher-level spell effects
+    # are introduced separately and are NOT made available by these slots alone.
+    var slot_totals: Dictionary = {"1": first_level_slots}
+    if class_id in ["priest", "evoker"]:
+        if level >= 3:
+            slot_totals["2"] = 2 if level == 3 else 3
+        if level >= 5:
+            slot_totals["3"] = 2
+    casting["spell_slots"] = slot_totals
     hero["spellcasting"] = casting
 
 
