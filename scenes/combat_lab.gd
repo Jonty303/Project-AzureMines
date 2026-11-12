@@ -872,6 +872,11 @@ func _refresh() -> void:
             resources.append("Mage Armor")
         if bool(a.get("dodging", false)):
             resources.append("Dodging")
+        if str(a.get("combat_state", "")) == "unconscious":
+            resources.append("Death saves: %d passed / %d failed" % [
+                int(a.get("death_successes", 0)), int(a.get("death_failures", 0))])
+        elif str(a.get("combat_state", "")) == "stable":
+            resources.append("Stabilised: no further death saves")
         if not resources.is_empty():
             actor_status += "  |  " + ", ".join(resources)
         lines.append(actor_status)
