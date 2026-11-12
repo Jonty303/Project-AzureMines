@@ -15,7 +15,8 @@ Only mark PASS after actual execution with evidence. Keep NOT RUN and NOT VERIFI
 | Surface | Result | Evidence |
 | --- | --- | --- |
 | Godot 4.5.2 headless suite on feature/downed-sprites-action-bar | PASS **historically**, 2026-10-29 | https://github.com/Jonty303/Project-AzureMines/actions/runs/40862763511 |
-| Governance docs validation on new integration branch | NOT RUN at authoring; consult the new Actions run |
+| Governance docs validation on feature/development-governance | **PASS 2026-11-12** | https://github.com/Jonty303/Project-AzureMines/actions/runs/43209745016 |
+| Godot 4.5.2 headless suite with SHA-256 integrity gate on feature/development-governance | **PASS 2026-11-12** | https://github.com/Jonty303/Project-AzureMines/actions/runs/43209744933 |
 | Godot release archive digest | Recorded from official GitHub release 4.5.2-stable asset metadata | SHA-256 in development/toolchain.json |
 | Combat sandbox isolation | NOT IMPLEMENTED / NOT RUN | To be specified on next branch |
 | Desktop art/layout/animation inspection | NOT RUN for next cycle | Human review needed |
