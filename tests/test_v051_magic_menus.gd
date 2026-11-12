@@ -25,6 +25,9 @@ func _run() -> void:
     engine.turn_index = engine.turn_order.find("elyra")
     engine._begin_turn()
     lab._refresh()
+    # Wait for Godot's layout containers to establish global positions.
+    await process_frame
+    await process_frame
     _check(lab.attack_button.get_parent() == lab.weapon_chip.get_parent(),
         "Weapon selector is not directly beneath Attack")
     _check(lab.spell_button.get_parent() == lab.spell_chip.get_parent(),
@@ -35,6 +38,7 @@ func _run() -> void:
         "Tiered gem resource display missing level-one/two capacities")
     _check(lab.slot_gems.text.contains("◆"), "No illuminated spell-slot gems")
     lab._toggle_spell_menu()
+    await create_timer(0.22).timeout
     _check(lab.spell_popup.visible, "Tapping spell chip did not open menu")
     _check(not lab.weapon_popup.visible, "Spell selection opened weapon menu")
     _check(lab.spell_popup.global_position.y < lab.spell_chip.global_position.y,
@@ -47,6 +51,7 @@ func _run() -> void:
     _check(not lab.spell_popup.visible and lab._selected_spell() == "magic_missile"
         and lab.action_mode == "spell", "Choosing spell failed to select and dismiss menu")
     lab._toggle_weapon_menu()
+    await create_timer(0.22).timeout
     _check(lab.weapon_popup.visible and not lab.spell_popup.visible,
         "Tapping weapon chip did not open an exclusive weapon menu")
     _check(lab.weapon_popup.global_position.y < lab.weapon_chip.global_position.y,
