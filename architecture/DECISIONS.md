@@ -48,3 +48,8 @@ Draft a Proposed ADR before material changes. Never mark an unreviewed change Ac
 **Consequences:** UI needs a shared camera input/coordinate transform, gesture arbitration, portable artwork and additive visual events. Existing CombatEngine remains rules authority. Maintain keyboard/mouse alternatives.
 **Scope:** Presentation only. The generated reference's class labels, MP and damage/hit percentages are noncanonical illustrative content.
 **Detail:** docs/combat-lab-ipad-art-direction-v02.md and FEAT-015.
+
+### ADR-AM-009 — Downed initiative and presentation-only impact staging
+**Status:** Owner-agreed, implemented in Combat Lab on 2026-11-12; physical iPad acceptance pending.
+**Decision:** An unconscious hero resolves an automatic death save at initiative but never receives an input turn or End Turn command. Stable, dead and knocked-out creatures are skipped. Natural-20 recovery restores a playable turn. Ordinary AI does not deliberately select downed foes unless an explicit future policy enables it. Smooth per-tile actor motion and delayed fatal projectile collapse are presentation queues sourced from resolved events and snapshots; the combat engine never waits for VFX.
+**Consequences:** Maintain reproducible death-save sequencing, do not duplicate rules state in the board, and keep visual/audio state cancellable on retry. See FEAT-016.

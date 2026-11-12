@@ -3,6 +3,7 @@ extends Control
 ## The approved mock-up drives the warm stone palette and strong target highlights.
 
 signal cell_clicked(cell: Vector2i)
+signal projectile_impact(target_id: String, final_state: String)
 
 const CombatEngine = preload("res://combat/combat_engine.gd")
 const CELL_SIZE := 68
@@ -43,16 +44,76 @@ var _last_touch_msec := -10000
 var inspected_cell := Vector2i(-1, -1)
 var _effects: Array[Dictionary] = []
 var _projectiles: Array[Dictionary] = []
+var _movement_queue: Array[Dictionary] = []
+var _last_motion_end: Dictionary = {}
 var _next_projectile_start_ms := 0
 const EFFECT_DURATION_MS := 720
 const PROJECTILE_DURATION_MS := 450
+const MOVE_TILE_DURATION_MS := 115
+
+# Creature motion and projectile flight are visual effects only.
+# CombatEngine has already resolved tile paths, damage and actor states.
+func _queue_movement(event: Dictionary) -> void:
+    var actor_id: String = str(event.get("actor_id", ""))
+    var from_data: Array = event.get("from", [])
+    var to_data: Array = event.get("to", [])
+    if from_data.size() != 2 or to_data.size() != 2 or actor_id.is_empty():
+        return
+    var from_cell := Vector2(float(from_data[0]), float(from_data[1]))
+    var to_cell := Vector2(float(to_data[0]), float(to_data[1]))
+    var now: int = Time.get_ticks_msec()
+    var start_ms: int = maxi(now, int(_last_motion_end.get(actor_id, now)))
+    _last_motion_end[actor_id] = start_ms + MOVE_TILE_DURATION_MS
+    _movement_queue.append({
+        "actor_id": actor_id, "from_cell": from_cell, "to_cell": to_cell,
+        "start_ms": start_ms, "duration_ms": MOVE_TILE_DURATION_MS
+    })
+    set_process(true)
+    queue_redraw()
+
+
+func _render_actor_cell(actor_id: String, resolved_cell: Vector2i) -> Vector2:
+    var now: int = Time.get_ticks_msec()
+    for motion in _movement_queue:
+        if str(motion.get("actor_id", "")) != actor_id:
+            continue
+        var start_ms: int = int(motion["start_ms"])
+        if now < start_ms:
+            return motion["from_cell"]
+        var duration_ms: int = int(motion["duration_ms"])
+        if now < start_ms + duration_ms:
+            var fraction: float = clampf(float(now - start_ms) / float(duration_ms), 0.0, 1.0)
+            var source: Vector2 = motion["from_cell"]
+            var destination: Vector2 = motion["to_cell"]
+            return source.lerp(destination, fraction)
+    return Vector2(resolved_cell)
+
+
+func _pending_fatal_projectile(actor_id: String) -> Dictionary:
+    var now: int = Time.get_ticks_msec()
+    for projectile in _projectiles:
+        if str(projectile.get("target_id", "")) != actor_id:
+            continue
+        if str(projectile.get("kind", "")) != "hit":
+            continue
+        if int(projectile.get("hp_before", 0)) <= 0:
+            continue
+        if str(projectile.get("state_after", "")) not in ["dead", "unconscious", "knocked_out"]:
+            continue
+        if now < int(projectile["start_ms"]) + PROJECTILE_DURATION_MS:
+            return projectile
+    return {}
+
 
 # Non-authoritative presentation driven only by engine-resolved combat facts.
 func enqueue_combat_event(event: Dictionary) -> void:
     var kind: String = str(event.get("kind", ""))
-    if kind not in ["hit", "miss", "heal", "cast", "death"]:
+    if kind not in ["hit", "miss", "heal", "cast", "death", "move"]:
         return
     if engine == null:
+        return
+    if kind == "move":
+        _queue_movement(event)
         return
     var ranged: bool = kind in ["hit", "miss"] and (
         str(event.get("attack_kind", "")) == "ranged_weapon" or (
@@ -62,12 +123,21 @@ func enqueue_combat_event(event: Dictionary) -> void:
     var to_data: Array = event.get("target_cell", [])
     if ranged and from_data.size() == 2 and to_data.size() == 2:
         var now := Time.get_ticks_msec()
+        var source_id: String = str(event.get("actor_id", ""))
+        var target_id: String = str(event.get("target_id", ""))
+        # If an attacker advanced into range before firing, let the movement
+        # complete visually before launching the already-resolved missile.
         var start_time: int = maxi(now, _next_projectile_start_ms)
+        start_time = maxi(start_time, int(_last_motion_end.get(source_id, now)))
+        start_time = maxi(start_time, int(_last_motion_end.get(target_id, now)))
         _next_projectile_start_ms = start_time + PROJECTILE_DURATION_MS + 70
         _projectiles.append({
             "kind": kind, "amount": int(event.get("amount", 0)),
             "damage_type": str(event.get("damage_type", "")),
             "source_kind": str(event.get("source_kind", "")),
+            "target_id": str(event.get("target_id", "")),
+            "hp_before": int(event.get("hp_before", 0)),
+            "state_after": str(event.get("state_after", "")),
             "from_cell": Vector2(float(from_data[0]), float(from_data[1])),
             "to_cell": Vector2(float(to_data[0]), float(to_data[1])),
             "start_ms": start_time,
@@ -100,6 +170,8 @@ func enqueue_combat_event(event: Dictionary) -> void:
 func reset_presentation() -> void:
     _effects.clear()
     _projectiles.clear()
+    _movement_queue.clear()
+    _last_motion_end.clear()
     _next_projectile_start_ms = 0
     inspected_cell = Vector2i(-1, -1)
     set_process(false)
@@ -118,11 +190,22 @@ func _process(_delta: float) -> void:
                 "cell": Vector2i(projectile["to_cell"]),
                 "critical": false, "start_ms": now
             })
+            if str(projectile.get("state_after", "")) == "dead":
+                _effects.append({
+                    "kind": "death", "amount": 0, "source_kind": "impact",
+                    "damage_type": "", "cell": Vector2i(projectile["to_cell"]),
+                    "critical": false, "start_ms": now
+                })
+                projectile_impact.emit(str(projectile.get("target_id", "")), "dead")
             _projectiles.remove_at(i)
+    for i in range(_movement_queue.size() - 1, -1, -1):
+        var motion: Dictionary = _movement_queue[i]
+        if now >= int(motion["start_ms"]) + int(motion["duration_ms"]):
+            _movement_queue.remove_at(i)
     for i in range(_effects.size() - 1, -1, -1):
         if now - int(_effects[i]["start_ms"]) >= EFFECT_DURATION_MS:
             _effects.remove_at(i)
-    if _effects.is_empty() and _projectiles.is_empty():
+    if _effects.is_empty() and _projectiles.is_empty() and _movement_queue.is_empty():
         set_process(false)
     queue_redraw()
 
@@ -407,14 +490,17 @@ func _draw() -> void:
     for id_variant in engine.actors.keys():
         var actor: Dictionary = engine.actors[id_variant]
         var cell: Vector2i = actor["position"]
-        var dest := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
-        var active: bool = engine.is_combat_capable(str(id_variant))
         var actor_id: String = str(actor["id"])
+        var draw_cell: Vector2 = _render_actor_cell(actor_id, cell)
+        var cell_origin: Vector2 = draw_cell * CELL_SIZE
+        var dest := Rect2(cell_origin + Vector2(2, 2), Vector2(64, 64))
+        var held: Dictionary = _pending_fatal_projectile(actor_id)
+        var active: bool = engine.is_combat_capable(str(id_variant)) or not held.is_empty()
         if actor_id == current or (engine.deployment_active and actor_id == selected_deployment_actor):
-            draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(66, 66)), GOLD, false, 3.0)
+            draw_rect(Rect2(cell_origin + Vector2(1, 1), Vector2(66, 66)), GOLD, false, 3.0)
         elif active:
             var team_color: Color = PARTY_BLUE if actor["team"] == "party" else ENEMY_RED
-            draw_rect(Rect2(Vector2(cell * CELL_SIZE) + Vector2(1, 1), Vector2(66, 66)), team_color, false, 1.3)
+            draw_rect(Rect2(cell_origin + Vector2(1, 1), Vector2(66, 66)), team_color, false, 1.3)
 
         var drawn := false
         if not active and downed != null:
@@ -441,9 +527,10 @@ func _draw() -> void:
             var status_color: Color = PARTY_BLUE if glyph == "Z" else ENEMY_RED
             draw_string(get_theme_default_font(), dest.position + Vector2(50, 16),
                 glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, status_color)
-        var hp_bar := Rect2(Vector2(cell * CELL_SIZE) + Vector2(6, 62), Vector2(56, 4))
+        var hp_bar := Rect2(cell_origin + Vector2(6, 62), Vector2(56, 4))
         draw_rect(hp_bar, Color("#652d32"))
-        var fraction: float = float(actor["hp"]) / float(maxi(1, int(actor["max_hp"])))
+        var shown_hp: int = int(held.get("hp_before", actor["hp"]))
+        var fraction: float = float(shown_hp) / float(maxi(1, int(actor["max_hp"])))
         draw_rect(Rect2(hp_bar.position, Vector2(hp_bar.size.x * fraction, 4)), Color("#65bd7c"))
 
     _draw_effects()

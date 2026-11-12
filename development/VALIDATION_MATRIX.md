@@ -62,3 +62,14 @@ When Codespaces is chosen as a runtime, verify actual Codespaces inventory, bran
 | Direct weapon/spell buttons, End Turn icon and projectile flight/impact queue | PASS, automated | `tests/test_v04_wide_camera_projectiles.gd` |
 | GitHub Pages Web export | PENDING latest deployment | `.github/workflows/combat-lab-web.yml` |
 | Real iPad touch, swipe comfort, projectile visibility, enemy art acceptance | NOT RUN | Owner manual review after deployment |
+
+## v0.4.1 — Downed/impact/movement validation (2026-11-12)
+
+| Check | Status | Evidence |
+| --- | --- | --- |
+| Automatic death saves and non-controllable downed turns | PASS, Godot headless | `tests/test_v041_downed_auto_turn.gd` |
+| Nat-20 recovery, stable skip, ordinary AI excludes downed targets | PASS, Godot headless | Same test |
+| Step-by-step movement sprite interpolation and path queueing | PASS, Godot headless | `tests/test_v041_movement_impact.gd` |
+| Fatal missile sprite hold, impact collapse and deferred audio contract | PASS, Godot headless | Same test |
+| Actual iPad Safari render and animation timing | NOT RUN | Manual owner review pending |
+| Web export and Pages for v0.4.1 | PENDING | Publish only after complete green checks |

@@ -237,6 +237,7 @@ func _build_ui() -> void:
     main_grid.add_child(board_panel)
     board = CombatBoard.new()
     board.cell_clicked.connect(_on_cell_clicked)
+    board.projectile_impact.connect(_on_projectile_impact)
     board_panel.add_child(board)
 
     # Landscape: this is a permanent right-hand panel.
@@ -766,6 +767,42 @@ func _reset_view() -> void:
     board.reset_camera()
 
 
+func _death_waits_for_projectile(event_index: int) -> bool:
+    # The engine emits death before its resolved hit fact. Keep the resulting
+    # corpse frame and visual DOWN cue until the matched projectile lands.
+    var death_event: Dictionary = engine.events[event_index]
+    var dead_id: String = str(death_event.get("actor_id", ""))
+    for next_index in range(event_index + 1, engine.events.size()):
+        var followup: Dictionary = engine.events[next_index]
+        if str(followup.get("kind", "")) != "hit" or str(followup.get("target_id", "")) != dead_id:
+            continue
+        var projectile: bool = str(followup.get("attack_kind", "")) == "ranged_weapon" or (
+            str(followup.get("source_kind", "")) == "spell" and str(followup.get("action_id", "")) in [
+                "fire_bolt", "ray_of_frost", "magic_missile"])
+        if projectile and str(followup.get("state_after", "")) == "dead":
+            return true
+    return false
+
+
+func _death_sound_waits_for_projectile(event_index: int) -> bool:
+    # The combat rules produce death audio immediately, but the player should
+    # hear the collapse only after a fatal missile visually lands.
+    for next_index in range(event_index + 1, engine.events.size()):
+        var followup: Dictionary = engine.events[next_index]
+        if str(followup.get("kind", "")) == "death":
+            return _death_waits_for_projectile(next_index)
+        if str(followup.get("sound", "")) == "death":
+            return false
+    return false
+
+
+func _on_projectile_impact(_target_id: String, final_state: String) -> void:
+    if final_state == "dead" and sfx_players.has("death"):
+        var player: AudioStreamPlayer = sfx_players["death"]
+        if player.stream != null:
+            player.play()
+
+
 func _play_events() -> void:
     if engine == null:
         return
@@ -773,12 +810,16 @@ func _play_events() -> void:
     var sound_ids: Array[String] = []
     for i in range(heard_events, engine.events.size()):
         var event: Dictionary = engine.events[i]
-        if str(event.get("kind", "")) in ["hit", "miss", "cast", "heal", "death"]:
-            board.enqueue_combat_event(event)
+        var kind: String = str(event.get("kind", ""))
+        if kind in ["hit", "miss", "cast", "heal", "death", "move"]:
+            if kind != "death" or not _death_waits_for_projectile(i):
+                board.enqueue_combat_event(event)
         var line: String = str(event.get("text", ""))
         if not line.is_empty():
             lines.append(line)
         var sound: String = str(event.get("sound", ""))
+        if sound == "death" and _death_sound_waits_for_projectile(i):
+            sound = ""
         if not sound.is_empty() and not sound_ids.has(sound) and sound_ids.size() < 3:
             sound_ids.append(sound)
     if not lines.is_empty():
@@ -831,6 +872,11 @@ func _refresh() -> void:
             resources.append("Mage Armor")
         if bool(a.get("dodging", false)):
             resources.append("Dodging")
+        if str(a.get("combat_state", "")) == "unconscious":
+            resources.append("Death saves: %d passed / %d failed" % [
+                int(a.get("death_successes", 0)), int(a.get("death_failures", 0))])
+        elif str(a.get("combat_state", "")) == "stable":
+            resources.append("Stabilised: no further death saves")
         if not resources.is_empty():
             actor_status += "  |  " + ", ".join(resources)
         lines.append(actor_status)

@@ -1,5 +1,8 @@
 # Azure Mines — Standalone Combat Lab
 
+**v0.4.1 gameplay and animation correction:** [FEAT-016](specifications/features/FEAT-016-downed-turns-impact-and-movement.md) documents automatic death saves without downed player turns, deliberate AI policy for active threats, smooth tile movement and impact-synchronised death sprites/audio. The feature is implemented on `feature/combat-lab-v041-downed-turn-impact`; manual iPad acceptance remains pending.
+
+
 **v0.4 playable implementation:** [Expanded battlefield and iPad controls](docs/combat-lab-v04-release.md), aligned to the [owner-agreed art direction](docs/combat-lab-ipad-art-direction-v02.md) and [FEAT-015](specifications/features/FEAT-015-ipad-camera-projectiles-and-card-actions.md). Built on `feature/combat-lab-v04-ipad-camera-cards`; deployment only follows passing Godot CI.
 
 ## Web / iPad preview (feature branch)
