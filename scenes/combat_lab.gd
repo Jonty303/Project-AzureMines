@@ -766,6 +766,23 @@ func _reset_view() -> void:
     board.reset_camera()
 
 
+func _death_waits_for_projectile(event_index: int) -> bool:
+    # The engine emits death before its resolved hit fact. Keep the resulting
+    # corpse frame and visual DOWN cue until the matched projectile lands.
+    var death_event: Dictionary = engine.events[event_index]
+    var dead_id: String = str(death_event.get("actor_id", ""))
+    for next_index in range(event_index + 1, engine.events.size()):
+        var followup: Dictionary = engine.events[next_index]
+        if str(followup.get("kind", "")) != "hit" or str(followup.get("target_id", "")) != dead_id:
+            continue
+        var projectile: bool = str(followup.get("attack_kind", "")) == "ranged_weapon" or (
+            str(followup.get("source_kind", "")) == "spell" and str(followup.get("action_id", "")) in [
+                "fire_bolt", "ray_of_frost", "magic_missile"])
+        if projectile and str(followup.get("state_after", "")) == "dead":
+            return true
+    return false
+
+
 func _play_events() -> void:
     if engine == null:
         return
@@ -773,8 +790,10 @@ func _play_events() -> void:
     var sound_ids: Array[String] = []
     for i in range(heard_events, engine.events.size()):
         var event: Dictionary = engine.events[i]
-        if str(event.get("kind", "")) in ["hit", "miss", "cast", "heal", "death"]:
-            board.enqueue_combat_event(event)
+        var kind: String = str(event.get("kind", ""))
+        if kind in ["hit", "miss", "cast", "heal", "death", "move"]:
+            if kind != "death" or not _death_waits_for_projectile(i):
+                board.enqueue_combat_event(event)
         var line: String = str(event.get("text", ""))
         if not line.is_empty():
             lines.append(line)
