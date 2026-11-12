@@ -113,7 +113,7 @@ func _run() -> void:
         _fail("Panning did not move the expanded battlefield")
         return
     var expected_cell := Vector2i(9, 5)
-    var board_space := (Vector2(expected_cell) + Vector2(0.2, 0.2)) * (
+    var board_space: Vector2 = (Vector2(expected_cell) + Vector2(0.2, 0.2)) * (
         float(board.display_cell_size) * board.camera_zoom) + board.camera_offset
     if board._cell_from_position(board_space) != expected_cell:
         _fail("Grid coordinates shifted after panning")
