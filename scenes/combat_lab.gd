@@ -853,7 +853,7 @@ func _rebuild_pickers() -> void:
             var display_name: String = spell.replace("_", " ").capitalize()
             spell_picker.add_item(display_name)
             var marker: String = "∞" if tier == 0 else (
-                "I" if tier == 1 else ("II" if tier == 2 else str(tier)))
+                "I" if tier == 1 else ("II" if tier == 2 else ("III" if tier == 3 else str(tier))))
             var card := _make_button("%s  %s" % [marker, display_name],
                 spell_strip, _select_spell_card.bind(spell), 236)
             card.toggle_mode = true
@@ -1058,7 +1058,7 @@ func _refresh() -> void:
     var active_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
     var spell_rank: int = int(active_spell.get("level", 0))
     var spell_marker: String = "∞" if spell_rank == 0 else (
-        "I" if spell_rank == 1 else ("II" if spell_rank == 2 else str(spell_rank)))
+        "I" if spell_rank == 1 else ("II" if spell_rank == 2 else ("III" if spell_rank == 3 else str(spell_rank))))
     spell_chip.text = "%s  %s  ▴" % [spell_marker,
         _selected_spell().replace("_", " ").capitalize() if not spell_ids.is_empty() else "—"]
     spell_chip.modulate = Color("#9ba4b4") if not engine.can_cast_current_spell(_selected_spell()) else (
