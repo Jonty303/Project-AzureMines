@@ -1,0 +1,15 @@
+{
+  "name": "Azure Mines — documentation tooling (Godot not preinstalled)",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+  "postCreateCommand": "python3 scripts/validate_template.py --project && python3 scripts/validate_toolchain.py",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "yzhang.markdown-all-in-one",
+        "geequlim.godot-tools"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
