@@ -15,7 +15,7 @@ def main() -> int:
         return 2
     archive = pathlib.Path(sys.argv[1])
     destination = pathlib.Path.home() / ".local/share/godot/export_templates/4.5.2.stable"
-    expected = {"web_release.zip", "web_debug.zip"}
+    expected = {"web_nothreads_release.zip", "web_nothreads_debug.zip"}
     with zipfile.ZipFile(archive) as zipped:
         selected = {}
         for info in zipped.infolist():
