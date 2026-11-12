@@ -457,6 +457,9 @@ func _advance_move() -> void:
         _record("%s moves from (%d,%d) to (%d,%d)." % [
             mover["name"], from_cell.x, from_cell.y, next_cell.x, next_cell.y
         ])
+        _event("move", mover_id, "", {
+            "from": [from_cell.x, from_cell.y], "to": [next_cell.x, next_cell.y]
+        })
         _emit_sound("footstep")
         _trigger_hazards(mover_id, next_cell, "enter")
         if finished or int(actors[mover_id]["hp"]) <= 0:
@@ -524,12 +527,20 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
         _record("%s Opportunity Attack against %s: %d — MISS." % [
             reactor["name"], target["name"], result["total"]
         ])
+        _event("miss", reactor_id, target_id, {
+            "action_id": str(weapon.get("id", "")), "source_kind": "weapon", "reaction": true
+        })
         return
     var damage: int = RulesMath.roll_damage(str(weapon["damage"]), rng, bool(result["critical"]))
     _emit_sound("melee_hit")
     _emit_sound("damage")
     _record("%s Opportunity Attack hits %s for %d damage." % [reactor["name"], target["name"], damage])
     _deal_damage(target_id, damage)
+    _event("hit", reactor_id, target_id, {
+        "amount": damage, "action_id": str(weapon.get("id", "")),
+        "damage_type": str(weapon.get("damage_type", "physical")), "source_kind": "weapon",
+        "critical": bool(result["critical"]), "reaction": true
+    })
     _check_victory()
 
 
@@ -555,10 +566,15 @@ func resolve_reaction(accept: bool) -> bool:
             _record("%s casts Shield! AC rises to %d until the start of their next turn." % [
                 defender["name"], int(defender["armor_class"]) + 5
             ])
+            _event("cast", defender_id, defender_id, {"action_id": "shield", "effect": "shield"})
         var result: Dictionary = decision["roll"]
         if int(result["total"]) < effective_ac(actors[defender_id]):
             _emit_sound("miss")
             _record("Shield deflects the incoming attack on %s." % defender["name"])
+            _event("miss", str(decision["source"]), defender_id, {
+                "action_id": str(decision["weapon"].get("id", "")),
+                "source_kind": "weapon", "blocked_by": "shield"
+            })
         else:
             _resolve_hit(str(decision["source"]), defender_id,
                 decision["weapon"], result, bool(decision["disadvantage"]), bool(decision.get("nonlethal", false)))
@@ -616,6 +632,7 @@ func _deal_damage(target_id: String, damage: int, critical: bool = false) -> voi
     if target["combat_state"] == "dead" and previous_state != "dead":
         _emit_sound("death")
         _record("%s dies." % target["name"])
+        _event("death", target_id, target_id)
 
 
 func can_disengage() -> bool:
@@ -712,6 +729,10 @@ func attack(target_id: String, weapon_id: String = "", nonlethal: bool = false) 
         _record("%s uses %s against %s: %d vs AC %d — MISS%s." % [
             source["name"], attack_name, target["name"], roll["total"], target["armor_class"], disadvantage_label
         ])
+        _event("miss", source_id, target_id, {
+            "action_id": str(weapon.get("id", "")), "source_kind": "weapon",
+            "damage_type": str(weapon.get("damage_type", "physical"))
+        })
         return true
     if not bool(roll["critical"]) and _can_shield(target_id):
         pending_reaction = {
@@ -762,6 +783,11 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
         source["name"], attack_name, target["name"], roll["total"], target["armor_class"],
         critical_label, damage, weapon.get("damage_type", ""), old_hp, target["hp"], disadvantage_label
     ])
+    _event("hit", source_id, target_id, {
+        "amount": damage, "action_id": str(weapon.get("id", "")),
+        "damage_type": str(weapon.get("damage_type", "physical")),
+        "source_kind": "weapon", "critical": bool(roll["critical"]), "nonlethal": knocked_out
+    })
     _emit_sound("damage")
     if knocked_out:
         _record("%s is knocked unconscious nonlethally (1 HP)." % target["name"])
@@ -1111,6 +1137,7 @@ func use_second_wind() -> bool:
     _record("%s uses Second Wind, healing %d HP (%d/%d); %d use(s) left." % [
         actor["name"], restored, actor["hp"], actor["max_hp"], actor["second_wind_remaining"]
     ])
+    _event("heal", actor_id, actor_id, {"amount": restored, "action_id": "second_wind"})
     return true
 
 
@@ -1182,6 +1209,10 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
         actors[caster_id] = caster
     var target: Dictionary = actors[target_id]
     var effect: String = str(spell["effect"])
+    _event("cast", caster_id, target_id, {
+        "action_id": spell_id, "effect": effect,
+        "damage_type": str(spell.get("damage_type", ""))
+    })
     if effect != "heal":
         _emit_sound("magic")
     var title: String = spell_id.replace("_", " ").capitalize()
@@ -1208,6 +1239,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
             _record("%s casts %s on %s for %d HP (%d/%d)." % [
                 caster["name"], title, target["name"], gained, target["hp"], target["max_hp"]
             ])
+            _event("heal", caster_id, target_id, {"amount": gained, "action_id": spell_id})
         "automatic_damage":
             var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
             _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
@@ -1217,6 +1249,10 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
             var dc: int = int(caster["spellcasting"]["save_dc"])
             if roll >= dc:
                 _record("%s resists %s (Dex save %d vs DC %d)." % [target["name"], title, roll, dc])
+                _event("miss", caster_id, target_id, {
+                    "action_id": spell_id, "source_kind": "spell",
+                    "damage_type": str(spell.get("damage_type", ""))
+                })
             else:
                 var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
                 _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
@@ -1233,6 +1269,10 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
                 _record("%s casts %s at %s: %d vs AC %d — MISS." % [
                     caster["name"], title, target["name"], hit["total"], target["armor_class"]
                 ])
+                _event("miss", caster_id, target_id, {
+                    "action_id": spell_id, "source_kind": "spell",
+                    "damage_type": str(spell.get("damage_type", ""))
+                })
     return true
 
 
@@ -1244,6 +1284,10 @@ func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: Stri
     _record("%s casts %s on %s: %d %s damage (%d HP left)." % [
         caster["name"], spell_name, target["name"], damage, damage_type, target["hp"]
     ])
+    _event("hit", str(caster.get("id", "")), target_id, {
+        "amount": damage, "action_id": spell_name.to_snake_case(),
+        "damage_type": damage_type, "source_kind": "spell"
+    })
     if not is_combat_capable(target_id):
         _record("%s is %s." % [target["name"], target["combat_state"]])
     _check_victory()
@@ -1360,12 +1404,26 @@ func _check_concentration_after_damage(actor_id: String, damage: int) -> void:
         _stop_concentration(actor_id)
 
 
+func _event(kind: String, actor_id: String = "", target_id: String = "",
+        payload: Dictionary = {}) -> void:
+    # Versioned, deterministic combat facts. UI must not parse _record() prose for VFX.
+    # Each resolved event gets a stable sequence ID in this encounter session.
+    var entry: Dictionary = {
+        "schema_version": 1, "event_id": "%s:%06d" % [encounter_id, events.size()],
+        "round": round_number, "kind": kind, "actor_id": actor_id,
+        "target_id": target_id, "text": "", "sound": ""
+    }
+    for key in payload.keys():
+        entry[key] = payload[key]
+    events.append(entry)
+
+
 func _record(line: String) -> void:
-    events.append({"round": round_number, "text": line, "sound": ""})
+    _event("log", "", "", {"text": line})
 
 
 func _emit_sound(sound_id: String) -> void:
-    events.append({"round": round_number, "text": "", "sound": sound_id})
+    _event("audio", "", "", {"sound": sound_id})
 
 
 func _read_json(path: String) -> Dictionary:
