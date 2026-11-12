@@ -44,3 +44,9 @@
 - Official Web export remains single-threaded with verified Godot templates; the GitHub Pages publish job is not a physical-device test.
 
 No game logic rewrites, new dependencies or narrative assets were introduced.
+
+## v0.4.1 correction — 12 November 2026
+
+The owner reported a downed character demanding End Turn and disappearing before the projectile landed. This feature branch now automatically resolves death saves at downed initiative positions, skips non-combatant turns, retains natural-20 recovery, and keeps ordinary AI focused on active threats. A new movement presentation interpolates each resolved tile instead of teleporting sprites. Fatal arrow/spell targets keep their standing battlefield graphic until impact; impact/collapse and death sound are synchronised. HP, death state, dice and combat event results remain authoritative immediately.
+
+Testing details: [FEAT-016](../specifications/features/FEAT-016-downed-turns-impact-and-movement.md). Owner must inspect actual iPad Safari before final acceptance.

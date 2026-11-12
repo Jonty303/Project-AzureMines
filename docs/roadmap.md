@@ -38,3 +38,12 @@ This branch is intentionally **not** the Azure Mines narrative game.
 - Replaced player-facing weapon/spell dropdowns with direct weapon buttons and swipeable spell cards; icon-based player actions and a prominent right-aligned End Turn remain in the bottom bar.
 - Added ranged arrow/bolt and elemental spell projectile travel from resolved `source_cell`/`target_cell` snapshots, independent of deterministic combat outcomes.
 - Read [v0.4 release/acceptance](combat-lab-v04-release.md). Real iPad visual and swipe/gesture acceptance remains pending.
+
+## Combat Lab v0.4.1 — Downed turns and animation staging
+
+- Unconscious heroes no longer require an End Turn press; automatic death saves occur within initiative and do not expose player commands. Natural 20 recovery still allows immediate action.
+- Stable/dead/incapacitated combatants are skipped, while downed allies remain available to healing.
+- Ordinary monster AI deliberately targets only combat-capable opponents. Finishing moves are deferred to explicit AI-profile work.
+- Resolved movement animates per tile (~115ms) and projectile launching follows queued attacker movement.
+- A fatal ranged projectile keeps the target's battlefield sprite upright until impact, then plays collapse and death sound, while the engine state remains authoritative throughout.
+- Formal acceptance/tests: [FEAT-016](../specifications/features/FEAT-016-downed-turns-impact-and-movement.md). Physical iPad animation review remains outstanding.
