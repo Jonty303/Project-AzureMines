@@ -19,3 +19,7 @@ The combat isolation/polish plan is prepared for the dedicated combat developmen
 ## Newly agreed presentation work
 
 - [FEAT-015 — iPad map camera, touch gestures, projectile VFX and weapon/spell cards](features/FEAT-015-ipad-camera-projectiles-and-card-actions.md) records the owner-approved provisional composition and an implementation/test checklist. Recording this specification is not equivalent to implementing the features.
+
+## v0.5 Magic and Tactical Effects
+
+- [FEAT-018 — action selectors, spell-slot tiers, expanded magic and persistent battlefield effects](features/FEAT-018-magic-and-tactical-effects.md) defines the owner's v0.5 direction. **v0.5.1** implements the picker/slot foundation; **Web and the remaining second-level spells are not implemented yet**. See issue #16 for staged mechanical scope.
