@@ -540,6 +540,8 @@ func _start_battle() -> void:
     engine = instance
     board.engine = engine
     board.reset_presentation()
+    board.reset_camera()
+    _apply_responsive_layout(get_viewport_rect().size)
     recorded = false
     heard_events = 0
     picker_actor = ""
@@ -692,22 +694,75 @@ func _rebuild_pickers() -> void:
     picker_actor = actor_id
     weapon_ids.clear()
     spell_ids.clear()
+    weapon_cards.clear()
+    spell_cards.clear()
     attack_picker.clear()
     spell_picker.clear()
+    for strip in [weapon_strip, spell_strip]:
+        for child in strip.get_children():
+            strip.remove_child(child)
+            child.queue_free()
     if not engine.current_is_party():
         return
     for attack in engine.current_actor().get("attacks", []):
         var kind: String = str(attack.get("kind", ""))
         if kind in ["melee_weapon", "ranged_weapon"]:
-            weapon_ids.append(str(attack["id"]))
-            attack_picker.add_item(str(attack["id"]).replace("_", " ").capitalize())
+            var wid: String = str(attack["id"])
+            weapon_ids.append(wid)
+            attack_picker.add_item(wid.replace("_", " ").capitalize())
+            var card := _make_button(wid.replace("_", " ").capitalize(),
+                weapon_strip, _select_weapon_card.bind(wid), 108)
+            card.toggle_mode = true
+            _set_button_icon(card, "bow" if kind == "ranged_weapon"
+                else ("dagger" if wid.contains("dagger") else "sword"))
+            weapon_cards[wid] = card
     for spell in engine.get_current_spells():
         spell_ids.append(spell)
         spell_picker.add_item(spell.replace("_", " ").capitalize())
+        var card := _make_button(spell.replace("_", " ").capitalize(),
+            spell_strip, _select_spell_card.bind(spell), 128)
+        card.toggle_mode = true
+        _set_button_icon(card, "second_wind" if spell in ["cure_wounds", "healing_word"] else "spell")
+        spell_cards[spell] = card
     if not weapon_ids.is_empty():
         attack_picker.select(0)
     if not spell_ids.is_empty():
         spell_picker.select(0)
+    spell_scroll.scroll_horizontal = 0
+
+
+func _select_weapon_card(weapon_id: String) -> void:
+    var index: int = weapon_ids.find(weapon_id)
+    if index < 0:
+        return
+    attack_picker.select(index)
+    action_mode = "attack"
+    _refresh()
+
+
+func _select_spell_card(spell_id: String) -> void:
+    var index: int = spell_ids.find(spell_id)
+    if index < 0:
+        return
+    spell_picker.select(index)
+    action_mode = "spell"
+    _refresh()
+
+
+func _scroll_spells(direction: int) -> void:
+    spell_scroll.scroll_horizontal = maxi(0, spell_scroll.scroll_horizontal + direction * 275)
+
+
+func _zoom_in() -> void:
+    board.zoom_at(board.camera_viewport * 0.5, 1.2)
+
+
+func _zoom_out() -> void:
+    board.zoom_at(board.camera_viewport * 0.5, 1.0 / 1.2)
+
+
+func _reset_view() -> void:
+    board.reset_camera()
 
 
 func _play_events() -> void:
@@ -814,6 +869,19 @@ func _refresh() -> void:
     disengage_button.disabled = not can_act or not engine.can_disengage()
     wind_button.disabled = not can_act or not engine.can_use_second_wind()
     end_turn_button.disabled = not can_act
+    end_turn_button.modulate = Color(1.0, 0.95, 0.7) if can_act and (
+        engine.action_used or not engine.can_move_current()) else Color.WHITE
+    for wid in weapon_cards.keys():
+        var weapon_card: Button = weapon_cards[wid]
+        weapon_card.disabled = not can_act or engine.action_used
+        weapon_card.set_pressed_no_signal(str(wid) == _selected_weapon())
+    for sid in spell_cards.keys():
+        var spell_card: Button = spell_cards[sid]
+        var definition: Dictionary = Level1Spells.get_definition(str(sid))
+        spell_card.disabled = not can_act or (
+            int(definition.get("level", 0)) > 0 and
+            int(engine.current_actor().get("spell_slots_remaining", 0)) <= 0)
+        spell_card.set_pressed_no_signal(str(sid) == _selected_spell())
     attack_picker.disabled = not can_act or engine.action_used or weapon_ids.is_empty()
     spell_picker.disabled = not can_act or spell_ids.is_empty()
     var selected_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
@@ -914,10 +982,12 @@ func _apply_responsive_layout(view_size: Vector2) -> void:
     sidebar_panel.custom_minimum_size.x = float(sidebar_width) if landscape else 0.0
     # Reserve vertical space for the always-visible player action bar.
     var available_height: float = view_size.y - (300.0 if landscape else 250.0)
-    var cell: int = floori(minf(68.0, minf(available_width / 12.0, available_height / 10.0)))
-    if not landscape:
-        cell = floori(minf(68.0, available_width / 12.0))
+    # Use a clipped camera viewport rather than fitting all 17 columns at once.
+    var map_width: float = maxf(290.0, available_width)
+    var map_height: float = maxf(280.0, available_height)
+    var cell: int = clampi(floori(minf(map_width / 11.0, map_height / 8.0)), 38, 68)
     board.set_display_cell_size(cell)
+    board.set_viewport_size(Vector2(map_width, map_height))
 
 
 func _update_selection_details() -> void:
