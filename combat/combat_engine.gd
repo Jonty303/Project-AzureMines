@@ -535,6 +535,7 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
         })
         return
     var damage: int = RulesMath.roll_damage(str(weapon["damage"]), rng, bool(result["critical"]))
+    var before_hp: int = int(target["hp"])
     _emit_sound("melee_hit")
     _emit_sound("damage")
     _record("%s Opportunity Attack hits %s for %d damage." % [reactor["name"], target["name"], damage])
@@ -543,7 +544,9 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
         "amount": damage, "action_id": str(weapon.get("id", "")),
         "damage_type": str(weapon.get("damage_type", "physical")), "source_kind": "weapon",
         "critical": bool(result["critical"]), "reaction": true,
-        "attack_kind": str(weapon.get("kind", ""))
+        "attack_kind": str(weapon.get("kind", "")), "hp_before": before_hp,
+        "hp_after": int(actors[target_id]["hp"]),
+        "state_after": str(actors[target_id]["combat_state"])
     })
     _check_victory()
 
@@ -792,7 +795,8 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
         "amount": damage, "action_id": str(weapon.get("id", "")),
         "damage_type": str(weapon.get("damage_type", "physical")),
         "source_kind": "weapon", "critical": bool(roll["critical"]), "nonlethal": knocked_out,
-        "attack_kind": str(weapon.get("kind", ""))
+        "attack_kind": str(weapon.get("kind", "")), "hp_before": old_hp,
+        "hp_after": int(target["hp"]), "state_after": str(target["combat_state"])
     })
     _emit_sound("damage")
     if knocked_out:
@@ -1308,6 +1312,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
 
 func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: String, damage: int, damage_type: String) -> void:
     var target: Dictionary = actors[target_id]
+    var before_hp: int = int(target["hp"])
     _deal_damage(target_id, damage)
     target = actors[target_id]
     _emit_sound("damage")
@@ -1316,7 +1321,9 @@ func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: Stri
     ])
     _event("hit", str(caster.get("id", "")), target_id, {
         "amount": damage, "action_id": spell_name.to_snake_case(),
-        "damage_type": damage_type, "source_kind": "spell"
+        "damage_type": damage_type, "source_kind": "spell",
+        "hp_before": before_hp, "hp_after": int(target["hp"]),
+        "state_after": str(target["combat_state"])
     })
     if not is_combat_capable(target_id):
         _record("%s is %s." % [target["name"], target["combat_state"]])
