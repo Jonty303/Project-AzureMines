@@ -42,7 +42,10 @@ var _last_touch_cell := Vector2i(-1, -1)
 var _last_touch_msec := -10000
 var inspected_cell := Vector2i(-1, -1)
 var _effects: Array[Dictionary] = []
+var _projectiles: Array[Dictionary] = []
+var _next_projectile_start_ms := 0
 const EFFECT_DURATION_MS := 720
+const PROJECTILE_DURATION_MS := 450
 
 # Non-authoritative presentation driven only by engine-resolved combat facts.
 func enqueue_combat_event(event: Dictionary) -> void:
@@ -51,7 +54,29 @@ func enqueue_combat_event(event: Dictionary) -> void:
         return
     if engine == null:
         return
-    var target_id: String = str(event.get("target_id", ""))
+    var ranged: bool = kind in ["hit", "miss"] and (
+        str(event.get("attack_kind", "")) == "ranged_weapon" or (
+            str(event.get("source_kind", "")) == "spell" and
+            str(event.get("action_id", "")) in ["fire_bolt", "ray_of_frost", "magic_missile"]))
+    var from_data: Array = event.get("source_cell", [])
+    var to_data: Array = event.get("target_cell", [])
+    if ranged and from_data.size() == 2 and to_data.size() == 2:
+        var now := Time.get_ticks_msec()
+        var start_time: int = maxi(now, _next_projectile_start_ms)
+        _next_projectile_start_ms = start_time + PROJECTILE_DURATION_MS + 70
+        _projectiles.append({
+            "kind": kind, "amount": int(event.get("amount", 0)),
+            "damage_type": str(event.get("damage_type", "")),
+            "source_kind": str(event.get("source_kind", "")),
+            "from_cell": Vector2(float(from_data[0]), float(from_data[1])),
+            "to_cell": Vector2(float(to_data[0]), float(to_data[1])),
+            "start_ms": start_time,
+            "miss": kind == "miss"
+        })
+        set_process(true)
+        queue_redraw()
+        return
+    var target_id: String = str(event.get("actor_id", "")) if kind == "cast" else str(event.get("target_id", ""))
     if not engine.actors.has(target_id):
         target_id = str(event.get("actor_id", ""))
     if not engine.actors.has(target_id):
@@ -74,6 +99,8 @@ func enqueue_combat_event(event: Dictionary) -> void:
 
 func reset_presentation() -> void:
     _effects.clear()
+    _projectiles.clear()
+    _next_projectile_start_ms = 0
     inspected_cell = Vector2i(-1, -1)
     set_process(false)
     queue_redraw()
@@ -81,10 +108,21 @@ func reset_presentation() -> void:
 
 func _process(_delta: float) -> void:
     var now := Time.get_ticks_msec()
+    for i in range(_projectiles.size() - 1, -1, -1):
+        var projectile: Dictionary = _projectiles[i]
+        if now - int(projectile["start_ms"]) >= PROJECTILE_DURATION_MS:
+            _effects.append({
+                "kind": str(projectile["kind"]), "amount": int(projectile["amount"]),
+                "source_kind": str(projectile["source_kind"]),
+                "damage_type": str(projectile["damage_type"]),
+                "cell": Vector2i(projectile["to_cell"]),
+                "critical": false, "start_ms": now
+            })
+            _projectiles.remove_at(i)
     for i in range(_effects.size() - 1, -1, -1):
         if now - int(_effects[i]["start_ms"]) >= EFFECT_DURATION_MS:
             _effects.remove_at(i)
-    if _effects.is_empty():
+    if _effects.is_empty() and _projectiles.is_empty():
         set_process(false)
     queue_redraw()
 
@@ -146,6 +184,36 @@ func _draw_effects() -> void:
         draw_string(get_theme_default_font(),
             center + Vector2(-17.0, -rise), caption, HORIZONTAL_ALIGNMENT_LEFT,
             -1, label_size, tint)
+
+
+func _draw_projectiles() -> void:
+    var now := Time.get_ticks_msec()
+    for projectile in _projectiles:
+        var age_ms: int = now - int(projectile["start_ms"])
+        if age_ms < 0:
+            continue
+        var p: float = clampf(float(age_ms) / float(PROJECTILE_DURATION_MS), 0.0, 1.0)
+        var begin_cell: Vector2 = projectile["from_cell"]
+        var destination: Vector2 = projectile["to_cell"]
+        var start_pt := (begin_cell + Vector2(0.5, 0.5)) * CELL_SIZE
+        var end_pt := (destination + Vector2(0.5, 0.5)) * CELL_SIZE
+        var pos := start_pt.lerp(end_pt, p)
+        var direction := (end_pt - start_pt).normalized()
+        var tint := _effect_color("hit", str(projectile.get("damage_type", "")))
+        if str(projectile.get("source_kind", "")) == "weapon":
+            # Arrow / sling-bolt silhouette plus a modest warm trail.
+            draw_line(pos - direction * 22.0, pos, Color("#efbd73", 0.85), 3.0, true)
+            var side := Vector2(-direction.y, direction.x)
+            draw_colored_polygon(PackedVector2Array([
+                pos + direction * 11.0,
+                pos - direction * 5.0 + side * 4.0,
+                pos - direction * 5.0 - side * 4.0
+            ]), Color("#f9e6b7"))
+        else:
+            draw_circle(pos - direction * 12.0, 6.0, Color(tint.r, tint.g, tint.b, 0.35))
+            draw_circle(pos - direction * 6.0, 7.0, Color(tint.r, tint.g, tint.b, 0.55))
+            draw_circle(pos, 9.0, tint)
+            draw_circle(pos, 3.5, Color("#f4f0ff"))
 
 
 func set_display_cell_size(value: int) -> void:
@@ -379,6 +447,7 @@ func _draw() -> void:
         draw_rect(Rect2(hp_bar.position, Vector2(hp_bar.size.x * fraction, 4)), Color("#65bd7c"))
 
     _draw_effects()
+    _draw_projectiles()
 
 
 func get_highlights() -> Dictionary:
