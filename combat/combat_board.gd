@@ -24,6 +24,112 @@ var display_cell_size: int = CELL_SIZE
 var keyboard_cell := Vector2i(2, 5)
 var _last_touch_cell := Vector2i(-1, -1)
 var _last_touch_msec := -10000
+var inspected_cell := Vector2i(-1, -1)
+var _effects: Array[Dictionary] = []
+const EFFECT_DURATION_MS := 720
+
+# Non-authoritative presentation driven only by engine-resolved combat facts.
+func enqueue_combat_event(event: Dictionary) -> void:
+    var kind: String = str(event.get("kind", ""))
+    if kind not in ["hit", "miss", "heal", "cast", "death"]:
+        return
+    if engine == null:
+        return
+    var target_id: String = str(event.get("target_id", ""))
+    if not engine.actors.has(target_id):
+        target_id = str(event.get("actor_id", ""))
+    if not engine.actors.has(target_id):
+        return
+    var cell: Vector2i = engine.actors[target_id]["position"]
+    _effects.append({
+        "kind": kind,
+        "cell": cell,
+        "amount": int(event.get("amount", 0)),
+        "damage_type": str(event.get("damage_type", "")),
+        "critical": bool(event.get("critical", false)),
+        "source_kind": str(event.get("source_kind", "")),
+        "start_ms": Time.get_ticks_msec()
+    })
+    while _effects.size() > 12:
+        _effects.pop_front()
+    set_process(true)
+    queue_redraw()
+
+
+func reset_presentation() -> void:
+    _effects.clear()
+    inspected_cell = Vector2i(-1, -1)
+    set_process(false)
+    queue_redraw()
+
+
+func _process(_delta: float) -> void:
+    var now := Time.get_ticks_msec()
+    for i in range(_effects.size() - 1, -1, -1):
+        if now - int(_effects[i]["start_ms"]) >= EFFECT_DURATION_MS:
+            _effects.remove_at(i)
+    if _effects.is_empty():
+        set_process(false)
+    queue_redraw()
+
+
+func _effect_color(kind: String, damage_type: String) -> Color:
+    match kind:
+        "heal":
+            return Color("#62e6a2")
+        "miss":
+            return Color("#c3d0da")
+        "death":
+            return Color("#9a9da8")
+        "cast":
+            return Color("#cba5ff")
+        _:
+            match damage_type:
+                "fire": return Color("#ff893e")
+                "cold": return Color("#75dcf5")
+                "radiant": return Color("#ffea8a")
+                "force": return Color("#c48aff")
+                "necrotic": return Color("#9279ad")
+                _: return Color("#ff7470")
+
+
+func _draw_effects() -> void:
+    var now := Time.get_ticks_msec()
+    for effect in _effects:
+        var age: float = float(now - int(effect["start_ms"])) / float(EFFECT_DURATION_MS)
+        var progress: float = clampf(age, 0.0, 1.0)
+        var kind: String = str(effect["kind"])
+        var cell: Vector2i = effect["cell"]
+        var center := Vector2(cell * CELL_SIZE) + Vector2(CELL_SIZE / 2.0, CELL_SIZE / 2.0)
+        var tint: Color = _effect_color(kind, str(effect.get("damage_type", "")))
+        tint.a = 1.0 - progress
+        var radius := 16.0 + progress * 22.0
+        if kind in ["cast", "heal"] or (kind == "hit" and effect.get("source_kind", "") == "spell"):
+            draw_arc(center, radius, 0.0, TAU, 28, tint, 4.0, true)
+        elif kind == "hit":
+            draw_line(center + Vector2(-19.0, 16.0), center + Vector2(19.0, -16.0),
+                tint, 5.0, true)
+            draw_line(center + Vector2(-17.0, -12.0), center + Vector2(15.0, 13.0),
+                tint, 2.0, true)
+        var caption := ""
+        match kind:
+            "hit":
+                caption = "-%d" % int(effect["amount"])
+            "heal":
+                caption = "+%d" % int(effect["amount"])
+            "miss":
+                caption = "MISS"
+            "cast":
+                caption = "CAST"
+            "death":
+                caption = "DOWN"
+        if caption.is_empty():
+            continue
+        var rise := 12.0 + progress * 24.0
+        var label_size := 20 if kind != "cast" else 14
+        draw_string(get_theme_default_font(),
+            center + Vector2(-17.0, -rise), caption, HORIZONTAL_ALIGNMENT_LEFT,
+            -1, label_size, tint)
 
 
 func set_display_cell_size(value: int) -> void:
@@ -43,6 +149,7 @@ func _activate_cell(cell: Vector2i) -> void:
     if cell.x >= engine.grid_size.x or cell.y >= engine.grid_size.y:
         return
     keyboard_cell = cell
+    inspected_cell = cell
     cell_clicked.emit(cell)
     queue_redraw()
 
@@ -53,6 +160,7 @@ func _ready() -> void:
     mouse_filter = Control.MOUSE_FILTER_STOP
     set_display_cell_size(CELL_SIZE)
     focus_mode = Control.FOCUS_ALL
+    set_process(false)
 
 
 func _draw() -> void:
@@ -96,6 +204,9 @@ func _draw() -> void:
                 draw_rect(dest.grow(-3), Color("#65b3df", 0.65), false, 1.5)
             draw_rect(dest, Color("#1c232b", 0.58), false, 1.0)
 
+    if inspected_cell.x >= 0 and inspected_cell.y >= 0:
+        var selected := Rect2(Vector2(inspected_cell * CELL_SIZE) + Vector2(3, 3), Vector2(62, 62))
+        draw_rect(selected, Color("#faf0c1"), false, 2.5)
     if has_focus():
         var cursor := Rect2(Vector2(keyboard_cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
         draw_rect(cursor, Color("#f0da86"), false, 3.0)
@@ -181,6 +292,7 @@ func _draw() -> void:
         var fraction: float = float(actor["hp"]) / float(maxi(1, int(actor["max_hp"])))
         draw_rect(Rect2(hp_bar.position, Vector2(hp_bar.size.x * fraction, 4)), Color("#65bd7c"))
 
+    _draw_effects()
 
 
 func get_highlights() -> Dictionary:
