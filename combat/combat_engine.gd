@@ -488,25 +488,32 @@ func _trigger_hazards(actor_id: String, cell: Vector2i, trigger: String) -> void
 
 
 func _opportunity_reactor(mover_id: String, from_cell: Vector2i, next_cell: Vector2i) -> String:
-    if bool(actors[mover_id].get("disengaged", false)):
-        return ""
-    var mover: Dictionary = actors[mover_id]
     for id_variant in actors.keys():
         var reactor_id: String = str(id_variant)
-        var reactor: Dictionary = actors[reactor_id]
-        if reactor["team"] == mover["team"] or int(reactor["hp"]) <= 0:
-            continue
-        if bool(reactor.get("reaction_used", false)) or reaction_checked.has(reactor_id):
-            continue
-        var pos: Vector2i = reactor["position"]
-        if _distance(pos, from_cell) > 1 or _distance(pos, next_cell) <= 1:
-            continue
-        if not _line_clear(pos, from_cell):
-            continue
-        for attack_data in reactor.get("attacks", []):
-            if attack_data.get("kind", "") == "melee_weapon":
-                return reactor_id
+        if not reaction_checked.has(reactor_id) and _can_opportunity_attack(
+                reactor_id, mover_id, from_cell, next_cell):
+            return reactor_id
     return ""
+
+
+func _can_opportunity_attack(reactor_id: String, mover_id: String,
+        from_cell: Vector2i, next_cell: Vector2i) -> bool:
+    # Shared by movement execution and tactical risk estimation; no rolls.
+    var mover: Dictionary = actors[mover_id]
+    var reactor: Dictionary = actors[reactor_id]
+    if bool(mover.get("disengaged", false)) or reactor["team"] == mover["team"]:
+        return false
+    if not is_combat_capable(reactor_id) or bool(reactor.get("reaction_used", false)):
+        return false
+    var pos: Vector2i = reactor["position"]
+    if _distance(pos, from_cell) > 1 or _distance(pos, next_cell) <= 1:
+        return false
+    if not _line_clear(pos, from_cell):
+        return false
+    for attack_data in reactor.get("attacks", []):
+        if attack_data.get("kind", "") == "melee_weapon":
+            return true
+    return false
 
 
 func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
@@ -660,17 +667,21 @@ func use_disengage() -> bool:
 func available_attack(target_id: String, weapon_id: String = "") -> Dictionary:
     if deployment_active or finished or action_used or not actors.has(target_id):
         return {}
-    var source_id := current_id()
-    if source_id.is_empty():
+    return _attack_from(current_id(), target_id, current_actor().get("position", Vector2i(-1, -1)), weapon_id)
+
+
+func _attack_from(source_id: String, target_id: String, from_cell: Vector2i,
+        weapon_id: String = "") -> Dictionary:
+    # Pure shared geometry query. Command availability/budgets stay in
+    # available_attack; AI can evaluate a prospective tile without moving actors.
+    if not is_combat_capable(source_id) or not is_combat_capable(target_id):
         return {}
     var source: Dictionary = actors[source_id]
     var target: Dictionary = actors[target_id]
-    if not is_combat_capable(source_id):
+    if source["team"] == target["team"]:
         return {}
-    if source["team"] == target["team"] or not is_combat_capable(target_id):
-        return {}
-    var distance := _distance(source["position"], target["position"])
-    if not _line_clear(source["position"], target["position"]):
+    var distance := _distance(from_cell, target["position"])
+    if not _line_clear(from_cell, target["position"]):
         return {}
     var options: Array = source.get("attacks", [])
     var ranged: Dictionary = {}
@@ -862,94 +873,144 @@ func take_ai_turn() -> void:
         # The AI does not act on their behalf; simply move initiative forward.
         end_turn()
         return
-    var source: Dictionary = current_actor()
-    var role: String = str(source.get("role", "melee"))
-    var enemy_ids: Array[String] = []
-    for target_id_variant in actors.keys():
-        var id: String = str(target_id_variant)
-        var target: Dictionary = actors[id]
-        if target["team"] != source["team"] and is_combat_capable(id):
-            enemy_ids.append(id)
-    if enemy_ids.is_empty():
+    var intent: Dictionary = choose_ai_intent()
+    if intent.is_empty():
         _check_victory()
         return
-
-    # Archers prefer line-of-sight shortbow shots instead of charging melee.
-    # They only resort to a knife when already engaged in adjacent combat.
-    var chosen_id := ""
-    var chosen_weapon := ""
-    var best_distance := 9999
-    for id in enemy_ids:
-        var distance: int = _distance(source["position"], actors[id]["position"])
-        var weapon_id: String = _ai_weapon_id(source, distance)
-        if not available_attack(id, weapon_id).is_empty() and distance < best_distance:
-            best_distance = distance
-            chosen_id = id
-            chosen_weapon = weapon_id
-    if not chosen_id.is_empty():
-        attack(chosen_id, chosen_weapon)
-    else:
-        var reachable: Dictionary = get_reachable(actor_id)
-        var origin: Vector2i = source["position"]
-        var best_cell: Vector2i = origin
-        # Pick a stable tactical objective instead of changing target for each
-        # evaluated square; changing targets mid-search causes oscillation.
-        var focus_id: String = _nearest_opponent(actor_id)
-        if not focus_id.is_empty():
-            var best_score: int = _ai_position_score(source, actors[focus_id], origin, 0)
-            for cell_variant in reachable.keys():
-                var cell: Vector2i = cell_variant
-                if cell == origin:
-                    continue
-                var score: int = _ai_position_score(source, actors[focus_id], cell,
-                    int(reachable[cell]["cost"]))
-                if score < best_score:
-                    best_score = score
-                    best_cell = cell
-        # Never move merely because movement is available. An archer on good
-        # ground can hold position if it has already spent its action.
-        if best_cell != source["position"]:
-            move_to(best_cell)
-            if not pending_reaction.is_empty() or not pending_move.is_empty() or finished:
-                return
-        if not finished:
-            for id in enemy_ids:
-                var target: Dictionary = actors[id]
-                var distance: int = _distance(actors[actor_id]["position"], target["position"])
-                var weapon_id: String = _ai_weapon_id(actors[actor_id], distance)
-                if not available_attack(id, weapon_id).is_empty():
-                    attack(id, weapon_id)
-                    break
+    if intent["cell"] != actors[actor_id]["position"]:
+        move_to(intent["cell"])
+        if not pending_reaction.is_empty() or not pending_move.is_empty() or finished:
+            return
+    # Revalidate after movement/hazards/reactions with the same command used by
+    # player input. Resuming an interrupted AI turn recomputes intent normally.
+    if is_combat_capable(actor_id):
+        var shot: Dictionary = _ai_attack_choice(actor_id, actors[actor_id]["position"])
+        if not shot.is_empty() and not available_attack(shot["target"], shot["weapon"]).is_empty():
+            attack(shot["target"], shot["weapon"])
     if not finished and pending_reaction.is_empty() and pending_move.is_empty():
         end_turn()
 
 
-func _ai_position_score(source: Dictionary, target: Dictionary, cell: Vector2i,
-        move_cost: int) -> int:
-    # Lower is better. Current tile is compared first so equal/worse reachable
-    # tiles do not trigger gratuitous movement or two-turn zig-zags.
-    var distance: int = _distance(cell, target["position"])
-    var clear: bool = _line_clear(cell, target["position"])
-    var role: String = str(source.get("role", "melee"))
-    var score: int = 0
-    if role == "ranged":
-        var normal_range := 6
-        for weapon_variant in source.get("attacks", []):
-            var weapon: Dictionary = weapon_variant
-            if weapon.get("kind", "") == "ranged_weapon":
-                normal_range = maxi(1, int(weapon.get("normal_range_feet", 30)) / 5)
-                break
-        score = (0 if clear else 450) + maxi(0, distance - normal_range) * 60
-        score += absi(distance - mini(4, normal_range)) * 20
-        if distance <= 1:
-            score += 500
-    else:
-        score = distance * 100 + (0 if clear else 25)
-    score += move_cost * 6
-    for hazard in hazards:
-        if hazard.get("position", Vector2i(-1, -1)) == cell:
-            score += 800
+func choose_ai_intent() -> Dictionary:
+    # Policy only: no state writes, RNG, events or speculative actor relocation.
+    # Origin wins ties, then row/column order; target ties use sorted stable IDs.
+    var actor_id: String = current_id()
+    if actor_id.is_empty() or not is_combat_capable(actor_id):
+        return {}
+    var source: Dictionary = actors[actor_id]
+    var origin: Vector2i = source["position"]
+    if action_used:
+        return {"cell": origin}
+    var goals: Dictionary = {}
+    for y in grid_size.y:
+        for x in grid_size.x:
+            var cell := Vector2i(x, y)
+            if _is_open(actor_id, cell):
+                var choice: Dictionary = _ai_attack_choice(actor_id, cell)
+                if not choice.is_empty():
+                    goals[cell] = int(choice["score"])
+    if goals.is_empty():
+        return {"cell": origin}
+    var approach: Dictionary = _ai_approach_costs(actor_id, goals)
+    var reachable: Dictionary = get_reachable(actor_id)
+    var best_cell: Vector2i = origin
+    var best_score: int = _ai_position_score(actor_id, origin, reachable, approach)
+    # Iterate coordinates explicitly rather than relying on Dictionary order.
+    for y in grid_size.y:
+        for x in grid_size.x:
+            var cell := Vector2i(x, y)
+            if not reachable.has(cell) or cell == origin:
+                continue
+            var score: int = _ai_position_score(actor_id, cell, reachable, approach)
+            if score < best_score:
+                best_cell = cell
+                best_score = score
+    return {"cell": best_cell}
+
+
+func _ai_attack_choice(actor_id: String, cell: Vector2i) -> Dictionary:
+    var source: Dictionary = actors[actor_id]
+    var best: Dictionary = {}
+    var ids: Array = actors.keys()
+    ids.sort()
+    for id_variant in ids:
+        var target_id: String = str(id_variant)
+        var target: Dictionary = actors[target_id]
+        var distance: int = _distance(cell, target["position"])
+        var weapon_id: String = _ai_weapon_id(source, distance)
+        var weapon: Dictionary = _attack_from(actor_id, target_id, cell, weapon_id)
+        if weapon.is_empty():
+            continue
+        var score: int = cover_bonus(cell, target["position"]) * 40
+        if weapon.get("kind", "") == "ranged_weapon":
+            if distance * 5 > int(weapon.get("normal_range_feet", 0)):
+                score += 160
+            for other_id in ids:
+                if actors[other_id]["team"] != source["team"] and is_combat_capable(str(other_id)) \
+                        and _distance(cell, actors[other_id]["position"]) <= 1:
+                    score += 160
+        if best.is_empty() or score < int(best["score"]) or (
+                score == int(best["score"]) and distance < int(best["distance"])):
+            best = {"target": target_id, "weapon": weapon_id, "score": score, "distance": distance}
+    return best
+
+
+func _ai_approach_costs(actor_id: String, goals: Dictionary) -> Dictionary:
+    # Reverse Dijkstra potential to legal attack tiles, using _can_step and
+    # actual terrain entry costs. Unlike straight-line distance this leads out
+    # of U-shaped obstacles even when the first step goes away from the enemy.
+    var costs: Dictionary = goals.duplicate()
+    var pending: Array = goals.keys()
+    while not pending.is_empty():
+        var best := 0
+        for i in range(1, pending.size()):
+            if int(costs[pending[i]]) < int(costs[pending[best]]):
+                best = i
+        var cell: Vector2i = pending.pop_at(best)
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                if dx == 0 and dy == 0:
+                    continue
+                var previous := cell + Vector2i(dx, dy)
+                if not _is_open(actor_id, previous) or not _can_step(actor_id, previous, cell):
+                    continue
+                var step_cost: int = (2 if cell in difficult_terrain else 1) * 100
+                step_cost += _ai_hazard_cost(cell, "enter")
+                var cost: int = int(costs[cell]) + step_cost
+                if not costs.has(previous) or cost < int(costs[previous]):
+                    costs[previous] = cost
+                    if not pending.has(previous):
+                        pending.append(previous)
+    return costs
+
+
+func _ai_position_score(actor_id: String, cell: Vector2i, reachable: Dictionary,
+        approach: Dictionary) -> int:
+    var origin: Vector2i = actors[actor_id]["position"]
+    var score: int = int(approach.get(cell, 1000000)) + int(reachable[cell]["cost"]) * 6
+    score += _ai_hazard_cost(cell, "start_turn")
+    # Evaluate the exact route move_to will reconstruct, not just its endpoint.
+    var current: Vector2i = cell
+    var threatened_by: Dictionary = {}
+    while current != origin:
+        var previous: Vector2i = reachable[current]["previous"]
+        score += _ai_hazard_cost(current, "enter")
+        for id_variant in actors.keys():
+            var reactor_id: String = str(id_variant)
+            if not threatened_by.has(reactor_id) and _can_opportunity_attack(
+                    reactor_id, actor_id, previous, current):
+                score += 500
+                threatened_by[reactor_id] = true
+        current = previous
     return score
+
+
+func _ai_hazard_cost(cell: Vector2i, trigger: String) -> int:
+    var cost := 0
+    for hazard in hazards:
+        if hazard.get("position") == cell and hazard.get("trigger", []).has(trigger):
+            cost += 1200
+    return cost
 
 
 func target_at(cell: Vector2i) -> String:
@@ -981,9 +1042,8 @@ func can_cast_any_current_spell() -> bool:
     if not current_is_party() or int(current_actor().get("hp", 0)) <= 0:
         return false
     for spell_id in get_current_spells():
-        for target_id in actors.keys():
-            if can_cast_spell(spell_id, str(target_id)):
-                return true
+        if can_cast_current_spell(spell_id):
+            return true
     return false
 
 
@@ -1220,36 +1280,63 @@ func _sneak_attack_eligible(source_id: String, target_id: String, weapon: Dictio
 
 
 func can_cast_spell(spell_id: String, target_id: String) -> bool:
-    if finished or current_id().is_empty() or not actors.has(target_id):
-        return false
+    return spell_unavailable_reason(spell_id, target_id).is_empty()
+
+
+func can_cast_current_spell(spell_id: String) -> bool:
+    for target_id in actors.keys():
+        if can_cast_spell(spell_id, str(target_id)):
+            return true
+    return false
+
+
+func spell_unavailable_reason(spell_id: String, target_id: String) -> String:
+    # Single authority for casting, cards, target highlights and contextual hints.
+    # Empty means legal. Check turn/resources before target-specific restrictions.
+    if deployment_active:
+        return "Begin battle before casting."
+    if finished or current_id().is_empty():
+        return "No active combat turn."
+    if not pending_reaction.is_empty() or not pending_move.is_empty():
+        return "Resolve the pending reaction or movement first."
     var caster: Dictionary = current_actor()
     if not is_combat_capable(current_id()):
-        return false
+        return "This creature cannot act."
     if not Level1Spells.known_spells(caster).has(spell_id):
-        return false
+        return "Choose a known spell."
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
     if spell.is_empty():
-        return false
+        return "Spell is not implemented."
     if spell["time"] == "reaction":
-        return false
+        return "This spell is only available as a reaction."
     if spell["time"] == "action" and action_used:
-        return false
+        return "Action already used this turn."
     if spell["time"] == "bonus" and bonus_action_used:
-        return false
-    if int(spell["level"]) > 0 and (slotted_cast_this_turn or int(caster.get("spell_slots_remaining", 0)) <= 0):
-        return false
+        return "Bonus action already used this turn."
+    if int(spell["level"]) > 0:
+        if slotted_cast_this_turn:
+            return "A slotted spell was already cast this turn."
+        if int(caster.get("spell_slots_remaining", 0)) <= 0:
+            return "No spell slots remaining."
+    if spell["effect"] == "mage_armor":
+        if bool(caster.get("mage_armor_active", false)):
+            return "Mage Armor is already active."
+        if caster.get("armor") != null:
+            return "Mage Armor requires an unarmored caster."
+    if not actors.has(target_id):
+        return "Choose a creature on a gold target cell."
     var target: Dictionary = actors[target_id]
     if spell["target"] == "enemy" and (caster["team"] == target["team"] or not is_combat_capable(target_id)):
-        return false
+        return "Choose an active enemy."
     if spell["target"] == "ally" and (caster["team"] != target["team"] or target.get("combat_state", "") == "dead"):
-        return false
+        return "Choose a living ally (downed allies can be healed)."
     if spell["target"] == "self" and target_id != current_id():
-        return false
-    if spell["effect"] == "mage_armor" and (bool(caster.get("mage_armor_active", false)) or caster.get("armor") != null):
-        return false
+        return "This spell targets the caster; use Cast on Self."
     if _distance(caster["position"], target["position"]) * 5 > int(spell["range_feet"]):
-        return false
-    return _line_clear(caster["position"], target["position"])
+        return "Target is out of spell range."
+    if not _line_clear(caster["position"], target["position"]):
+        return "Line of sight is blocked."
+    return ""
 
 
 func cast_spell(spell_id: String, target_id: String) -> bool:

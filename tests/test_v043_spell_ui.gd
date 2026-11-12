@@ -16,7 +16,7 @@ func _run() -> void:
     await process_frame
     lab._start_battle()
     var engine = lab.engine
-    engine.deployment_active = false
+    engine.begin_battle()
     engine.turn_index = engine.turn_order.find("elyra")
     engine._begin_turn()
     engine.actors["elyra"]["position"] = Vector2i(3, 3)

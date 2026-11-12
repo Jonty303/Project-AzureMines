@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test in             test_canonical_party             test_combat_engine             test_combat_playthrough             test_level1_features             test_sprite_assets             test_reactions_and_disengage             test_shield_and_bless             test_wagon_camp             test_action_bar_and_downed             test_audio_and_contextual_ui             test_party_deployment             test_combat_lab_setup             test_combat_lab_ui             test_web_touch_input             test_combat_lab_v03_feedback             test_v04_wide_camera_projectiles             test_v041_downed_auto_turn             test_v041_movement_impact
+          for test in             test_canonical_party             test_combat_engine             test_combat_playthrough             test_level1_features             test_sprite_assets             test_reactions_and_disengage             test_shield_and_bless             test_wagon_camp             test_action_bar_and_downed             test_audio_and_contextual_ui             test_party_deployment             test_combat_lab_setup             test_combat_lab_ui             test_web_touch_input             test_combat_lab_v03_feedback             test_v04_wide_camera_projectiles             test_v041_downed_auto_turn             test_v041_movement_impact             test_v043_tactical_ai             test_v043_spell_ui
           do
             echo "::group::$test"
             ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script "res://tests/$test.gd"
