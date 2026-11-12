@@ -1,0 +1,154 @@
+name: Publish isolated PR15 iPad preview
+
+on:
+  push:
+    branches: [feature/pr15-ipad-preview]
+    paths: ['.github/workflows/pr15-preview.yml', 'scripts/preview_site.py', 'docs/pr15-ipad-preview.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: combat-lab-pages
+  cancel-in-progress: false
+
+env:
+  PREVIEW_SHA: f41eba85eaabf9c81dbf38899c8b41b690b13c07
+  STABLE_SHA: 950b41ee1203f7dcb607c38eb1ae0c70a57a7b9b
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: automation
+          persist-credentials: false
+      - name: Guard the approved source and stable publishing branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/15" --jq .head.sha)" = "$PREVIEW_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/feature/combat-lab-web-touch" --jq .object.sha)" = "$STABLE_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/43255328775" --jq .conclusion)" = success
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PREVIEW_SHA }}
+          path: candidate
+          persist-credentials: false
+      - name: Retrieve original stable build without rebuilding it
+        uses: actions/download-artifact@v4
+        with:
+          name: combat-lab-web-build
+          run-id: 43255328775
+          github-token: ${{ github.token }}
+          path: stable-root
+      - name: Download and verify existing pinned Godot toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 -o godot.zip https://github.com/godotengine/godot/releases/download/4.5.2-stable/Godot_v4.5.2-stable_linux.x86_64.zip
+          echo '87f6e6be292929e363d15ed9052f277b2ba4e95ed994e1e099048097be2dfd03  godot.zip' | sha256sum --check
+          unzip -q godot.zip
+          chmod +x Godot_v4.5.2-stable_linux.x86_64
+          curl --fail --location --retry 3 -o templates.tpz https://github.com/godotengine/godot/releases/download/4.5.2-stable/Godot_v4.5.2-stable_export_templates.tpz
+          echo 'ea50e5183f057d42b22120d0d0340205b98f51f8ff13c33c70fd4ac9077d2019  templates.tpz' | sha256sum --check
+          python3 candidate/scripts/install_web_templates.py templates.tpz
+          rm templates.tpz godot.zip
+      - name: Isolate preview's last-battle report from the existing build
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('candidate/scenes/combat_lab.gd')
+          text = path.read_text()
+          old = 'const LAST_REPORT_PATH := "user://combat_lab_last_battle.json"'
+          new = 'const LAST_REPORT_PATH := "user://combat_lab_pr15_last_battle.json"'
+          if text.count(old) != 1:
+              raise SystemExit('Unexpected report-path declaration; refusing to change gameplay')
+          path.write_text(text.replace(old, new))
+          PY
+          test "$(git -C candidate diff --name-only)" = scenes/combat_lab.gd
+      - name: Import, launch and run all 20 regression scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT="$GITHUB_WORKSPACE/Godot_v4.5.2-stable_linux.x86_64"
+          mkdir -p evidence/logs
+          "$GODOT" --headless --path candidate --editor --quit 2>&1 | tee evidence/logs/import.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Failed to load script|(^| )ERROR:' evidence/logs/import.log; then exit 1; fi
+          "$GODOT" --headless --path candidate --quit-after 30 2>&1 | tee evidence/logs/startup.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Failed to load script|(^| )ERROR:' evidence/logs/startup.log; then exit 1; fi
+          count=0
+          for test in candidate/tests/test_*.gd; do
+            name="$(basename "$test" .gd)"
+            echo "::group::$name"
+            "$GODOT" --headless --path candidate --script "res://tests/$name.gd" 2>&1 | tee "evidence/logs/$name.log"
+            grep -q 'PASS:' "evidence/logs/$name.log"
+            if grep -Eq 'SCRIPT ERROR|Parse Error|Failed to load script|FAIL:' "evidence/logs/$name.log"; then exit 1; fi
+            count=$((count + 1))
+            echo '::endgroup::'
+          done
+          test "$count" -eq 20
+          echo "All $count regression scripts reported PASS. Known cleanup/dialog diagnostics remain review items." >> "$GITHUB_STEP_SUMMARY"
+      - name: Export the preview and preserve the stable root byte for byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p preview-export
+          ./Godot_v4.5.2-stable_linux.x86_64 --headless --path candidate --export-release Web "$GITHUB_WORKSPACE/preview-export/index.html" 2>&1 | tee evidence/logs/export.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Failed to load script|(^| )ERROR:' evidence/logs/export.log; then exit 1; fi
+          python3 automation/scripts/preview_site.py stage stable-root preview-export site | tee evidence/logs/stage.log
+          cp site/previews/pr-15/build.json evidence/build.json
+          echo 'Preview: https://jonty303.github.io/Project-AzureMines/previews/pr-15/' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload test and preservation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr15-preview-evidence
+          path: evidence/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Upload complete site with unchanged stable root and new preview
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://jonty303.github.io/Project-AzureMines/previews/pr-15/
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Recheck stable and preview source before deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/feature/combat-lab-web-touch" --jq .object.sha)" = "$STABLE_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/15" --jq .head.sha)" = "$PREVIEW_SHA"
+      - name: Deploy combined site
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: pr15-preview-evidence
+          path: evidence
+      - name: Verify public preview and unchanged original game files
+        run: python3 scripts/preview_site.py verify evidence/build.json
