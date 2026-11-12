@@ -60,9 +60,10 @@ jobs:
           echo 'ea50e5183f057d42b22120d0d0340205b98f51f8ff13c33c70fd4ac9077d2019  templates.tpz' | sha256sum --check
           python3 candidate/scripts/install_web_templates.py templates.tpz
           rm templates.tpz godot.zip
-      - name: Isolate preview's last-battle report from the existing build
+      - name: Isolate preview's last-battle report and preserve the persistence assertion
         shell: bash
         run: |
+          set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
           path = Path('candidate/scenes/combat_lab.gd')
@@ -72,8 +73,17 @@ jobs:
           if text.count(old) != 1:
               raise SystemExit('Unexpected report-path declaration; refusing to change gameplay')
           path.write_text(text.replace(old, new))
+          # The existing test hard-codes the normal filename. Parameterise only
+          # that expected path; keep file existence and restored-session checks.
+          test = Path('candidate/tests/test_combat_lab_ui.gd')
+          text = test.read_text()
+          old = 'FileAccess.file_exists("user://combat_lab_last_battle.json")'
+          new = 'FileAccess.file_exists("user://combat_lab_pr15_last_battle.json")'
+          if text.count(old) != 1:
+              raise SystemExit('Unexpected persistence assertion; refusing to weaken the test')
+          test.write_text(text.replace(old, new))
           PY
-          test "$(git -C candidate diff --name-only)" = scenes/combat_lab.gd
+          test "$(git -C candidate diff --name-only | sort)" = "$(printf '%s\n' scenes/combat_lab.gd tests/test_combat_lab_ui.gd)"
       - name: Import, launch and run all 20 regression scripts
         shell: bash
         run: |
