@@ -71,6 +71,9 @@ func _run() -> void:
     lab._toggle_spell_menu()
     _check(lab.spell_popup.visible and lab.spell_cards["magic_missile"].disabled,
         "Unavailable prepared spell vanished instead of staying greyed out")
+    _check(lab.spell_notes["magic_missile"].visible and
+        lab.spell_notes["magic_missile"].text.to_lower().contains("slots"),
+        "Unavailable spell needs an explicit iPad-readable explanation")
     lab._select_spell_card("fire_bolt")
     _check(lab._selected_spell() == "fire_bolt", "A legal cantrip could not be selected")
     engine.turn_index = engine.turn_order.find("alden")
