@@ -19,3 +19,7 @@ The combat isolation/polish plan is prepared for the dedicated combat developmen
 ## Newly agreed presentation work
 
 - [FEAT-015 — iPad map camera, touch gestures, projectile VFX and weapon/spell cards](features/FEAT-015-ipad-camera-projectiles-and-card-actions.md) records the owner-approved provisional composition and an implementation/test checklist. Recording this specification is not equivalent to implementing the features.
+
+## Future large-creature support
+
+- [FEAT-017 — Multi-tile creature footprints, collision, reach, AI and rendering](features/FEAT-017-multi-tile-creatures.md) documents the requested Large 2×2 / Huge 3×3 / Gargantuan 4×4+ tactical sizes, separate sprite overhang and staged acceptance. **Proposed design only; no implementation yet.**

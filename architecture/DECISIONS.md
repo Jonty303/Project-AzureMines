@@ -53,3 +53,11 @@ Draft a Proposed ADR before material changes. Never mark an unreviewed change Ac
 **Status:** Owner-agreed, implemented in Combat Lab on 2026-11-12; physical iPad acceptance pending.
 **Decision:** An unconscious hero resolves an automatic death save at initiative but never receives an input turn or End Turn command. Stable, dead and knocked-out creatures are skipped. Natural-20 recovery restores a playable turn. Ordinary AI does not deliberately select downed foes unless an explicit future policy enables it. Smooth per-tile actor motion and delayed fatal projectile collapse are presentation queues sourced from resolved events and snapshots; the combat engine never waits for VFX.
 **Consequences:** Maintain reproducible death-save sequencing, do not duplicate rules state in the board, and keep visual/audio state cancellable on retry. See FEAT-016.
+
+### ADR-AM-010 — Creature footprint independent of graphic bounds
+**Status:** Proposed (owner requested design documentation, 2026-11-12); implementation and exact geometry policies require review.
+**Decision direction:** Give each combatant a definition-driven square-grid footprint, independent of its sprite silhouette. For 5-foot tiles: Small/Medium 1×1, Large 2×2, Huge 3×3, Gargantuan 4×4 or more. Tiny sharing, special silhouettes and oversized footprints require explicit later policy. Maintain a stable top-left instance anchor, with queryable occupied cells and a separate visual ground-contact anchor.
+**Consequences:** Occupancy, multi-tile collision/pathfinding, melee reach, threat/AoO, cover/line of sight, hazards/areas, selection/hit tests, AI and event visual endpoints must use the same footprint-aware geometry. Large sprite wings or tails are art, not blocking space. Current absent footprint remains 1×1 by backward-compatible default after implementation.
+**Deferred:** Flying/altitude, landings, breath cones, mounts, squeezing, non-square/facing silhouettes, downed-body collision decisions and an implemented dragon/giant encounter.
+**Alternatives rejected in principle:** Merely enlarging the sprite over a 1×1 tactical square, or assigning a different collision implementation per monster.
+**Review/validation:** See FEAT-017 for staged implementation and 2×2/3×3 passage, AoO, range, zoom and event tests. Recording this decision does not implement it.
