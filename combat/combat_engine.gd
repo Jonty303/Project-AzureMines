@@ -581,6 +581,9 @@ func resolve_reaction(accept: bool) -> bool:
         if accept and _can_shield(defender_id):
             defender["reaction_used"] = true
             defender["spell_slots_remaining"] = int(defender["spell_slots_remaining"]) - 1
+            var tiered_slots: Dictionary = defender.get("spell_slots_by_level", {}).duplicate()
+            tiered_slots["1"] = int(defender["spell_slots_remaining"])
+            defender["spell_slots_by_level"] = tiered_slots
             defender["shield_bonus"] = 5
             actors[defender_id] = defender
             _emit_sound("magic")
