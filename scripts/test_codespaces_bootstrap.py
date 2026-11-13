@@ -64,6 +64,14 @@ def main() -> int:
             assert boot.main() == 0
         assert (home / ".local/bin/godot").is_file()
         assert (home / ".local/share/godot/export_templates/4.5.2.stable/web_nothreads_release.zip").is_file()
+        # A different executable reporting the same version must not bypass SHA checks.
+        binary = home / ".local/bin/godot"
+        binary.write_bytes(b"#!/bin/sh\\necho 4.5.2.stable.official.impostor\\n".replace(b"\\n", b"\n"))
+        binary.chmod(0o755)
+        with patch.object(boot, "ROOT", root), patch.object(boot, "MANIFEST", manifest), \
+             patch.object(boot.Path, "home", return_value=home), patch.object(boot, "urlopen", urlopen):
+            assert boot.main() == 0
+        assert binary.read_bytes() == executable
         with patch.object(preview, "ROOT", root), patch.object(preview.Path, "home", return_value=Path(dirname) / "missing"), \
              patch.object(sys, "argv", ["preview_godot_web.py", "--build-only"]):
             assert preview.main() == 1
