@@ -91,3 +91,7 @@ python3 scripts/preview_godot_web.py
 Then open **Ports → 8765 → Open in Browser** from the iPad Codespaces editor. The second command builds the **currently checked-out commit**, verifies nonempty HTML/JS/WASM/PCK output and only then serves the site; it cannot silently display an empty directory. Keep the forwarded port private. The server runs until Ctrl+C, and it does not publish Pages or merge any branch.
 
 Check `git branch --show-current` before playtesting. On `feature/combat-lab-v053-web`, Elyra at level 3+ can select Web, tap a top-left floor anchor to preview all 16 cells, then use **Confirm Web** or **Cancel**. Fire Bolt can ignite an intact Web cell. See [Web implementation and validation limits](docs/combat-lab-v053-web-implementation.md); physical iPad acceptance remains pending. If a persisted local VS Code setting still points to `/workspaces/Project-AzureMines/godot`, remove that override in favour of `/home/vscode/.local/bin/godot`.
+
+## Reconnecting to a Codespace
+
+The iPad web preview can run as a detached service, independent of the VS Code terminal. After adopting the updated devcontainer, it starts on every Codespace startup, rebuilds when the checked-out commit changes, and keeps the last valid export available if a later build fails. See [Codespaces persistent preview](docs/codespaces-auto-preview.md). For the initial migration, run `python3 scripts/codespaces_web_preview.py start` once after pulling, then rebuild the devcontainer once to activate automatic future starts.
