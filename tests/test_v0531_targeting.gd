@@ -22,7 +22,11 @@ func _initialize() -> void:
     assert(b.area_spell_reason("web", Vector2i(13, 1)).is_empty())
     b.walls.append(Vector2i(4, 4))
     before = F.state(b)
-    assert(not b.cast_area_spell("web", Vector2i(4, 4)) and F.state(b) == before)
+    assert(not b.cast_area_spell("web", Vector2i(4, 4)))
+    var after := F.state(b)
+    assert(after[1].size() == before[1].size() + 1 and after[1][-1].get("outcome", "") == "REJECTED")
+    after[1] = before[1]
+    assert(after == before)
     b = F.battle()
     # A single viable selected cell is legal even with the rest masked.
     for y in range(3, 7):

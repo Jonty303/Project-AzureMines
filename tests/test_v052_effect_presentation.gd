@@ -41,6 +41,7 @@ func _run() -> void:
     _check(b.active_effects[id]["cells"].size() == 16, "region snapshot aliases authoritative cells")
     b.active_effects[id]["save_dc"] = 1
     lab._escape_effect()
+    lab._confirm_action()
     _check(b.action_used and not b.has_condition("alden", "restrained"), "player escape adapter failed")
     b.action_used = false
     b._apply_condition("alden", "restrained", id)

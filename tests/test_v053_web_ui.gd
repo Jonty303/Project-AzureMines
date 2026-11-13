@@ -36,7 +36,11 @@ func run() -> void:
     lab._on_cell_clicked(Vector2i(28, 18))
     check(lab.confirm_web.disabled and not lab.board.area_preview_valid and lab.action_hint.text.contains("full 4x4"), "invalid preview/reason")
     lab._confirm_web()
-    check(F.state(b) == before, "invalid confirm spent resources")
+    var rejected := F.state(b)
+    check(rejected[1].size() == before[1].size() + 1 and rejected[1][-1].get("outcome", "") == "REJECTED", "invalid confirm missing rejection")
+    rejected[1] = before[1]
+    check(rejected == before, "invalid confirm spent resources")
+    before = F.state(b)
     lab._on_cell_clicked(Vector2i(4, 4))
     lab.board.pan_by(Vector2(-15, -10))
     check(lab.web_anchor.x < 0 and not lab.web_controls.visible, "pan stale anchor")
