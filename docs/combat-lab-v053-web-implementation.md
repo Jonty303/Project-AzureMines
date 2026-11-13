@@ -65,3 +65,17 @@ The existing baseline categories remain: four older audio/presentation suites lo
 Physical **iPad Safari** (portrait/landscape, touch, legibility, actual confirm/burn/escape, accessibility and audio), real desktop gameplay/readability/audio signoff, gamepad and balance acceptance: **NOT RUN**. Browser title/deployment smoke and synthetic touches do not establish these checks. No owner-run v0.5.3 evidence has been supplied. Actual hosted/private Codespaces preview and Codespace inventory: **NOT VERIFIED**; only the same build command ran locally. Nothing was publicly served or deployed; the browser smoke used loopback only.
 
 No Perception subsystem exists to exercise end-to-end; only the API/Details/LOS contract is tested. Other level-two spells, general upcasting, third-level spells, arbitrary 3D anchoring and large creature bases remain outside this slice.
+
+## Independent recovery validation — 13 November 2026
+
+Recovered existing implementation head `22a76d76cda8392a06493a55928a8be37660071f` from the requested remote branch. Issue #22 and the complete handoff were read before edits; #16/#18 and repository instructions were also reviewed. Remote parent remained `9a506a52a663651f5051982b3c3fcef96ee81e13`; existing PR #23 was verified as Draft targeting `feature/combat-lab-ipad-action-ux-fixes`. This follow-up corrects stale README availability/preview instructions; it does not change gameplay.
+
+Fresh execution with checksum-verified `4.5.2.stable.official.6ce3de25a`:
+
+- `python3 scripts/self_test.py`, `python3 scripts/validate_template.py --project`, `python3 scripts/validate_toolchain.py`: PASS.
+- Godot `--headless --path . --editor --quit` and `--headless --path . --quit-after 30`: PASS, exit 0.
+- Every `tests/test_*.gd` (29 suites, the 25 existing suites and four Web suites listed above): PASS, exit 0 and PASS output. Logs retain the same seven suites' diagnostic categories disclosed above; new Web suites, import and startup have no such diagnostics.
+- `python3 scripts/bootstrap_codespaces.py` and `python3 scripts/preview_godot_web.py --build-only`: PASS, verified pinned editor/templates and nonempty export artifacts.
+- `git diff --check`: PASS.
+
+Fresh logs and machine-readable suite results: `/tmp/azure-v053-revalidation/`. These local recovery artifacts are separate from the earlier execution artifacts. Physical iPad Safari, audio/readability/accessibility, gamepad, balance and actual hosted Codespaces checks remain NOT RUN. GitHub CLI GraphQL and REST issue requests returned `Forbidden`; required issue/PR content was read through GitHub web pages instead. CI evidence for this documentation checkpoint must be distinguished from the already recorded gameplay checkpoint.
