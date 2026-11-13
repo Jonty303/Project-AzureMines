@@ -60,6 +60,8 @@ var spell_picker: OptionButton
 var weapon_strip: VBoxContainer
 var spell_scroll: ScrollContainer
 var spell_strip: VBoxContainer
+var spell_scroll_previous: Button
+var spell_scroll_next: Button
 var weapon_chip: Button
 var spell_chip: Button
 var weapon_popup: PanelContainer
@@ -359,14 +361,14 @@ func _build_ui() -> void:
     attack_stack.add_theme_constant_override("separation", 3)
     player_commands.add_child(attack_stack)
     attack_button = _make_button("Attack", attack_stack, _select_mode.bind("attack"), 122)
-    weapon_chip = _make_button("Weapon: —  ▴", attack_stack, _toggle_weapon_menu, 122)
+    weapon_chip = _make_button("Weapon: -  ^", attack_stack, _toggle_weapon_menu, 122)
     weapon_chip.tooltip_text = "Tap to choose a weapon; Attack enters targeting mode."
     weapon_chip.add_theme_font_size_override("font_size", 13)
     var spell_stack := VBoxContainer.new()
     spell_stack.add_theme_constant_override("separation", 3)
     player_commands.add_child(spell_stack)
     spell_button = _make_button("Spell", spell_stack, _select_mode.bind("spell"), 136)
-    spell_chip = _make_button("Spell: —  ▴", spell_stack, _toggle_spell_menu, 136)
+    spell_chip = _make_button("Spell: -  ^", spell_stack, _toggle_spell_menu, 136)
     spell_chip.tooltip_text = "Tap to open the spell list above this selector."
     spell_chip.add_theme_font_size_override("font_size", 13)
     slot_gems = RichTextLabel.new()
@@ -417,13 +419,24 @@ func _build_ui() -> void:
     spell_popup = _make_floating_picker("SELECT A SPELL")
     var spell_content: VBoxContainer = spell_popup.get_child(0)
     spell_scroll = ScrollContainer.new()
-    spell_scroll.custom_minimum_size = Vector2(265, 180)
+    # A larger touch viewport plus explicit paging keeps long spell lists usable
+    # in iPad Safari, where the thin scrollbar is awkward to drag.
+    spell_scroll.custom_minimum_size = Vector2(278, 270)
     spell_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     spell_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
     spell_content.add_child(spell_scroll)
+    spell_scroll.get_v_scroll_bar().custom_minimum_size.x = 22.0
     spell_strip = VBoxContainer.new()
     spell_strip.add_theme_constant_override("separation", 4)
     spell_scroll.add_child(spell_strip)
+    var spell_navigation := HBoxContainer.new()
+    spell_navigation.add_theme_constant_override("separation", 8)
+    spell_content.add_child(spell_navigation)
+    spell_scroll_previous = _make_button("Previous", spell_navigation, _scroll_spell_list.bind(-1), 120)
+    spell_scroll_next = _make_button("More spells", spell_navigation, _scroll_spell_list.bind(1), 140)
+    spell_scroll_previous.custom_minimum_size.y = 54
+    spell_scroll_next.custom_minimum_size.y = 54
+    spell_scroll.get_v_scroll_bar().value_changed.connect(_on_spell_scroll_changed)
 
     var utility_row := HBoxContainer.new()
     actions_panel.add_child(utility_row)
@@ -610,6 +623,18 @@ func _begin_battle() -> void:
 func _select_mode(mode: String) -> void:
     if engine == null or not engine.current_is_party() or not engine.pending_reaction.is_empty():
         return
+    if (mode == "move" and not engine.can_move_current()) or (mode == "attack" and engine.action_used):
+        return
+    if mode == "spell":
+        if not engine.can_cast_any_current_spell():
+            return
+        # After an action spell, a legal bonus-action spell may remain.
+        # Select it rather than leaving a spent spell visibly targeted.
+        if not engine.can_cast_current_spell(_selected_spell()):
+            for index in spell_ids.size():
+                if engine.can_cast_current_spell(spell_ids[index]):
+                    spell_picker.select(index)
+                    break
     action_mode = mode
     _hide_selection_menus()
     _refresh()
@@ -659,20 +684,23 @@ func _on_cell_clicked(cell: Vector2i) -> void:
     if action_mode == "move" and target_id.is_empty():
         engine.move_to(cell)
     elif action_mode == "attack" and not target_id.is_empty():
-        engine.attack(target_id, _selected_weapon())
+        if engine.attack(target_id, _selected_weapon()):
+            action_mode = ""
     elif action_mode == "spell":
         if not engine.can_cast_spell(_selected_spell(), target_id):
             _refresh()
             action_hint.text = engine.spell_unavailable_reason(_selected_spell(), target_id)
             return
-        engine.cast_spell(_selected_spell(), target_id)
+        if engine.cast_spell(_selected_spell(), target_id):
+            action_mode = ""
     _run_ai()
     _refresh()
 
 
 func _cast_self() -> void:
     if engine != null and engine.current_is_party():
-        engine.cast_spell(_selected_spell(), engine.current_id())
+        if engine.cast_spell(_selected_spell(), engine.current_id()):
+            action_mode = ""
         _run_ai()
     _refresh()
 
@@ -810,6 +838,33 @@ func _toggle_weapon_menu() -> void:
 func _toggle_spell_menu() -> void:
     if engine != null and engine.current_is_party():
         _open_selection_menu(spell_popup, spell_chip)
+        if spell_popup.visible:
+            spell_scroll.scroll_vertical = 0
+            call_deferred("_update_spell_scroll_buttons")
+
+
+func _scroll_spell_list(direction: int) -> void:
+    if spell_scroll == null or not spell_popup.visible:
+        return
+    var bar: VScrollBar = spell_scroll.get_v_scroll_bar()
+    var max_scroll: float = maxf(0.0, bar.max_value - bar.page)
+    var page_delta: float = maxf(100.0, spell_scroll.size.y - 54.0)
+    spell_scroll.scroll_vertical = roundi(clampf(
+        float(spell_scroll.scroll_vertical) + page_delta * float(direction), 0.0, max_scroll))
+    _update_spell_scroll_buttons()
+
+
+func _on_spell_scroll_changed(_value: float) -> void:
+    _update_spell_scroll_buttons()
+
+
+func _update_spell_scroll_buttons() -> void:
+    if spell_scroll == null or spell_scroll_previous == null or spell_scroll_next == null:
+        return
+    var bar: VScrollBar = spell_scroll.get_v_scroll_bar()
+    var max_scroll: float = maxf(0.0, bar.max_value - bar.page)
+    spell_scroll_previous.disabled = not spell_popup.visible or spell_scroll.scroll_vertical <= 1
+    spell_scroll_next.disabled = not spell_popup.visible or spell_scroll.scroll_vertical >= max_scroll - 1
 
 
 func _rebuild_pickers() -> void:
@@ -818,6 +873,8 @@ func _rebuild_pickers() -> void:
     var actor_id: String = engine.current_id()
     if actor_id == picker_actor:
         return
+    # Never inherit the previous actor's targeting mode after initiative advances.
+    action_mode = ""
     _hide_selection_menus()
     picker_actor = actor_id
     weapon_ids.clear()
@@ -854,7 +911,7 @@ func _rebuild_pickers() -> void:
                 tier_spells.append(spell_id)
         if tier_spells.is_empty():
             continue
-        var tier_label: String = "CANTRIPS  ·  ∞" if tier == 0 else "LEVEL %d SPELLS" % tier
+        var tier_label: String = "CANTRIPS (AT WILL)" if tier == 0 else "LEVEL %d SPELLS" % tier
         var section: Label = _make_label(tier_label, spell_strip, 13)
         section.add_theme_color_override("font_color",
             Color("#e0e5e8") if tier == 0 else (
@@ -863,7 +920,7 @@ func _rebuild_pickers() -> void:
             spell_ids.append(spell)
             var display_name: String = spell.replace("_", " ").capitalize()
             spell_picker.add_item(display_name)
-            var marker: String = "∞" if tier == 0 else (
+            var marker: String = "C" if tier == 0 else (
                 "I" if tier == 1 else ("II" if tier == 2 else ("III" if tier == 3 else str(tier))))
             var card := _make_button("%s  %s" % [marker, display_name],
                 spell_strip, _select_spell_card.bind(spell), 236)
@@ -982,6 +1039,12 @@ func _refresh() -> void:
     if engine == null:
         return
     _rebuild_pickers()
+    # Clear an obsolete targeting highlight as soon as the underlying action
+    # becomes unavailable, even when a different bonus-action spell remains.
+    if engine.current_is_party() and not engine.deployment_active:
+        if (action_mode == "attack" and engine.action_used) or (
+                action_mode == "spell" and not engine.can_cast_current_spell(_selected_spell())):
+            action_mode = ""
     board.action_mode = action_mode if not engine.deployment_active else ""
     board.selected_deployment_actor = deployment_actor
     board.selected_weapon = _selected_weapon()
@@ -1060,20 +1123,28 @@ func _refresh() -> void:
         else:
             action_hint.text = "Gold cells indicate legal targets for the selected spell. Tap to cast."
     else:
-        action_hint.text = "Choose Move, Attack or Spell to highlight legal destinations and targets."
+        if can_act and engine.action_used and engine.can_cast_any_current_spell():
+            action_hint.text = "Action used. Bonus-action spells are still available; choose one under Spell."
+        elif can_act and engine.action_used:
+            action_hint.text = "Action used. Move if possible, or End Turn."
+        else:
+            action_hint.text = "Choose Move, Attack or Spell to highlight legal destinations and targets."
     move_button.disabled = not can_act or not engine.can_move_current()
     attack_button.disabled = not can_act or engine.action_used
     spell_button.disabled = not can_act or not engine.can_cast_any_current_spell()
+    spell_button.text = "Bonus Spell" if can_act and engine.action_used and not spell_button.disabled else "Spell"
     weapon_chip.disabled = not can_act or weapon_ids.is_empty()
     spell_chip.disabled = not can_act or spell_ids.is_empty()
-    weapon_chip.text = "Weapon: %s  ▴" % (
-        _selected_weapon().replace("_", " ").capitalize() if not weapon_ids.is_empty() else "—")
+    # Selectors can still be inspected, but must not look like usable attacks.
+    weapon_chip.modulate = Color("#9ba4b4") if engine.action_used else Color.WHITE
+    weapon_chip.text = "Weapon: %s  ^" % (
+        _selected_weapon().replace("_", " ").capitalize() if not weapon_ids.is_empty() else "-")
     var active_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
     var spell_rank: int = int(active_spell.get("level", 0))
-    var spell_marker: String = "∞" if spell_rank == 0 else (
+    var spell_marker: String = "C" if spell_rank == 0 else (
         "I" if spell_rank == 1 else ("II" if spell_rank == 2 else ("III" if spell_rank == 3 else str(spell_rank))))
-    spell_chip.text = "%s  %s  ▴" % [spell_marker,
-        _selected_spell().replace("_", " ").capitalize() if not spell_ids.is_empty() else "—"]
+    spell_chip.text = "%s  %s  ^" % [spell_marker,
+        _selected_spell().replace("_", " ").capitalize() if not spell_ids.is_empty() else "-"]
     spell_chip.modulate = Color("#9ba4b4") if not engine.can_cast_current_spell(_selected_spell()) else (
         Color("#f1e7d5") if spell_rank == 0 else (
             Color("#8dcfff") if spell_rank == 1 else Color("#c9a3f1")))
@@ -1087,9 +1158,8 @@ func _refresh() -> void:
             var remaining: int = mini(total, engine.spell_slots_left(current_caster, tier))
             var colour: String = "#8bcff7" if tier == 1 else (
                 "#c7a4ff" if tier == 2 else "#edbd6c")
-            gem_rows.append("[color=%s]%s %s%s %d/%d[/color]" % [
-                colour, str(tier), "◆".repeat(remaining),
-                "◇".repeat(total - remaining), remaining, total])
+            gem_rows.append("[color=%s]L%d: %d/%d[/color]" % [
+                colour, tier, remaining, total])
     slot_gems.text = "  ".join(gem_rows)
     slot_gems.visible = not gem_rows.is_empty()
     escape_button.visible = engine.has_condition(engine.current_id(), "restrained") and engine.current_is_party()
@@ -1125,8 +1195,9 @@ func _refresh() -> void:
     var selected_spell: Dictionary = Level1Spells.get_definition(_selected_spell())
     self_button.disabled = not can_act or selected_spell.get("target", "") != "self" or (
         not engine.can_cast_spell(_selected_spell(), engine.current_id()))
-    for choice in [move_button, attack_button, spell_button]:
-        choice.set_pressed_no_signal(not choice.disabled and action_mode == choice.text.to_lower())
+    move_button.set_pressed_no_signal(not move_button.disabled and action_mode == "move")
+    attack_button.set_pressed_no_signal(not attack_button.disabled and action_mode == "attack")
+    spell_button.set_pressed_no_signal(not spell_button.disabled and action_mode == "spell")
     _play_events()
     if engine.finished and not recorded:
         _record_result()
