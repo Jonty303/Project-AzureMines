@@ -8,7 +8,7 @@ func check(ok: bool, message: String) -> void:
 func _initialize() -> void:
     var b := F.battle()
     b.actors["elyra"]["spellcasting"]["save_dc"] = 100
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     var id: String = b.active_effects.keys()[0]
     var before := F.state(b)
     check(not b.cast_fire_bolt_cell(Vector2i(4, 4)) and F.state(b) == before, "busy fire bolt changed state")
@@ -50,7 +50,7 @@ func _initialize() -> void:
     b._stop_concentration("elyra", "test")
     check(b.active_effects.is_empty() and not b.is_web_burning(Vector2i(5, 4)), "concentration leaves burning cells")
     b = F.battle()
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     b.ignite_web_cell(Vector2i(4, 4), "elyra")
     for status in ["unconscious", "stable"]:
         b.actors["alden"]["position"] = Vector2i(4, 4)
@@ -62,7 +62,7 @@ func _initialize() -> void:
         b._begin_turn()
         check(b.actors["alden"]["death_failures"] >= 1, "downed/stable actor ignored fire")
     b = F.battle()
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     var extra := b.create_area_effect("brunna", {"schema_version": 1, "type": "web",
         "anchor": Vector2i(4, 4), "footprint": Vector2i(4, 4), "duration_rounds": 600,
         "concentration": false, "flammable": true, "lightly_obscured": true,
@@ -82,7 +82,7 @@ func _initialize() -> void:
     check(b.active_effects.is_empty() and b.condition_sources.is_empty(), "last burned cell cleanup")
     b = F.battle()
     b.hazards.append({"position": Vector2i(4, 4), "kind": "campfire", "damage_type": "fire"})
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     check(b.is_web_burning(Vector2i(4, 4)), "authored fire did not ignite")
     check(b.start(53022) and b.active_effects.is_empty(), "restart left burning state")
     if failures == 0: print("PASS: v053 playable Fire Bolt ignition, single-cell 2d4 start damage/burnout, overlap and reset")

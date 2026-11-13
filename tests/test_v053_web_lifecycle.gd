@@ -8,7 +8,7 @@ func check(ok: bool, message: String) -> void:
 func _initialize() -> void:
     var b := F.battle()
     b.actors["elyra"]["spellcasting"]["save_dc"] = 100
-    check(b.cast_area_spell("web", Vector2i(4, 4)), "cast")
+    check(b.cast_area_spell("web", Vector2i(5, 5)), "cast")
     var id: String = b.active_effects.keys()[0]
     check(b.active_effects[id]["save_dc"] == 100 and b.active_effects[id]["duration_rounds"] == 600, "DC/duration")
     check(F.facts(b, "effect_applied").is_empty(), "creation rolled a save")
@@ -44,16 +44,16 @@ func _initialize() -> void:
     check(not b.active_effects.has(id) and b.active_effects.has(other) and b.has_condition("alden", "restrained"), "expiry cleared unrelated condition")
     check(not b.is_lightly_obscured(Vector2i(4, 4)), "expired obscurement")
     b = F.battle()
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     b._deal_damage("elyra", 10000)
     check(b.active_effects.is_empty(), "downing leaves Web")
     b = F.battle()
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     b.actors["elyra"]["ability_scores"]["constitution"] = -100
     b._deal_damage("elyra", 2)
     check(b.active_effects.is_empty(), "failed damage concentration save leaves Web")
     b = F.battle()
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     id = str(b.active_effects.keys()[0])
     b.active_effects[id]["save_dc"] = 100
     b.actors["alden"]["position"] = Vector2i(4, 4)
@@ -72,14 +72,14 @@ func _initialize() -> void:
     check(not F.facts(b, "escape_check").is_empty(), "AI escape action not executed")
     b = F.battle()
     b.actors["elyra"]["spellcasting"]["save_dc"] = 100
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     b.actors["alden"]["position"] = Vector2i(2, 4)
     b.turn_index = b.turn_order.find("alden")
     b._begin_turn()
     check(b.get_reachable("alden")[Vector2i(4, 4)]["cost"] >= 3, "Web reachability costs")
     check(b.move_to(Vector2i(5, 5)) and b.has_area_effect_at(b.actors["alden"]["position"]) and b.has_condition("alden", "restrained") and b.pending_move.is_empty(), "Web did not stop movement path at entry")
     b = F.battle()
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     b.turn_index = b.turn_order.find(enemy)
     b.actors[enemy]["position"] = Vector2i(2, 4)
     b.actors["alden"]["position"] = Vector2i(10, 4)
@@ -98,7 +98,7 @@ func _initialize() -> void:
     quit(0 if failures == 0 else 1)
 func replay() -> Array:
     var b := F.battle()
-    b.cast_area_spell("web", Vector2i(4, 4))
+    b.cast_area_spell("web", Vector2i(5, 5))
     b.actors["alden"]["position"] = Vector2i(4, 4)
     b.effect_hook("alden", "start_turn")
     b.ignite_web_cell(Vector2i(4, 4), "elyra")

@@ -32,8 +32,8 @@ func _initialize() -> void:
             "offboard": anchor = Vector2i(28, 18)
             "negative": anchor = Vector2i(-1, 4)
             "range": anchor = Vector2i(14, 1)
-            "wall": b.walls.append(Vector2i(7, 7))
-            "obstacle": b.blocked_cells.append(Vector2i(7, 7))
+            "wall": b.walls.append(anchor)
+            "obstacle": b.obstacles.append({"position": anchor, "size": Vector2i.ONE, "blocks_area": true})
             "sight": b.sight_blockers.append(Vector2i(3, 3))
             "slot": b.actors["elyra"]["spell_slots_by_level"]["2"] = 0
             "action": b.action_used = true

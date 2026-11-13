@@ -150,13 +150,23 @@ func create_area_effect(source_id: String, definition: Dictionary) -> String:
             or footprint.x < 1 or footprint.y < 1 or footprint.x > grid_size.x or footprint.y > grid_size.y:
         return ""
     var cells: Array[Vector2i] = []
+    var explicit: bool = definition.has("cells")
     for y in range(footprint.y):
         for x in range(footprint.x):
             var cell := anchor + Vector2i(x, y)
-            if cell.x < 0 or cell.y < 0 or cell.x >= grid_size.x or cell.y >= grid_size.y \
-                    or cell in walls or cell in blocked_cells:
+            if cell.x < 0 or cell.y < 0 or cell.x >= grid_size.x or cell.y >= grid_size.y:
+                return ""
+            if explicit and not definition["cells"].has(cell):
+                continue
+            if cell in walls or (not explicit and cell in blocked_cells) or (explicit and _area_barrier(cell)):
                 return ""
             cells.append(cell)
+    if cells.is_empty():
+        return ""
+    if explicit:
+        for cell in definition["cells"]:
+            if not cell is Vector2i or not cells.has(cell):
+                return ""
     if concentrating:
         _stop_concentration(source_id, "replacement")
     effect_sequence += 1
@@ -1937,26 +1947,63 @@ func _read_json(path: String) -> Dictionary:
 
 
 # Area queries never mutate resources, concentration, events or RNG.
-func area_spell_reason(spell_id: String, anchor: Vector2i) -> String:
-    var reason := spell_resource_reason(spell_id)
-    if not reason.is_empty():
-        return reason
+func _area_barrier(cell: Vector2i) -> bool:
+    if cell in walls:
+        return true
+    for prop in obstacles:
+        var origin: Vector2i = prop["position"]
+        var size: Vector2i = prop["size"]
+        if Rect2i(origin, size).has_point(cell) and bool(prop.get("blocks_area", prop.get("blocks_sight", false))):
+            return true
+    return false
+
+
+func preview_area_spell(spell_id: String, selected: Vector2i) -> Dictionary:
+    var anchor := selected - Vector2i.ONE
+    var result := {"target_point": selected, "anchor": anchor, "nominal_cells": [],
+        "affected_cells": [], "blocked_cells": [], "reason": spell_resource_reason(spell_id)}
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
     if spell.get("target", "") != "area":
-        return "This spell targets creatures."
+        result["reason"] = "This spell targets creatures."
+        return result
     var footprint: Vector2i = spell["footprint"]
+    var eligible: Array[Vector2i] = []
+    var offboard := false
     for y in range(footprint.y):
         for x in range(footprint.x):
             var cell := anchor + Vector2i(x, y)
-            if cell.x < 0 or cell.y < 0 or cell.x >= grid_size.x or cell.y >= grid_size.y:
-                return "The full 4x4 footprint must be on the floor."
-            if cell in walls or cell in blocked_cells:
-                return "The full 4x4 footprint must avoid walls and obstacles."
-    if _distance(current_actor()["position"], anchor) * 5 > int(spell["range_feet"]):
-        return "Point is beyond 60 feet."
-    if not _line_clear(current_actor()["position"], anchor):
-        return "Line of sight to the point is blocked."
-    return ""
+            result["nominal_cells"].append(cell)
+            if not Rect2i(Vector2i.ZERO, grid_size).has_point(cell):
+                offboard = true
+            elif not _area_barrier(cell):
+                eligible.append(cell)
+    var reached: Array[Vector2i] = []
+    if eligible.has(selected):
+        reached.append(selected)
+        var cursor := 0
+        while cursor < reached.size():
+            for offset in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+                var next: Vector2i = reached[cursor] + offset
+                if eligible.has(next) and not reached.has(next):
+                    reached.append(next)
+            cursor += 1
+    for cell in result["nominal_cells"]:
+        result["affected_cells" if reached.has(cell) else "blocked_cells"].append(cell)
+    if not str(result["reason"]).is_empty():
+        return result
+    if offboard:
+        result["reason"] = "The full 4x4 footprint must be on the floor."
+    elif not eligible.has(selected):
+        result["reason"] = "Selected point is blocked."
+    elif _distance(current_actor()["position"], selected) * 5 > int(spell["range_feet"]):
+        result["reason"] = "Point is beyond 60 feet."
+    elif not _line_clear(current_actor()["position"], selected):
+        result["reason"] = "Line of sight to the point is blocked."
+    return result
+
+
+func area_spell_reason(spell_id: String, selected: Vector2i) -> String:
+    return str(preview_area_spell(spell_id, selected)["reason"])
 
 
 func cast_area_spell(spell_id: String, anchor: Vector2i) -> bool:
@@ -1965,7 +2012,8 @@ func cast_area_spell(spell_id: String, anchor: Vector2i) -> bool:
     var caster_id := current_id()
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
     var id := create_area_effect(caster_id, {
-        "schema_version": 1, "type": spell_id, "anchor": anchor,
+        "schema_version": 1, "type": spell_id, "anchor": anchor - Vector2i.ONE,
+        "cells": preview_area_spell(spell_id, anchor)["affected_cells"],
         "footprint": spell["footprint"], "duration_rounds": spell["duration_rounds"],
         "concentration": true, "save_dc": int(current_actor()["spellcasting"]["save_dc"]),
         "difficult_terrain": true, "lightly_obscured": true, "flammable": true,
