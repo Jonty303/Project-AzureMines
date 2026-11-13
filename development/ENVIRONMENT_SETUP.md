@@ -35,3 +35,13 @@ Current mouse-based combat UI exists; keyboard, real touchscreen and gamepad sup
 ## Troubleshooting
 Version mismatch -> use the pinned 4.5.2 standard build. Import/script parse errors -> run the existing CI smoke commands and inspect logs. 'No Godot installed' -> NOT RUN; provisioning is a separate task.
 <!-- [EXAMPLE ONLY] A possible Windows laptop and gamepad combination is not evidence of a tested setup. -->
+
+## Azure Mines Codespaces: Godot 4.5.2 and iPad Web preview
+
+The previous `.devcontainer` was a documentation/Python image with **no engine**; Codex's validated `/tmp` binary was not persisted into the running Codespace, and starting `python3 -m http.server` before Web export produced an empty directory listing. The new devcontainer now provisions the editor and single-threaded Web export templates from SHA-256-pinned official 4.5.2 archives. Installation is idempotent, uses `/home/vscode/.local/bin/godot`, and runs a headless import. The Godot Tools extension is configured for that path and headless LSP.
+
+For an existing Codespace, preserve uncommitted changes and either invoke `python3 scripts/bootstrap_codespaces.py` after this branch is available, or explicitly rebuild the container to apply `.devcontainer/devcontainer.json`. A rebuild is not performed just by merging a PR. Rebuilding can reinstall binaries under `~/.local` and should be deliberate.
+
+Run `python3 scripts/preview_godot_web.py` from the repository checkout. It removes stale generated Web files, imports the project, exports the `Web` preset, verifies that `index.html`, `*.js`, `*.wasm` and `*.pck` exist and are nonempty, and only then binds the HTTP preview to 0.0.0.0:8765. Use private Codespaces **Ports → Open in Browser** for Safari/iPad testing. Never share an empty directory listing as a successful preview. This workflow is not a public deployment or physical touch sign-off.
+
+Evidence: offline fixture regression tests for bootstrap and preview guards were run outside Codespaces; actual new devcontainer rebuild, real Web export in Codespaces, Safari acceptance and audio/visual checks remain **NOT RUN** until observed.
