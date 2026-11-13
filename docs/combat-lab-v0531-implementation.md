@@ -1,0 +1,43 @@
+# Combat Lab v0.5.3.1 — implementation candidate
+
+Issue [#24](https://github.com/Jonty303/Project-AzureMines/issues/24), [FEAT-019](../specifications/features/FEAT-019-area-targeting-combustion.md). Prepared branch `feature/combat-lab-v0531-targeting-combustion`; draft PR targets `feature/combat-lab-v053-web`. No merge or deployment. Physical iPad Safari acceptance **PENDING / NOT RUN**.
+
+## Contracts and changed paths
+
+- `combat/combat_engine.gd`: `preview_area_spell()` returns copied target, corner, nominal, affected and excluded cells plus legality reason. Upper-left central square tie-break: corner = selected − (1,1). Range/LOS are to selected square. A deterministic four-neighbour flood within the complete on-board 4×4 masks walls/solid props and isolated pockets. Props use `blocks_area`, defaulting to authored `blocks_sight`; movement blocking alone is not a spell barrier. Actors do not block area coverage. Other spells' LOS is unchanged.
+- `create_area_effect()` accepts validated explicit `cells` inside its nominal rectangle; old rectangle-only fixtures retain their historical obstacle rejection. Preview/rejected cast never spends resources, rolls, emits events or replaces concentration. Successful cast revalidates and spends one Action/L2 slot using existing authority.
+- Expiry snapshots all burning Web cells before mutation, sorts region IDs and row/column cells, collects eligible orthogonal neighbours, ignites one wave, then consumes old cells. Newly lit cells cannot recurse in that boundary. Overlaps share the existing fire clock/source; existing single 2d4 start-turn exposure remains. Duration expiry precedes fire propagation, so an expired region cannot spread. Removed cells immediately lose terrain/obscurement and their owned restraint applications.
+- Typed `burning_snapshots()` / `burning_snapshot()` return deep copies; events `burning_started`, `burning_updated`, `burning_ended` carry target kind/key, source/owner, onset, expiry/fuel policy, intensity and ticks. Web snapshots also remain available through `area_effects_at()`.
+- `ignite_actor()` is explicit: **house rule** 1d4 fire at each start, maximum three ticks, no stacking/reset; independent of position/concentration. `extinguish()` costs one Action and revalidates actor, turn, reaction/move and action availability. `douse_burning()` / `douse_web_cell()` are explicit future-adapter seams. Ordinary Fire Bolt/Web damage never ignites actors. Damage uses existing concentration, downing and death authority; unconscious/stable actors process fire automatically without input. Death, encounter finish and reset clear state.
+- `ignite_prop()` uses stable authored IDs and flammability/fuel metadata. `combat_lab/fixtures/encounters/stone_chamber.json` marks its existing wooden table flammable for three rounds, without changing geometry, cover or movement. Prop fuel expiry changes only Burning state; no destruction, floor flame, automatic prop damage, weather, smoke, wind or global material system.
+- `scenes/combat_lab.gd`, `combat/combat_board.gd`: second distinct same-cell activation confirms; another cell retargets. Explicit Confirm/Cancel and keyboard Enter twice remain. Existing touch/mouse, drag/pinch/pan/zoom and keyboard-repeat arbitration is retained. Preview labels **WEB / BLOCK** plus a centre ring distinguish area cells without colour alone; live fire and actors/props have text labels and Details. Extinguish appears only for a capable burning party actor and is enabled only when affordable. Debug → **Ignite selected (Lab test)** is an explicitly labelled developer ignition adapter, not a new spell.
+- Four new `tests/test_v0531_*.gd` suites are registered in `.github/workflows/godot-smoke.yml`. Historical Web tests migrate centred cast coordinates while preserving their original rectangle fixtures; old all-or-nothing blocked-footprint/second-tap expectations are deliberately migrated. Canonical L1 fixture and template remain unchanged.
+
+Recovery checkpoints: `87617e6` shape/legality, `118f502` controls, `2531633` propagation, `9680468` typed Burning/UI/CI. Final verification/documentation follows these commits.
+
+## Executed validation — 13 November 2026
+
+Official Godot **4.5.2.stable.official.6ce3de25a**, verified Linux editor archive SHA-256 `87f6e6be292929e363d15ed9052f277b2ba4e95ed994e1e099048097be2dfd03`. Repository bootstrap verified the pinned editor and Web templates. Preinstalled 4.6.3 was not used for acceptance.
+
+- `python3 scripts/self_test.py`, `python3 scripts/validate_template.py --project`, `python3 scripts/validate_toolchain.py`: PASS.
+- Godot `--headless --path . --editor --quit` and `--headless --path . --quit-after 30`: PASS outside socket-restricted sandbox. Initial sandbox import's socket diagnostics are not clean import evidence.
+- All **33** `tests/test_*.gd`: PASS, exit 0 and PASS output, with existing diagnostics below. This includes all 29 previous suites, four new suites, deterministic Web wave/event replay, atomic failures, central masking, input parity/gesture guards and explicit actor/prop lifecycle tests.
+- `python3 scripts/bootstrap_codespaces.py`: PASS; `python3 scripts/preview_godot_web.py --build-only`: PASS, actual nonempty HTML/JS/WASM/PCK.
+- Local Chromium/Playwright Web smoke at `http://127.0.0.1:8765/`: title renders, canvas present, no browser JavaScript errors. Browser rendering is not physical touch/visual acceptance.
+- `git diff --check`: PASS.
+
+Logs, suite results and browser screenshots: `/tmp/azure-v0531-validation/` (local execution artifacts, not game assets). Runtime/governance final-SHA CI evidence belongs in the draft PR; local results do not establish remote CI success.
+
+Existing diagnostic categories remain in seven older suites: image-as-resource warnings (`test_action_bar_and_downed`, `test_sprite_assets`), ObjectDB/resource cleanup (`test_audio_and_contextual_ui`, `test_party_deployment`, `test_v041_movement_impact`, `test_v04_wide_camera_projectiles`), exclusive dialog (`test_combat_lab_ui`). Their assertions pass. New v0.5.3.1 suites have no such diagnostics. An initial pre-import regression run could not load the skeleton SVG; full rerun after import passed all 33 suites.
+
+GitHub CLI Codespaces inventory request returned **Forbidden**: hosted/private Codespaces port forwarding **NOT VERIFIED**. Local port 8765 smoke does not establish an actual hosted Codespace. Physical iPad Safari, desktop gameplay/readability/audio approval, gamepad and balance acceptance **NOT RUN**.
+
+## Owner iPad Safari acceptance — pending
+
+1. Pull this branch, check commit SHA; run `python3 scripts/bootstrap_codespaces.py` then `python3 scripts/preview_godot_web.py`. Keep forwarded **8765 private**. Record SHA, displayed v0.5.3.1, iPad model, iPadOS/Safari, orientation and tester/date.
+2. Select party level 3+, set level, start a battle and deploy. On Elyra's turn select Web. Tap a centre square: preview only, no Action/slot spent. Tap another square: retarget only. Tap same square again: exactly one Web, one L2 slot/Action. Repeat with Confirm/Cancel and keyboard Enter twice where available.
+3. Try board edges, out-of-range/hidden points, a wall splitting the footprint and low scenery/table. Verify nominal WEB/BLOCK labels, selected centre and unreachable pockets. Check rejected casts retain resources/concentration.
+4. On a later turn use Fire Bolt on Web. Advance turns: old cell burns away after one round and only the next orthogonal wave lights; no diagonal jump or wall crossing. Verify start-only 2d4, source-owned restraint cleanup, terrain/path changes and concentration cancellation.
+5. Select a creature, open Debug, **Ignite selected (Lab test)**. Verify Burning text/Details, independent persistence after moving or ending Web, 1d4 at starts, no stacking from repeated ignition, maximum three ticks. On that capable party actor's turn use **Extinguish (Action)**; confirm Action spent, Bonus unaffected, status removed. Downed/stable creatures must never receive prompts. Ordinary Fire Bolt/Web damage alone must not add actor Burning.
+6. In Stone Chamber select wooden table and explicitly ignite with Debug. Check Burning prop label/Details and eventual fuel expiry; movement/cover unchanged. Non-flammable props must not ignite.
+7. Test portrait/landscape, upward picker/paging, finger hit targets, pan, drag, pinch/zoom, synthesized mouse, Retry/title, reactions, bonus spells, AI paths and automatic downed turns. Gestures/retry must not accidentally cast or preserve stale previews. Save screenshots/issues; owner supplies PASS/FAIL before acceptance.

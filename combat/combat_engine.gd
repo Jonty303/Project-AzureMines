@@ -152,6 +152,8 @@ func create_area_effect(source_id: String, definition: Dictionary) -> String:
         return ""
     var cells: Array[Vector2i] = []
     var explicit: bool = definition.has("cells")
+    if explicit and not definition["cells"] is Array:
+        return ""
     for y in range(footprint.y):
         for x in range(footprint.x):
             var cell := anchor + Vector2i(x, y)
@@ -2097,12 +2099,12 @@ func ignite_web_cell(cell: Vector2i, fire_source: String) -> bool:
         for other in active_effects.values():
             if other["burning_cells"].has(cell):
                 var existing: Dictionary = other["burning_cells"][cell]
-                for field in ["source", "start_round", "start_turn", "expiry_round", "expiry_turn"]:
+                for field in ["source", "owner", "start_round", "start_turn", "expiry_round", "expiry_turn"]:
                     burn[field] = existing[field]
                 break
         effect["burning_cells"][cell] = burn
         _event("burning_started", str(burn["source"]), "", burn.duplicate(true))
-        _event("web_ignited", fire_source, "", {"effect_id": id, "cell": [cell.x, cell.y]})
+        _event("web_ignited", str(burn["source"]), "", {"effect_id": id, "cell": [cell.x, cell.y]})
         _event("area_updated", str(effect["source"]), "", _effect_payload(str(id)))
         changed = true
     return changed

@@ -183,7 +183,7 @@ func _build_ui() -> void:
     title_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     title_panel.add_theme_constant_override("separation", 14)
     title_scroll.add_child(title_panel)
-    _make_label("AZURE MINES  /  COMBAT LAB", title_panel, 32)
+    _make_label("AZURE MINES  /  COMBAT LAB v0.5.3.1", title_panel, 32)
     _make_label("Standalone tactical encounters · No narrative engine · No campaign rewards", title_panel, 16)
     var level_row := HFlowContainer.new()
     level_row.add_theme_constant_override("separation", 10)

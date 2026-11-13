@@ -23,5 +23,13 @@ func _initialize() -> void:
     b.walls.append(Vector2i(4, 4))
     before = F.state(b)
     assert(not b.cast_area_spell("web", Vector2i(4, 4)) and F.state(b) == before)
+    b = F.battle()
+    # A single viable selected cell is legal even with the rest masked.
+    for y in range(3, 7):
+        for x in range(3, 7):
+            if Vector2i(x, y) != Vector2i(4, 4): b.walls.append(Vector2i(x, y))
+    b.actors.elyra.position = Vector2i(4, 4)
+    assert(b.preview_area_spell("web", Vector2i(4, 4)).affected_cells == [Vector2i(4, 4)])
+    assert(b.cast_area_spell("web", Vector2i(4, 4)))
     print("PASS: v0531 central mapping, pure snapshots, masking/pockets, low cover and atomic failure")
     quit()

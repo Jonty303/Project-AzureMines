@@ -33,3 +33,7 @@ The spell's established SRD mechanics remain: L2 slot, Action, 60-foot point, 4Ã
 **Exclusions:** New spells, general weather and smoke, global destructible objects, campaign/narrative, engine upgrades, Pages deployment, merges and template changes.
 
 Read [the full Codex issue](https://github.com/Jonty303/Project-AzureMines/issues/24) for exact event, overlap, expiry and regression acceptance conditions.
+
+## Implementation candidate
+
+The prepared task is implemented on the working branch; owner acceptance remains pending. See [v0.5.3.1 contracts, executed validation and iPad checklist](../../docs/combat-lab-v0531-implementation.md). All 33 Godot 4.5.2 suites pass locally; physical iPad Safari is NOT RUN. Draft delivery only; no merge or deployment.
