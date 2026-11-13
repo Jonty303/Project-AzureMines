@@ -22,7 +22,11 @@ static func prop_kind(prop: Dictionary) -> String:
 static func prop_rect(prop: Dictionary, pitch: float) -> Rect2:
     var size: Vector2 = Vector2(prop["size"]) * pitch
     var height: float = pitch * (0.25 if prop_kind(prop) in ["table", "chest", "crate", "barrel"] else 0.5)
-    return Rect2(Vector2(prop["position"]) * pitch - Vector2(0, height), size + Vector2(0, height))
+    var box_size := size + Vector2(0, height)
+    # The source pivot is four pixels above the bottom transparent margin.
+    var source_height := 80.0 if prop_kind(prop) in ["wagon", "boulder"] else (72.0 if prop_kind(prop) == "table" else 40.0)
+    var pivot_fraction := Vector2(0.5, (source_height - 4.0) / source_height)
+    return Rect2(prop_anchor(prop) * pitch - box_size * pivot_fraction, box_size)
 
 static func prop_anchor(prop: Dictionary) -> Vector2:
     return Vector2(prop["position"]) + Vector2(float(prop["size"].x) * 0.5, float(prop["size"].y) - 0.10)

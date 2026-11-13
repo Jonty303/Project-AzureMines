@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate shipped pixels/metadata without modifying or sampling references."""
 import json
+import hashlib
 from pathlib import Path
 from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,6 +11,7 @@ def main():
     manifest=json.loads((ART/'manifest.json').read_text())
     frame_count=0
     for name,meta in manifest['assets'].items():
+        assert hashlib.sha256((ART/meta['file']).read_bytes()).hexdigest()==meta['sha256'],name+' checksum'
         image=Image.open(ART/meta['file'])
         assert image.mode=='RGBA' and list(image.size)==meta['size'],name
         fw,fh=meta.get('frame_size',image.size)

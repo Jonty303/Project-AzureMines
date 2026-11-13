@@ -49,6 +49,7 @@ func _run() -> void:
     lab.call("_start_battle")
     var board = lab.get("board")
     var engine = lab.get("engine")
+    check(engine.begin_battle(), "Begin test fixture combat")
     check(Art.PASSES.find("ground") < Art.PASSES.find("ground_y"), "Web must remain under feet")
     check(Art.PASSES.find("environment") < Art.PASSES.find("projectiles"), "Projectiles above smoke/props")
     check(Art.PASSES.find("projectiles") < Art.PASSES.find("impacts"), "Impact compositing")
@@ -59,6 +60,8 @@ func _run() -> void:
     var chest := {"id": "chest", "kind": "chest", "position": Vector2i(4, 5), "size": Vector2i(1, 1)}
     check(Art.prop_anchor(wagon).is_equal_approx(Vector2(6.5, 4.9)), "Wagon ground contact uses full footprint")
     check(Art.prop_anchor(stone).is_equal_approx(Vector2(13.5, 5.9)), "1x2 stone uses lower contact")
+    var wagon_box: Rect2 = Art.prop_rect(wagon, 68)
+    check((wagon_box.position + wagon_box.size * Vector2(0.5, 76.0 / 80.0)).is_equal_approx(Art.prop_anchor(wagon) * 68), "Source pivot lands exactly on ground anchor")
     check(Art.prop_rect(chest, 68).size.y < 100, "Chest remains low half cover")
     var prop_entry := {"kind": "prop", "id": "wagon", "anchor": Art.prop_anchor(wagon)}
     check(Art.depth_before({"kind": "actor", "id": "behind", "anchor": Vector2(6.5, 3.9)}, prop_entry), "Actor behind wagon")
@@ -100,6 +103,20 @@ func _run() -> void:
     check(Art.monster_region("melee", 200, 1, false).position.x == 288, "Second melee frame")
     check(Art.wall_mask(Vector2i(1, 1), [Vector2i(1, 0), Vector2i(2, 1)]) == 3, "Wall corner mask")
     check(Art.wall_mask(Vector2i(1, 1), []) == 0, "Isolated wall end mask")
+    var web_id: String = engine.create_area_effect("elyra", {
+        "schema_version": 1, "type": "web", "anchor": Vector2i(10, 6),
+        "footprint": Vector2i(4, 4), "duration_rounds": 20, "concentration": true,
+        "save_dc": 10, "difficult_terrain": true, "condition": "restrained",
+        "triggers": ["enter", "start_turn"], "flammable": true
+    })
+    check(not web_id.is_empty() and engine.ignite_web_cell(Vector2i(10, 6), "test_visual"), "Real Web and burning Web rendering fixture")
+    check(board._effect_art({"kind": "heal"}) == "healing", "Healing effect family")
+    check(board._effect_art({"action_id": "bless"}) == "bless", "Bless effect family")
+    check(board._effect_art({"damage_type": "cold"}) == "frost", "Cold effect family")
+    var rules_before: Array = [engine.actors.duplicate(true), engine.rng.state, engine.events.duplicate(true)]
+    board.queue_redraw()
+    await process_frame
+    check(rules_before == [engine.actors, engine.rng.state, engine.events], "Animation/draw cannot mutate combat or RNG")
     # Audio lifetime is covered by the existing impact test; avoid starting audio during this visual contract.
     board.projectile_impact.disconnect(lab._on_projectile_impact)
     var victim := "lab_skeleton_01"

@@ -640,6 +640,8 @@ func _draw_monster(actor: Dictionary, dest: Rect2, active: bool) -> bool:
                 state = "walk"
                 elapsed = Time.get_ticks_msec()
                 break
+    if state == "melee":
+        ranged = false
     var source: Rect2 = Art.monster_region(state, elapsed, int(_actor_facing.get(actor_id, -1)), ranged)
     var art_scale := 1.75
     var ground_contact := dest.position - Vector2(2, 2) + Vector2(34, CELL_SIZE * 0.90)

@@ -4,6 +4,7 @@ No reference image is read. All coordinates are source pixels; runtime uses PNGs
 """
 from pathlib import Path
 import json
+import hashlib
 import math
 import random
 from PIL import Image, ImageDraw
@@ -26,7 +27,7 @@ def canvas(w=32, h=32):
 
 def save(name, im, **meta):
     im.save(OUT / (name + '.png'))
-    manifest['assets'][name] = dict(file=name+'.png', size=list(im.size), **meta)
+    manifest['assets'][name] = dict(file=name+'.png', size=list(im.size), sha256=hashlib.sha256((OUT/(name+'.png')).read_bytes()).hexdigest(), **meta)
 
 def poly(d, pts, fill, outline=INK):
     d.polygon(pts, fill=fill)

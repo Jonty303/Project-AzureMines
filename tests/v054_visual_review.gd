@@ -9,6 +9,7 @@ func _ready() -> void:
     lab._start_battle()
     var engine = lab.engine
     var board = lab.board
+    assert(engine.begin_battle())
     engine.walls.clear()
     for x in range(17):
         engine.walls.append(Vector2i(x, 0))
@@ -20,10 +21,23 @@ func _ready() -> void:
     engine.actors["pip"]["position"] = Vector2i(13, 3)
     engine.actors["brunna"]["blessed_by"] = "brunna"
     engine.actors["brunna"]["concentration"] = {"spell": "bless"}
-    engine.create_test_web_area("elyra", Vector2i(11, 2), 20, true, 10)
-    engine.ignite_web_cell(Vector2i(12, 2), "test_visual")
+    var cells: Array[Vector2i] = []
+    for y in range(2, 6):
+        for x in range(11, 15):
+            var cell := Vector2i(x, y)
+            if not engine._area_barrier(cell):
+                cells.append(cell)
+    var effect_id: String = engine.create_area_effect("elyra", {
+        "schema_version": 1, "type": "web", "anchor": Vector2i(11, 2),
+        "footprint": Vector2i(4, 4), "cells": cells, "duration_rounds": 20,
+        "concentration": true, "save_dc": 10, "difficult_terrain": true,
+        "condition": "restrained", "triggers": ["enter", "start_turn"], "flammable": true
+    })
+    assert(not effect_id.is_empty())
+    assert(engine.ignite_web_cell(Vector2i(12, 2), "test_visual"))
     engine.ignite_actor("pip", "test_visual")
+    lab._refresh()
     board.inspected_cell = Vector2i(6, 3)
     board.camera_zoom = 0.80
     board.queue_redraw()
-    lab.turn_label.text = "v0.5.4 VISUAL QA — test fixture / wagon occlusion / Web / Burning / Bless"
+    lab.battle_status.text = "VISUAL QA FIXTURE — occlusion / Web / Burning / Bless"
