@@ -1656,7 +1656,7 @@ func _action_input_buttons() -> Array:
 func _input(event: InputEvent) -> void:
     if not is_instance_valid(bottom_action_panel) or not bottom_action_panel.visible:
         return
-    if event is InputEventKey and not pending_action.is_empty() and not escape_sources.has_focus():
+    if event is InputEventKey and not pending_action.is_empty() and (event.keycode == KEY_ESCAPE or not escape_sources.has_focus()):
         _unhandled_key_input(event)
         if event.pressed and event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]:
             get_viewport().set_input_as_handled()
@@ -1699,5 +1699,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
         _cancel_action()
         get_viewport().set_input_as_handled()
     elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
-        _confirm_action()
+        var focused := get_viewport().gui_get_focus_owner()
+        if focused is Button and (_action_input_buttons().has(focused) or focused == explanation_details):
+            if not focused.disabled:
+                focused.pressed.emit()
+        else:
+            _confirm_action()
         get_viewport().set_input_as_handled()

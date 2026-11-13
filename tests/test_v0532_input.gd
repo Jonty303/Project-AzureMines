@@ -80,6 +80,24 @@ func run() -> void:
     key.echo = false
     lab._unhandled_key_input(key)
     check(b.action_used and lab.pending_action.is_empty(), "keyboard confirm")
+    # Enter on a focused Cancel must cancel, never hit the global confirm path.
+    b.action_used = false
+    b.dash_extra_squares = 0
+    lab._refresh()
+    lab._select_action("dash")
+    await process_frame
+    await process_frame
+    lab.intent_controls.get_child(1).grab_focus()
+    var cancel_key := InputEventKey.new()
+    cancel_key.keycode = KEY_ENTER
+    cancel_key.pressed = true
+    Input.parse_input_event(cancel_key)
+    await process_frame
+    var released: InputEventKey = cancel_key.duplicate()
+    released.pressed = false
+    Input.parse_input_event(released)
+    await process_frame
+    check(lab.pending_action.is_empty() and not b.action_used, "focused Cancel Enter committed instead")
     lab.queue_free()
     await process_frame
     if failures == 0: print("PASS: v0532 touch-release intent, compatibility mouse suppression, drag/pinch cancellation and keyboard parity (physical iPad NOT RUN)")
