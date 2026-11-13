@@ -54,7 +54,7 @@ func _run() -> void:
     var before: Array = engine.events.duplicate(true)
     lab._on_cell_clicked(Vector2i(7, 3))
     _check(lab.action_hint.text.to_lower().contains("sight"), "Blocked target needs line-of-sight reason")
-    _check(engine.events == before and not engine.action_used, "Illegal click consumed resources or events")
+    _check(engine.events.size() == before.size() + 1 and engine.events[-1].get("outcome", "") == "REJECTED" and not engine.action_used, "Illegal click must log rejection without spending resources")
     _agreement(lab)
     # Change actor: bonus-action healing must stay available after an action,
     # then disappear when the bonus budget is spent.

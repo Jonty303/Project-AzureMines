@@ -55,6 +55,7 @@ var effect_sequence := 0
 var turn_serial := 0
 var burning_targets: Dictionary = {}
 var last_d20: Dictionary = {}
+var committed_actions: Array[String] = []
 
 
 func area_effects_at(cell: Vector2i) -> Array[Dictionary]:
@@ -371,6 +372,7 @@ func escape_effect(effect_id: String) -> bool:
         "text": "%s attempts escape: %d vs DC %d — %s." % [actor["name"], total, dc, "success" if total >= dc else "failure"]})
     if total >= dc:
         _remove_condition(current_id(), "restrained", effect_id)
+    committed_actions.append("escape")
     return true
 
 
@@ -408,6 +410,7 @@ func _start_from_data(party: Dictionary, encounter: Dictionary, seed: int, with_
     active_effects.clear()
     burning_targets.clear()
     last_d20.clear()
+    committed_actions.clear()
     condition_sources.clear()
     effect_sequence = 0
     turn_serial = 0
@@ -1014,6 +1017,7 @@ func use_disengage() -> bool:
     actors[current_id()] = actor
     _record("%s Disengages, preventing Opportunity Attacks from their movement this turn." % actor["name"])
     _event("action_committed", current_id(), "", {"action_id": "disengage", "cost": "Action", "action_used": action_used, "movement_remaining": movement_remaining()})
+    committed_actions.append("disengage")
     return true
 
 
@@ -1131,15 +1135,20 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
     var disadvantage_label := " (Disadvantage)" if disadvantage else ""
     var damage: int = _roll_formula(str(weapon.get("damage", "1d4")), bool(roll["critical"]), source_id, target_id, str(weapon.get("id", "")), "hit")
     _emit_sound("ranged" if weapon.get("kind", "") == "ranged_weapon" else "melee_hit")
-    if _sneak_attack_eligible(source_id, target_id, weapon, disadvantage):
+    var sneak_eligible := _sneak_attack_eligible(source_id, target_id, weapon, disadvantage)
+    if source.get("class_id", "") == "thief":
+        _audit("Sneak Attack eligibility", source_id, target_id, {"source": weapon.get("id", ""), "outcome": "SUCCESS" if sneak_eligible else "SKIPPED", "reason": "weapon, ally adjacency, disadvantage and once-per-turn evaluated", "consequence": "extra 1d6" if sneak_eligible else "no extra damage"})
+    if sneak_eligible:
         var sneak_damage: int = _roll_formula("1d6", bool(roll["critical"]), source_id, target_id, "Sneak Attack", "eligible hit")
         damage += sneak_damage
         sneak_attack_used = true
         _record("%s uses Sneak Attack for %d extra damage." % [source["name"], sneak_damage])
     if weapon.get("mastery", "") == "sap":
         target["sap_pending"] = true
+        _event("mastery_applied", source_id, target_id, {"mastery": "Sap", "consequence": "next attack has disadvantage"})
     if weapon.get("mastery", "") == "vex":
         source["vex_target"] = target_id
+        _event("mastery_applied", source_id, target_id, {"mastery": "Vex", "consequence": "next attack against this target has advantage"})
         actors[source_id] = source
     var old_hp := int(target["hp"])
     var knocked_out: bool = nonlethal and damage >= old_hp
@@ -1428,6 +1437,7 @@ func use_dash() -> bool:
         current_actor()["name"], dash_extra_squares
     ])
     _event("action_committed", current_id(), "", {"action_id": "dash", "cost": "Action", "action_used": action_used, "movement_remaining": movement_remaining()})
+    committed_actions.append("dash")
     return true
 
 
@@ -1444,6 +1454,7 @@ func use_dodge() -> bool:
     actors[current_id()] = actor
     _record("%s Dodges until their next turn." % actor["name"])
     _event("action_committed", current_id(), "", {"action_id": "dodge", "cost": "Action", "action_used": action_used, "movement_remaining": movement_remaining()})
+    committed_actions.append("dodge")
     return true
 
 
@@ -1465,6 +1476,7 @@ func _nearest_opponent(source_id: String) -> String:
 
 func _begin_turn() -> void:
     turn_serial += 1
+    committed_actions.clear()
     _expire_effects()
     for effect in active_effects.values():
         effect["occasions"].clear()
@@ -1645,6 +1657,7 @@ func use_second_wind() -> bool:
         actor["name"], restored, actor["hp"], actor["max_hp"], actor["second_wind_remaining"]
     ])
     _event("heal", actor_id, actor_id, {"amount": restored, "action_id": "second_wind"})
+    committed_actions.append("second_wind")
     return true
 
 
@@ -2372,6 +2385,7 @@ func extinguish() -> bool:
     action_used = true
     _end_burning("actor:" + current_id(), "extinguish_action")
     _event("action_committed", current_id(), "", {"action_id": "extinguish", "cost": "Action"})
+    committed_actions.append("extinguish")
     return true
 
 
@@ -2472,7 +2486,7 @@ func action_info(action_id: String, source_id: String = "", target_id: String = 
             var level := int(spell.get("level", 0))
             if level > 0:
                 info["cost"] += " + L%d slot (%d left)" % [level, spell_slots_left(current_id(), level)]
-            info["effect"] = str(spell.get("effect", "unimplemented")).replace("_", " ")
+            info["effect"] = {"attack_damage": "roll a spell attack; on hit deal", "dex_save_damage": "target makes a Dexterity save; on failure deal", "automatic_damage": "automatically deal", "heal": "restore HP:", "mage_armor": "set AC to 13 + Dexterity", "bless": "up to three allies add 1d4 to attacks and saves", "web": "create Web"}.get(str(spell.get("effect", "")), "unimplemented")
             if spell.has("damage"):
                 info["effect"] += " " + str(spell["damage"]) + " " + str(spell.get("damage_type", ""))
             if spell.has("healing"):

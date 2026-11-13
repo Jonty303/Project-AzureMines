@@ -93,6 +93,22 @@ var enemy_kind := "mixed"
 var enemy_count := 4
 var arena_id := "wide"
 var encounter_seed := 42024
+const Explanation = preload("res://combat/action_explanation.gd")
+var pending_action := ""
+var pending_actor := ""
+var pending_turn := -1
+var pending_source := ""
+var intent_panel: VBoxContainer
+var intent_controls: HBoxContainer
+var intent_text: Label
+var confirm_action: Button
+var escape_sources: OptionButton
+var explanation_details: Button
+var show_explanation_details := false
+var action_touch: Dictionary = {}
+var action_touch_until := 0
+var action_touch_count := 0
+var utility_buttons: Dictionary = {}
 var action_mode := ""
 var deployment_actor := ""
 var picker_actor := ""
@@ -183,7 +199,7 @@ func _build_ui() -> void:
     title_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     title_panel.add_theme_constant_override("separation", 14)
     title_scroll.add_child(title_panel)
-    _make_label("AZURE MINES  /  COMBAT LAB v0.5.3.1", title_panel, 32)
+    _make_label("AZURE MINES  /  COMBAT LAB v0.5.3.2", title_panel, 32)
     _make_label("Standalone tactical encounters · No narrative engine · No campaign rewards", title_panel, 16)
     var level_row := HFlowContainer.new()
     level_row.add_theme_constant_override("separation", 10)
@@ -456,6 +472,31 @@ func _build_ui() -> void:
     reaction_text = _make_label("", reaction_panel, 16)
     reaction_accept = _make_button("React", reaction_panel, _resolve_reaction.bind(true), 100)
     reaction_decline = _make_button("Decline", reaction_panel, _resolve_reaction.bind(false), 100)
+    intent_panel = VBoxContainer.new()
+    bottom_action_layout.add_child(intent_panel)
+    var explanation_row := HBoxContainer.new()
+    intent_panel.add_child(explanation_row)
+    intent_text = _make_label("", explanation_row, 14)
+    intent_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    intent_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    escape_sources = OptionButton.new()
+    escape_sources.custom_minimum_size.y = 48
+    intent_panel.add_child(escape_sources)
+    escape_sources.item_selected.connect(_choose_escape_source)
+    intent_controls = HBoxContainer.new()
+    intent_panel.add_child(intent_controls)
+    confirm_action = _make_button("Confirm", intent_controls, _confirm_action, 170)
+    _make_button("Cancel", intent_controls, _cancel_action, 120)
+    explanation_details = _make_button("Details", explanation_row, _toggle_explanation_details, 100)
+    utility_buttons = {"dash": dash_button, "disengage": disengage_button, "dodge": dodge_button,
+        "second_wind": wind_button, "escape": escape_button, "extinguish": extinguish_button}
+    for action_id in utility_buttons:
+        var button: Button = utility_buttons[action_id]
+        button.toggle_mode = true
+    # Godot emulates mouse from touch. Drop only compatibility mouse events and
+    # key-repeat; genuine release-to-release presses retain normal Button focus.
+    for button in [dash_button, disengage_button, dodge_button, wind_button, escape_button, extinguish_button, confirm_action]:
+        button.gui_input.connect(_guard_action_input.bind(button))
     web_controls = HBoxContainer.new()
     bottom_action_layout.add_child(web_controls)
     confirm_web = _make_button("Confirm Web", web_controls, _confirm_web, 170)
@@ -578,6 +619,7 @@ func _update_title() -> void:
 
 
 func _show_title() -> void:
+    _discard_action()
     _clear_web_preview()
     if title_panel == null:
         return
@@ -590,6 +632,7 @@ func _show_title() -> void:
 
 
 func _start_battle() -> void:
+    _discard_action()
     _clear_web_preview()
     var setup: Dictionary = _current_setup()
     if setup.is_empty():
@@ -639,6 +682,7 @@ func _begin_battle() -> void:
 
 
 func _select_mode(mode: String) -> void:
+    _discard_action()
     if engine == null or not engine.current_is_party() or not engine.pending_reaction.is_empty():
         return
     if (mode == "move" and not engine.can_move_current()) or (mode == "attack" and engine.action_used):
@@ -660,11 +704,13 @@ func _select_mode(mode: String) -> void:
 
 
 func _on_weapon_change(_index: int) -> void:
+    _discard_action()
     action_mode = "attack"
     _refresh()
 
 
 func _on_spell_change(_index: int) -> void:
+    _discard_action()
     _clear_web_preview()
     action_mode = "spell"
     _refresh()
@@ -720,6 +766,7 @@ func _on_cell_clicked(cell: Vector2i) -> void:
             _refresh()
             return
         if not engine.can_cast_spell(_selected_spell(), target_id):
+            engine.cast_spell(_selected_spell(), target_id)
             _refresh()
             action_hint.text = engine.spell_unavailable_reason(_selected_spell(), target_id)
             return
@@ -738,38 +785,27 @@ func _cast_self() -> void:
 
 
 func _use_second_wind() -> void:
-    if engine != null:
-        engine.use_second_wind()
-    _refresh()
+    _select_action("second_wind")
 
 
 func _use_dash() -> void:
-    if engine != null and engine.use_dash():
-        action_mode = "move"
-    _refresh()
+    _select_action("dash")
 
 
 func _use_dodge() -> void:
-    if engine != null:
-        engine.use_dodge()
-    _refresh()
+    _select_action("dodge")
 
 
 func _escape_effect() -> void:
-    if engine != null and engine.current_is_party():
-        var effects: Array[String] = engine.escapable_effects()
-        if not effects.is_empty():
-            engine.escape_effect(effects[0])
-    _refresh()
+    _select_action("escape")
 
 
 func _use_disengage() -> void:
-    if engine != null and engine.use_disengage():
-        action_mode = "move"
-    _refresh()
+    _select_action("disengage")
 
 
 func _end_turn() -> void:
+    _discard_action()
     if engine != null and engine.current_is_party():
         engine.end_turn()
         _run_ai()
@@ -974,6 +1010,7 @@ func _rebuild_pickers() -> void:
 
 
 func _select_weapon_card(weapon_id: String) -> void:
+    _discard_action()
     var index: int = weapon_ids.find(weapon_id)
     if index < 0:
         return
@@ -984,6 +1021,7 @@ func _select_weapon_card(weapon_id: String) -> void:
 
 
 func _select_spell_card(spell_id: String) -> void:
+    _discard_action()
     var index: int = spell_ids.find(spell_id)
     if index < 0 or not engine.current_is_party() or not engine.can_cast_current_spell(spell_id):
         return
@@ -1075,6 +1113,8 @@ func _refresh() -> void:
     if engine == null:
         return
     _rebuild_pickers()
+    if not pending_action.is_empty() and (pending_actor != engine.current_id() or pending_turn != engine.turn_serial or engine.finished or engine.deployment_active):
+        _discard_action()
     # Clear an obsolete targeting highlight as soon as the underlying action
     # becomes unavailable, even when a different bonus-action spell remains.
     if engine.current_is_party() and not engine.deployment_active:
@@ -1253,6 +1293,7 @@ func _refresh() -> void:
     move_button.set_pressed_no_signal(not move_button.disabled and action_mode == "move")
     attack_button.set_pressed_no_signal(not attack_button.disabled and action_mode == "attack")
     spell_button.set_pressed_no_signal(not spell_button.disabled and action_mode == "spell")
+    _refresh_action_explanation()
     _play_events()
     if engine.finished and not recorded:
         _record_result()
@@ -1417,7 +1458,12 @@ func _dialog_size(preferred: Vector2i) -> Vector2i:
 
 
 func _show_live_log() -> void:
-    log_view.text = event_log.text
+    _play_events()
+    var all_lines: PackedStringArray = []
+    for event in engine.events:
+        if not str(event.get("text", "")).is_empty():
+            all_lines.append(str(event["text"]))
+    log_view.text = "\n".join(all_lines)
     log_dialog.popup_centered(_dialog_size(Vector2i(840, 520)))
 
 
@@ -1433,6 +1479,7 @@ func _clear_web_preview() -> void:
 
 
 func _cancel_web() -> void:
+    _discard_action()
     _clear_web_preview()
     action_mode = ""
     _refresh()
@@ -1449,10 +1496,7 @@ func _confirm_web() -> void:
 
 
 func _extinguish() -> void:
-    if engine != null and engine.extinguish():
-        action_mode = ""
-        _clear_web_preview()
-    _refresh()
+    _select_action("extinguish")
 
 
 func _test_ignite_selected() -> void:
@@ -1466,3 +1510,187 @@ func _test_ignite_selected() -> void:
             if Rect2i(prop["position"], prop["size"]).has_point(selected_cell):
                 engine.ignite_prop(str(prop.get("id", "")), "lab:explicit_ignition")
     _refresh()
+
+
+func _discard_action() -> void:
+    pending_action = ""
+    pending_actor = ""
+    pending_turn = -1
+    pending_source = ""
+    show_explanation_details = false
+
+
+func _select_action(action_id: String) -> void:
+    if engine == null or not engine.current_is_party():
+        return
+    if pending_action == action_id and pending_actor == engine.current_id() and pending_turn == engine.turn_serial:
+        _confirm_action()
+        return
+    _discard_action()
+    action_mode = ""
+    _clear_web_preview()
+    _hide_selection_menus()
+    var source := ""
+    if action_id == "escape":
+        var sources: Array[String] = engine.escapable_effects()
+        if sources.size() == 1:
+            source = sources[0]
+        elif sources.is_empty():
+            _refresh()
+            return
+    var info: Dictionary = engine.action_info(action_id, source)
+    if not info["legal"] and not (action_id == "escape" and source.is_empty()):
+        _refresh()
+        return
+    pending_action = action_id
+    pending_actor = engine.current_id()
+    pending_turn = engine.turn_serial
+    pending_source = source
+    _refresh()
+
+
+func _confirm_action() -> void:
+    if engine == null or pending_action.is_empty():
+        return
+    if pending_actor != engine.current_id() or pending_turn != engine.turn_serial:
+        _discard_action()
+        _refresh()
+        return
+    var info: Dictionary = engine.action_info(pending_action, pending_source)
+    if not info["legal"]:
+        _refresh()
+        return
+    var action := pending_action
+    var source := pending_source
+    _discard_action() # Clear before submitting; reentrant/duplicate confirms cannot spend twice.
+    var committed := false
+    match action:
+        "dash": committed = engine.use_dash()
+        "disengage": committed = engine.use_disengage()
+        "dodge": committed = engine.use_dodge()
+        "second_wind": committed = engine.use_second_wind()
+        "escape": committed = engine.escape_effect(source)
+        "extinguish": committed = engine.extinguish()
+    action_mode = "move" if committed and action in ["dash", "disengage"] and engine.can_move_current() else ""
+    _refresh()
+
+
+func _cancel_action() -> void:
+    _discard_action()
+    action_mode = ""
+    _clear_web_preview()
+    _refresh()
+
+
+func _choose_escape_source(index: int) -> void:
+    if pending_action == "escape":
+        pending_source = escape_sources.get_item_metadata(index)
+        _refresh()
+
+
+func _toggle_explanation_details() -> void:
+    show_explanation_details = not show_explanation_details
+    _refresh_action_explanation()
+
+
+func _refresh_action_explanation() -> void:
+    var selection := pending_action if not pending_action.is_empty() else action_mode
+    var source := pending_source
+    if selection == "attack": source = _selected_weapon()
+    if selection == "spell": source = _selected_spell()
+    intent_panel.visible = not selection.is_empty() and not engine.deployment_active and not engine.finished
+    intent_controls.visible = not pending_action.is_empty()
+    escape_sources.visible = pending_action == "escape" and engine.escapable_effects().size() > 1
+    if escape_sources.visible:
+        escape_sources.clear()
+        escape_sources.add_item("Choose restraint source…")
+        escape_sources.set_item_metadata(0, "")
+        for effect_id in engine.escapable_effects():
+            var effect: Dictionary = engine.active_effects[effect_id]
+            escape_sources.add_item("%s • %s • DC %d • %s" % [effect["type"], effect["source"], effect["save_dc"], effect_id])
+            var index := escape_sources.item_count - 1
+            escape_sources.set_item_metadata(index, effect_id)
+            if effect_id == pending_source: escape_sources.select(index)
+    if not selection.is_empty():
+        var info: Dictionary = engine.action_info(selection, source, engine.target_at(selected_cell))
+        if selection == "spell" and source == "web" and web_anchor.x >= 0:
+            info["reason"] = engine.area_spell_reason("web", web_anchor)
+        if selection == "escape" and pending_source.is_empty():
+            info["effect"] = "choose the exact restraint source below"
+            info["reason"] = "select a source before confirming"
+        intent_text.text = Explanation.render(info, show_explanation_details)
+        confirm_action.text = "Confirm " + str(info["name"])
+        confirm_action.disabled = not info["legal"]
+    explanation_details.text = "Hide details" if show_explanation_details else "Details"
+    move_button.text = "%s • %d ft" % ["Move selected" if action_mode == "move" else "Move", engine.movement_remaining() * 5]
+    move_button.tooltip_text = str(engine.action_info("move")["reason"])
+    for action_id in utility_buttons:
+        var button: Button = utility_buttons[action_id]
+        var info: Dictionary = engine.action_info(action_id, pending_source if action_id == "escape" else "")
+        var state := "Ready" if info["legal"] else "Disabled"
+        if engine.committed_actions.has(action_id): state = "Used"
+        if action_id == "dash" and engine.dash_extra_squares > 0: state = "Used"
+        if action_id == "dodge" and engine.current_actor().get("dodging", false): state = "Suppressed • Action used" if engine.has_condition(engine.current_id(), "restrained") else "Active • Action used"
+        if action_id == "disengage" and engine.current_actor().get("disengaged", false): state = "Active • Action used"
+        if pending_action == action_id: state = "Pending"
+        button.text = "%s • %s" % [info["name"], state]
+        button.set_pressed_no_signal(pending_action == action_id)
+        button.tooltip_text = Explanation.render(info)
+
+
+func _guard_action_input(event: InputEvent, button: Button) -> void:
+    if (event is InputEventMouseButton and event.device == InputEvent.DEVICE_ID_EMULATION) or (event is InputEventKey and event.echo):
+        button.accept_event()
+
+
+func _action_input_buttons() -> Array:
+    var buttons: Array = utility_buttons.values()
+    if intent_controls != null:
+        for child in intent_controls.get_children():
+            if child is Button: buttons.append(child)
+    return buttons
+
+
+func _input(event: InputEvent) -> void:
+    if not is_instance_valid(bottom_action_panel) or not bottom_action_panel.visible:
+        return
+    if event is InputEventMouseButton and Time.get_ticks_msec() < action_touch_until:
+        for button in _action_input_buttons():
+            if button.is_visible_in_tree() and button.get_global_rect().has_point(event.position):
+                get_viewport().set_input_as_handled()
+                return
+    if event is InputEventScreenTouch:
+        action_touch_count = maxi(0, action_touch_count + (1 if event.pressed else -1))
+        if action_touch_count > 1:
+            action_touch["cancelled"] = true
+        if event.pressed and action_touch.is_empty():
+            for button in _action_input_buttons():
+                if button.is_visible_in_tree() and not button.disabled and button.get_global_rect().has_point(event.position):
+                    action_touch = {"button": button, "index": event.index, "origin": event.position, "cancelled": action_touch_count > 1}
+                    action_touch_until = Time.get_ticks_msec() + 800
+                    get_viewport().set_input_as_handled()
+                    return
+        elif not action_touch.is_empty() and event.index == action_touch.get("index", -1):
+            action_touch_until = Time.get_ticks_msec() + 800
+            get_viewport().set_input_as_handled()
+            if not event.pressed:
+                var button: Button = action_touch["button"]
+                var commit: bool = not action_touch.get("cancelled", false) and not event.canceled and button.is_visible_in_tree() and not button.disabled and button.get_global_rect().has_point(event.position) and event.position.distance_to(action_touch["origin"]) < 18.0
+                action_touch.clear()
+                if commit: button.pressed.emit()
+    elif event is InputEventScreenDrag and not action_touch.is_empty() and event.index == action_touch.get("index", -1):
+        if event.position.distance_to(action_touch["origin"]) >= 18.0:
+            action_touch["cancelled"] = true
+        action_touch_until = Time.get_ticks_msec() + 800
+        get_viewport().set_input_as_handled()
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+    if pending_action.is_empty() or not event is InputEventKey or not event.pressed or event.echo:
+        return
+    if event.keycode == KEY_ESCAPE:
+        _cancel_action()
+        get_viewport().set_input_as_handled()
+    elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+        _confirm_action()
+        get_viewport().set_input_as_handled()
