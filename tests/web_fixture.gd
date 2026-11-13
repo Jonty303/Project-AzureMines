@@ -7,6 +7,7 @@ static func battle(level: int = 3) -> CombatEngine:
     assert(b.start_from_setup(Builder.build_setup(level, "thief", "goblin_melee", 2, "wide", 53022), false))
     b.grid_size = Vector2i(30, 20)
     b.walls.clear()
+    b.obstacles.clear()
     b.blocked_cells.clear()
     b.sight_blockers.clear()
     b.cover_cells.clear()

@@ -23,6 +23,7 @@ var selected_weapon := ""
 var selected_spell := ""
 var area_preview := Vector2i(-1, -1)
 var area_preview_valid := false
+var area_shape: Dictionary = {}
 var selected_deployment_actor := ""
 var _sprite_cache: Dictionary = {}
 var display_cell_size: int = CELL_SIZE
@@ -440,13 +441,21 @@ func _draw() -> void:
                 draw_rect(dest.grow(-4), Color("#d8e7ff", 0.85), false, 2.0)
                 draw_line(dest.position + Vector2(6, 6), dest.end - Vector2(6, 6), Color("#d8e7ff", 0.7), 2.0)
                 draw_line(dest.position + Vector2(6, CELL_SIZE - 6), dest.position + Vector2(CELL_SIZE - 6, 6), Color("#d8e7ff", 0.7), 2.0)
+            for prop in engine.obstacles:
+                if prop["position"] == cell and not engine.burning_snapshot("prop", str(prop.get("id", ""))).is_empty():
+                    draw_string(ThemeDB.fallback_font, dest.position + Vector2(6, 52), "Burning prop", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("#fff2b0"))
             if engine.is_web_burning(cell):
                 draw_rect(dest.grow(-5), Color("#ff762e", 0.4))
                 draw_string(ThemeDB.fallback_font, dest.position + Vector2(7, 20), "FIRE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#fff2b0"))
-            if area_preview.x >= 0 and cell.x >= area_preview.x and cell.y >= area_preview.y and cell.x < area_preview.x + 4 and cell.y < area_preview.y + 4:
-                var preview_color := Color("#62edbb") if area_preview_valid else Color("#ff706e")
+            if area_shape.get("nominal_cells", []).has(cell):
+                var affected: bool = area_shape.get("affected_cells", []).has(cell)
+                var preview_color := Color("#62edbb") if area_preview_valid and affected else Color("#ff706e")
                 draw_rect(dest.grow(-6), Color(preview_color, 0.18))
                 draw_rect(dest.grow(-6), preview_color, false, 3.0)
+                draw_string(ThemeDB.fallback_font, dest.position + Vector2(6, 38),
+                    "WEB" if affected else "BLOCK", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, preview_color)
+                if cell == area_preview:
+                    draw_circle(dest.get_center(), 7, Color.WHITE, false, 2.0)
             if cell in engine.difficult_terrain:
                 draw_rect(dest, Color("#8c6b35", 0.32))
             if reachable.has(cell) and cell != engine.current_actor()["position"]:
@@ -544,6 +553,10 @@ func _draw() -> void:
             draw_string(get_theme_default_font(), dest.position + Vector2(23, 43),
                 str(actor["name"]).substr(0, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
 
+        if not engine.burning_snapshot("actor", actor_id).is_empty():
+            draw_rect(Rect2(cell_origin + Vector2(2, 47), Vector2(64, 17)), Color("#502512", 0.95))
+            draw_string(get_theme_default_font(), cell_origin + Vector2(3, 60),
+                "Burning", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#fff2b0"))
         if engine.has_condition(actor_id, "restrained"):
             draw_rect(Rect2(cell_origin + Vector2(2, 2), Vector2(64, 15)), Color("#172031", 0.9))
             draw_string(get_theme_default_font(), cell_origin + Vector2(3, 14),

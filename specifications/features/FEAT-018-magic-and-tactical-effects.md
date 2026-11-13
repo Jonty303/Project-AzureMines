@@ -43,3 +43,7 @@ Branch: `feature/combat-lab-v053-web` from `feature/combat-lab-ipad-action-ux-fi
 ## v0.5.3 implementation candidate — issue #22 / draft PR #23
 
 Web now uses the existing region authority with atomic area validation/casting, Elyra L3+ loadout, explicit touch preview/confirmation, source-owned Restrained/escape, Lightly Obscured queries and per-cell Fire Bolt ignition/burning. See [implementation contracts, validation and physical acceptance gaps](../../docs/combat-lab-v053-web-implementation.md). Physical iPad and owner acceptance remain pending; no other second-level spells are implied.
+
+## v0.5.3.1 owner-directed targeting and combustion follow-up — prepared, not implemented
+
+See [FEAT-019](FEAT-019-area-targeting-combustion.md) and [Codex Issue #24](https://github.com/Jonty303/Project-AzureMines/issues/24). This bounded follow-up changes Web from top-left/all-or-nothing area placement to a centred, obstacle-masked area preview, adds deliberate two-tap casting and defines an **Azure Mines house-rule** combustion/Burning model including orthogonal Web fire spread. The original v0.5.3 implementation deliberately had no adjacent propagation, so that earlier acceptance expectation must be migrated in new tests. The separate v0.5.4 spell-completeness roadmap above remains pending. No v0.5.3.1 gameplay implementation, engine regression pass or physical iPad acceptance is implied by these handoff documents.
