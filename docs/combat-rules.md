@@ -30,6 +30,23 @@
 
 Movement is segmented into tile transitions so that reactions can interrupt it. Effects need lifecycle hooks (on apply, start/end turn, on damage, on save, on expire) and causal IDs for debugging.
 
+## Combat playback speed — presentation contract (agreed 13 November 2026)
+
+Support selectable combat playback rates so large encounters with many enemy turns remain comfortable to play. Proposed initial options: **Normal 1×**, **Fast 2×**, **Very Fast 4×**, with a possible later **Instant/minimal-animations** option. A persistent, accessible control should be available in Combat Lab and eventually normal combat, particularly for touch/iPad.
+
+This is a **visual scheduling / event playback** requirement, not a change to turn order, AI decision-making, action economy, random-number generation, hit/miss, conditions, durations, reactions or rules processing.
+
+- CombatEngine emits an ordered, causally linked record of resolved events at normal deterministic rules speed. The presentation timeline consumes the same events at different visual durations; changing playback speed cannot re-resolve a command, skip rule events, mutate combat state or change RNG draws.
+- Scale only presentation durations: interpolated movement, 2–3-frame walk cycling, 2-frame attack/cast poses, projectile travel, effect holds and brief recovery pauses. Keep essential action identity, hit/miss, damage, impacts, kills, status indicators and the combat log understandable at higher rates.
+- Preserve attack-to-impact causality. A projectile must reach the target before displaying the associated hit/death animation; death and incapacitation cannot be shown early at any playback rate.
+- Reactions, interrupts and any required player input must pause playback at a clear stable point, regardless of speed. Do not auto-dismiss decisions or skip information the player must act upon.
+- Allow user control of speed between actions, and define safe handling of mid-animation speed changes (e.g. apply to the next presentation segment or rescale its remaining visual time without changing the event order).
+- Persist the player's preferred speed separately from saved combat rules state. Consider an **enemy-turn fast playback** preference later, but do not silently speed up player-facing decisions.
+
+Tests should run an identical seeded encounter with each speed and compare the authoritative event log/final combat state; test that a player reaction is never skipped and that visual impact ordering is preserved.
+
+See [Modular character sprites and minimal animation](modular-character-sprites.md) for the small-frame asset plan whose animation timeline this feature controls.
+
 ## First milestones
 
 1. Four vs four battle: grid, initiative, movement, melee/ranged hits, HP, victory.
