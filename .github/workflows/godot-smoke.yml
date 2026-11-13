@@ -40,9 +40,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test in             test_canonical_party             test_combat_engine             test_combat_playthrough             test_level1_features             test_sprite_assets             test_reactions_and_disengage             test_shield_and_bless             test_wagon_camp             test_action_bar_and_downed             test_audio_and_contextual_ui             test_party_deployment             test_combat_lab_setup             test_combat_lab_ui             test_web_touch_input             test_combat_lab_v03_feedback             test_v04_wide_camera_projectiles             test_v041_downed_auto_turn             test_v041_movement_impact             test_v043_tactical_ai             test_v043_spell_ui             test_v051_spell_slots             test_v051_magic_menus             test_v052_persistent_effects             test_v052_effect_presentation             test_ipad_action_ux_regression             test_v053_web_casting             test_v053_web_lifecycle             test_v053_web_fire             test_v053_web_ui             test_v0531_targeting             test_v0531_controls             test_v0531_combustion             test_v0531_burning             test_v0532_audit             test_v0532_actions             test_v0532_input
+          for test in             test_canonical_party             test_combat_engine             test_combat_playthrough             test_level1_features             test_sprite_assets             test_reactions_and_disengage             test_shield_and_bless             test_wagon_camp             test_action_bar_and_downed             test_audio_and_contextual_ui             test_party_deployment             test_combat_lab_setup             test_combat_lab_ui             test_web_touch_input             test_combat_lab_v03_feedback             test_v04_wide_camera_projectiles             test_v041_downed_auto_turn             test_v041_movement_impact             test_v043_tactical_ai             test_v043_spell_ui             test_v051_spell_slots             test_v051_magic_menus             test_v052_persistent_effects             test_v052_effect_presentation             test_ipad_action_ux_regression             test_v053_web_casting             test_v053_web_lifecycle             test_v053_web_fire             test_v053_web_ui             test_v0531_targeting             test_v0531_controls             test_v0531_combustion             test_v0531_burning             test_v0532_audit             test_v0532_actions             test_v0532_input             test_v054_art_rendering
           do
             echo "::group::$test"
             ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --script "res://tests/$test.gd"
             echo "::endgroup::"
           done
+      - name: Verify Web export without publishing
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output templates.tpz https://github.com/godotengine/godot/releases/download/4.5.2-stable/Godot_v4.5.2-stable_export_templates.tpz
+          echo "ea50e5183f057d42b22120d0d0340205b98f51f8ff13c33c70fd4ac9077d2019  templates.tpz" | sha256sum --check --status
+          python3 scripts/install_web_templates.py templates.tpz
+          mkdir -p build/web
+          ./Godot_v4.5.2-stable_linux.x86_64 --headless --path . --export-release Web build/web/index.html 2>&1 | tee export.log
+          if grep -E -q 'SCRIPT ERROR|Parse Error|(^| )ERROR:' export.log; then exit 1; fi
+          for suffix in html js wasm pck; do test -s "build/web/index.$suffix"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: combat-lab-v054-web-check
+          path: build/web/

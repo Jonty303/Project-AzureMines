@@ -1,0 +1,21 @@
+{
+  "test_audio_and_contextual_ui": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+    "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+  ],
+  "test_combat_lab_ui": [
+    "ERROR: Attempting to make child window exclusive, but the parent window already has another exclusive child. This window: /root/CombatLab/@AcceptDialog@231, parent window: /root, current exclusive child window: /root/CombatLab/@ConfirmationDialog@163"
+  ],
+  "test_party_deployment": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+    "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+  ],
+  "test_v041_movement_impact": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+    "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+  ],
+  "test_v04_wide_camera_projectiles": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+    "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+  ]
+}

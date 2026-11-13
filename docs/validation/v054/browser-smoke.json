@@ -1,0 +1,22 @@
+{
+  "cosmetic_frames_change": true,
+  "desktop_raf_ms": {
+    "median": 83.29999999999927,
+    "p95": 100,
+    "samples": 120
+  },
+  "console": [
+    "log: Godot Engine v4.5.2.stable.official.6ce3de25a - https://godotengine.org",
+    "log: OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL",
+    "log: Build configuration: Emscripten 4.0.10, single-threaded, no GDExtension support.",
+    "log: Godot Engine v4.5.2.stable.official.6ce3de25a - https://godotengine.org",
+    "log: OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL",
+    "log: Build configuration: Emscripten 4.0.10, single-threaded, no GDExtension support.",
+    "log: Godot Engine v4.5.2.stable.official.6ce3de25a - https://godotengine.org",
+    "log: OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL",
+    "log: Build configuration: Emscripten 4.0.10, single-threaded, no GDExtension support."
+  ],
+  "errors": [],
+  "browser": "Chromium software WebGL 2, 1440x1000 and 820x1180; not an iPad performance measurement",
+  "physical_ipad": "NOT RUN"
+}

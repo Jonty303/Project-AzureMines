@@ -1,0 +1,210 @@
+[
+  {
+    "test": "test_action_bar_and_downed",
+    "pass": true,
+    "diagnostics": [
+      "WARNING: Loaded resource as image file, this will not work on export: 'res://assets/characters/sprites/downed_party_atlas_64.png'. Instead, import the image file as an Image resource and load it normally as a resource.",
+      "WARNING: Loaded resource as image file, this will not work on export: 'res://assets/environment/dungeon_props_64.png'. Instead, import the image file as an Image resource and load it normally as a resource."
+    ]
+  },
+  {
+    "test": "test_audio_and_contextual_ui",
+    "pass": true,
+    "diagnostics": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+      "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+    ]
+  },
+  {
+    "test": "test_canonical_party",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_combat_engine",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_combat_lab_setup",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_combat_lab_ui",
+    "pass": true,
+    "diagnostics": [
+      "ERROR: Attempting to make child window exclusive, but the parent window already has another exclusive child. This window: /root/CombatLab/@AcceptDialog@231, parent window: /root, current exclusive child window: /root/CombatLab/@ConfirmationDialog@163"
+    ]
+  },
+  {
+    "test": "test_combat_lab_v03_feedback",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_combat_playthrough",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_ipad_action_ux_regression",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_level1_features",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_party_deployment",
+    "pass": true,
+    "diagnostics": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+      "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+    ]
+  },
+  {
+    "test": "test_reactions_and_disengage",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_shield_and_bless",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_sprite_assets",
+    "pass": true,
+    "diagnostics": [
+      "WARNING: Loaded resource as image file, this will not work on export: 'res://assets/characters/sprites/alden_front_64.png'. Instead, import the image file as an Image resource and load it normally as a resource.",
+      "WARNING: Loaded resource as image file, this will not work on export: 'res://assets/characters/sprites/elyra_front_64.png'. Instead, import the image file as an Image resource and load it normally as a resource.",
+      "WARNING: Loaded resource as image file, this will not work on export: 'res://assets/characters/sprites/brunna_front_64.png'. Instead, import the image file as an Image resource and load it normally as a resource.",
+      "WARNING: Loaded resource as image file, this will not work on export: 'res://assets/characters/sprites/pip_front_64.png'. Instead, import the image file as an Image resource and load it normally as a resource.",
+      "WARNING: Loaded resource as image file, this will not work on export: 'res://assets/characters/sprites/goblin_front_64.png'. Instead, import the image file as an Image resource and load it normally as a resource."
+    ]
+  },
+  {
+    "test": "test_v041_downed_auto_turn",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v041_movement_impact",
+    "pass": true,
+    "diagnostics": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+      "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+    ]
+  },
+  {
+    "test": "test_v043_spell_ui",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v043_tactical_ai",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v04_wide_camera_projectiles",
+    "pass": true,
+    "diagnostics": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+      "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+    ]
+  },
+  {
+    "test": "test_v051_magic_menus",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v051_spell_slots",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v052_effect_presentation",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v052_persistent_effects",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v0531_burning",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v0531_combustion",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v0531_controls",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v0531_targeting",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v0532_actions",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v0532_audit",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v0532_input",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v053_web_casting",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v053_web_fire",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v053_web_lifecycle",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v053_web_ui",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_v054_art_rendering",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_wagon_camp",
+    "pass": true,
+    "diagnostics": []
+  },
+  {
+    "test": "test_web_touch_input",
+    "pass": true,
+    "diagnostics": []
+  }
+]

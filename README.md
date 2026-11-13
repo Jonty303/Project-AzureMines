@@ -1,5 +1,7 @@
 # Azure Mines — Standalone Combat Lab
 
+**v0.5.4 art/rendering pass (Issue #32):** Original terrain, props, monster atlases and spell VFX; explicit ground-contact sorting and visible tactical indicators. See [assets, validation and iPad acceptance](docs/combat-lab-v054-validation.md). Party animation remains deferred; owner visual acceptance is pending.
+
 **v0.4.1 gameplay and animation correction:** [FEAT-016](specifications/features/FEAT-016-downed-turns-impact-and-movement.md) documents automatic death saves without downed player turns, deliberate AI policy for active threats, smooth tile movement and impact-synchronised death sprites/audio. The feature is implemented on `feature/combat-lab-v041-downed-turn-impact`; manual iPad acceptance remains pending.
 
 
