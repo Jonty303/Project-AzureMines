@@ -92,8 +92,26 @@ func run() -> void:
     lab._select_spell_card("fire_bolt")
     check(lab.web_anchor.x < 0 and not lab.web_controls.visible, "spell change stale anchor")
     lab._select_spell_card("web")
-    lab._on_cell_clicked(Vector2i(4, 4))
-    lab._on_cell_clicked(Vector2i(4, 4))
+    # Two genuine touch releases confirm; synthetic mouse pair must not.
+    lab.board.camera_zoom = 1.0
+    lab.board.camera_offset = Vector2.ZERO
+    touch.position = Vector2(4.5, 4.5) * float(lab.board.display_cell_size)
+    touch.pressed = true
+    lab.board._gui_input(touch)
+    touch.pressed = false
+    lab.board._gui_input(touch)
+    var mouse := InputEventMouseButton.new()
+    mouse.position = touch.position
+    mouse.button_index = MOUSE_BUTTON_LEFT
+    mouse.pressed = true
+    lab.board._gui_input(mouse)
+    mouse.pressed = false
+    lab.board._gui_input(mouse)
+    check(b.active_effects.is_empty(), "synthetic mouse confirmed touch")
+    touch.pressed = true
+    lab.board._gui_input(touch)
+    touch.pressed = false
+    lab.board._gui_input(touch)
     check(b.active_effects.size() == 1 and b.spell_slots_left("elyra", 2) == 1 and b.action_used, "confirmed resources")
     lab._confirm_web()
     check(b.spell_slots_left("elyra", 2) == 1 and lab.action_mode.is_empty(), "double confirmation")
@@ -114,6 +132,25 @@ func run() -> void:
     check(lab.web_anchor.x < 0 and not lab.spell_ids.has("web"), "actor change stale anchor")
     lab._start_battle()
     check(lab.web_anchor.x < 0 and lab.engine.active_effects.is_empty(), "retry state")
+    lab.engine = F.battle()
+    lab.board.engine = lab.engine
+    lab.picker_actor = ""
+    lab._refresh()
+    lab._select_spell_card("web")
+    lab.board.keyboard_cell = Vector2i(4, 4)
+    lab.board._gui_input(key)
+    key.echo = true
+    lab.board._gui_input(key)
+    check(lab.engine.active_effects.is_empty(), "keyboard echo cast")
+    key.echo = false
+    lab.board._gui_input(key)
+    check(lab.engine.active_effects.size() == 1, "second Enter did not cast")
+    lab.engine.ignite_actor("elyra", "lab:test")
+    lab.engine.action_used = false
+    lab._refresh()
+    check(lab.extinguish_button.visible and not lab.extinguish_button.disabled, "Burning Extinguish affordance")
+    lab._extinguish()
+    check(lab.engine.action_used and not lab.extinguish_button.visible, "Extinguish UI economy/cleanup")
     lab._show_title()
     check(not lab.web_controls.visible, "title targeting state")
     for player in lab.sfx_players.values():

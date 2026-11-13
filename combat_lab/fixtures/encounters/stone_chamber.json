@@ -98,6 +98,9 @@
   "obstacles": [
     {
       "id": "wooden_table",
+      "flammable": true,
+      "fuel_rounds": 3,
+      "blocks_area": false,
       "kind": "table",
       "position": [
         5,

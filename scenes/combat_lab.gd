@@ -54,6 +54,7 @@ var attack_button: Button
 var spell_button: Button
 var dash_button: Button
 var dodge_button: Button
+var extinguish_button: Button
 var escape_button: Button
 var disengage_button: Button
 var wind_button: Button
@@ -391,6 +392,8 @@ func _build_ui() -> void:
     dodge_button = _make_button("Dodge", player_commands, _use_dodge, 85)
     escape_button = _make_button("Escape (Action)", player_commands, _escape_effect, 140)
     escape_button.visible = false
+    extinguish_button = _make_button("Extinguish (Action)", player_commands, _extinguish, 160)
+    extinguish_button.visible = false
     disengage_button = _make_button("Disengage", player_commands, _use_disengage, 118)
     end_turn_button = _make_button("END TURN", command_row, _end_turn, 155)
     end_turn_button.custom_minimum_size.y = 98
@@ -461,6 +464,8 @@ func _build_ui() -> void:
     action_hint = _make_label("Choose a command, then tap a highlighted tile.", bottom_action_layout, 14)
     action_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     debug_action_button = _make_button("Debug Input / Output", actions_tab, _show_debug, 200)
+    _make_button("Ignite selected (Lab test)", actions_tab, _test_ignite_selected, 220)
+    _make_label("House rule: explicit ignition; actors burn 1d4 for 3 starts. Extinguish costs an Action. Web exposure never ignites actors.", actions_tab, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     debug_action_button.tooltip_text = "View the versioned CombatSetup and last recorded CombatResult"
 
     _build_dialogs()
@@ -1115,6 +1120,9 @@ func _refresh() -> void:
             resources.append("Second Wind: %d" % int(a.get("second_wind_remaining", 0)))
         if not str(a.get("blessed_by", "")).is_empty():
             resources.append("Blessed")
+        var burning := engine.burning_snapshot("actor", id)
+        if not burning.is_empty():
+            resources.append("Burning: %d ticks" % int(burning["ticks_remaining"]))
         for condition in engine.condition_snapshot(id):
             resources.append(str(condition).capitalize())
         if bool(a.get("mage_armor_active", false)):
@@ -1207,6 +1215,8 @@ func _refresh() -> void:
                 colour, tier, remaining, total])
     slot_gems.text = "  ".join(gem_rows)
     slot_gems.visible = not gem_rows.is_empty()
+    extinguish_button.visible = engine.current_is_party() and not engine.burning_snapshot("actor", engine.current_id()).is_empty() and engine.is_combat_capable(engine.current_id())
+    extinguish_button.disabled = not can_act or not engine.can_extinguish()
     escape_button.visible = engine.has_condition(engine.current_id(), "restrained") and engine.current_is_party()
     var escape_options: Array[String] = engine.escapable_effects()
     escape_button.disabled = not can_act or escape_options.is_empty()
@@ -1365,6 +1375,9 @@ func _update_selection_details() -> void:
         parts.append("HP %d / %d   AC %d" % [
             int(creature.get("hp", 0)), int(creature.get("max_hp", 0)), int(creature.get("armor_class", 0))])
         parts.append("Status: " + str(creature.get("combat_state", "unknown")))
+        var burning := engine.burning_snapshot("actor", actor_id)
+        if not burning.is_empty():
+            parts.append("Burning (house rule): 1d4/start; %d ticks left; source %s; Extinguish = Action" % [burning["ticks_remaining"], burning["source"]])
         parts.append("Role: " + str(creature.get("role", creature.get("class_id", ""))))
         var attacks: Array = creature.get("attacks", [])
         if not attacks.is_empty():
@@ -1388,6 +1401,8 @@ func _update_selection_details() -> void:
         if tile.x >= corner.x and tile.x < corner.x + extent.x and tile.y >= corner.y and tile.y < corner.y + extent.y:
             parts.append("Obstacle: " + str(obstacle.get("kind", "")))
             parts.append("Cover: " + str(obstacle.get("cover", "none")))
+            if not engine.burning_snapshot("prop", str(obstacle.get("id", ""))).is_empty():
+                parts.append("Burning prop: authored fuel; no destruction or changed movement/cover")
             break
     for hazard in engine.hazards:
         if hazard["position"] == tile:
@@ -1430,4 +1445,24 @@ func _confirm_web() -> void:
     if engine.cast_area_spell("web", web_anchor):
         _clear_web_preview()
         action_mode = ""
+    _refresh()
+
+
+func _extinguish() -> void:
+    if engine != null and engine.extinguish():
+        action_mode = ""
+        _clear_web_preview()
+    _refresh()
+
+
+func _test_ignite_selected() -> void:
+    if engine == null:
+        return
+    var actor_id: String = engine.target_at(selected_cell)
+    if not actor_id.is_empty():
+        engine.ignite_actor(actor_id, "lab:explicit_ignition")
+    else:
+        for prop in engine.obstacles:
+            if Rect2i(prop["position"], prop["size"]).has_point(selected_cell):
+                engine.ignite_prop(str(prop.get("id", "")), "lab:explicit_ignition")
     _refresh()

@@ -52,6 +52,7 @@ var active_effects: Dictionary = {}
 var condition_sources: Dictionary = {}
 var effect_sequence := 0
 var turn_serial := 0
+var burning_targets: Dictionary = {}
 
 
 func area_effects_at(cell: Vector2i) -> Array[Dictionary]:
@@ -211,6 +212,8 @@ func end_effect(effect_id: String, reason: String = "expired") -> void:
     payload["reason"] = reason
     for application in effect["applications"].duplicate():
         _remove_condition(str(application["actor_id"]), str(application["condition"]), effect_id)
+    for burn in effect["burning_cells"].values():
+        _event("burning_ended", str(burn["source"]), "", {"target_kind": "web_cell", "target_key": burn["target_key"], "reason": reason})
     active_effects.erase(effect_id)
     var owner: String = effect["concentration_owner"]
     if not owner.is_empty() and actors[owner].get("concentration", {}).get("effect_id", "") == effect_id:
@@ -229,6 +232,7 @@ func _expire_effects() -> void:
                 and turn_index >= int(effect["expiry_turn"])):
             end_effect(str(id))
     _expire_burning_cells()
+    _expire_prop_burning()
 
 
 func effect_hook(actor_id: String, trigger: String, previous: Vector2i = Vector2i(-1, -1)) -> void:
@@ -345,6 +349,7 @@ func _start_from_data(party: Dictionary, encounter: Dictionary, seed: int, with_
     if encounter_id.is_empty():
         return false
     active_effects.clear()
+    burning_targets.clear()
     condition_sources.clear()
     effect_sequence = 0
     turn_serial = 0
@@ -925,6 +930,7 @@ func _deal_damage(target_id: String, damage: int, critical: bool = false) -> voi
     actors[target_id] = target
     _check_concentration_after_damage(target_id, damage)
     if target["combat_state"] == "dead" and previous_state != "dead":
+        _end_burning("actor:" + target_id, "dead")
         _emit_sound("death")
         _record("%s dies." % target["name"])
         _event("death", target_id, target_id)
@@ -1402,6 +1408,7 @@ func _begin_turn() -> void:
         actor["shield_bonus"] = 0
         actors[current_id()] = actor
         _tick_concentration(current_id())
+        _actor_burning_start_turn(current_id())
         var was_unconscious: bool = actor.get("combat_state", "") == "unconscious"
         if str(actor.get("combat_state", "")) in ["unconscious", "stable"]:
             _web_fire_start_turn(current_id(), actor["position"])
@@ -1437,6 +1444,7 @@ func _roll_death_save(actor_id: String) -> void:
         ])
         if int(actor["death_failures"]) >= 3:
             actor["combat_state"] = "dead"
+            _end_burning("actor:" + actor_id, "dead")
             _emit_sound("death")
             _record("%s has died." % actor["name"])
         elif int(actor["death_successes"]) >= 3:
@@ -1469,6 +1477,8 @@ func _check_victory() -> void:
         pending_reaction.clear()
         for effect_id in active_effects.keys():
             end_effect(str(effect_id), "encounter_ended")
+        for key in burning_targets.keys():
+            _end_burning(str(key), "encounter_ended")
         _record("VICTORY — opposing side incapacitated." if party_can_fight else
             "DEFEAT — no adventurer can fight.")
 
@@ -2082,8 +2092,16 @@ func ignite_web_cell(cell: Vector2i, fire_source: String) -> bool:
         var effect: Dictionary = active_effects[id]
         if not effect.get("flammable", false) or not effect["cells"].has(cell) or effect["burning_cells"].has(cell):
             continue
-        effect["burning_cells"][cell] = {"expiry_round": round_number + 1,
-            "expiry_turn": turn_index, "source": fire_source}
+        var burn := _burning_state("web_cell", "%s:%d:%d" % [id, cell.x, cell.y], fire_source, "web_one_round", 1)
+        # Existing overlapping fire owns its original clock and source.
+        for other in active_effects.values():
+            if other["burning_cells"].has(cell):
+                var existing: Dictionary = other["burning_cells"][cell]
+                for field in ["source", "start_round", "start_turn", "expiry_round", "expiry_turn"]:
+                    burn[field] = existing[field]
+                break
+        effect["burning_cells"][cell] = burn
+        _event("burning_started", str(burn["source"]), "", burn.duplicate(true))
         _event("web_ignited", fire_source, "", {"effect_id": id, "cell": [cell.x, cell.y]})
         _event("area_updated", str(effect["source"]), "", _effect_payload(str(id)))
         changed = true
@@ -2121,7 +2139,10 @@ func _expire_burning_cells() -> void:
         var cell: Vector2i = item["cell"]
         var effect: Dictionary = active_effects[id]
         effect["cells"].erase(cell)
+        var consumed: Dictionary = effect["burning_cells"][cell].duplicate(true)
+        consumed["reason"] = "fuel_consumed"
         effect["burning_cells"].erase(cell)
+        _event("burning_ended", str(item["source"]), "", consumed)
         for application in effect["applications"].duplicate():
             var actor_id: String = application["actor_id"]
             if actors[actor_id]["position"] == cell:
@@ -2157,3 +2178,130 @@ func _web_fire_start_turn(actor_id: String, cell: Vector2i) -> void:
             "state_after": actors[actor_id]["combat_state"]})
         _check_victory()
         return
+
+
+# Explicit ignition commands; ordinary fire damage never invokes these adapters.
+# House-rule defaults: actor 1d4 for three start turns; props consume fuel only.
+func _burning_state(kind: String, key: String, source: String, fuel: String, duration: int) -> Dictionary:
+    return {"schema_version": 1, "target_kind": kind, "target_key": key,
+        "source": source, "owner": source, "start_round": round_number,
+        "start_turn": turn_index, "expiry_round": round_number + duration,
+        "expiry_turn": turn_index, "intensity": 1, "fuel_policy": fuel,
+        "ticks_remaining": duration, "last_turn_serial": -1}
+
+
+func burning_snapshot(kind: String, target_key: String) -> Dictionary:
+    return burning_targets.get(kind + ":" + target_key, {}).duplicate(true)
+
+
+func burning_snapshots() -> Array[Dictionary]:
+    var result: Array[Dictionary] = []
+    var keys := burning_targets.keys()
+    keys.sort()
+    for key in keys:
+        result.append(burning_targets[key].duplicate(true))
+    for id in active_effects.keys():
+        for cell in _sorted_cells(active_effects[id]["burning_cells"].keys()):
+            result.append(active_effects[id]["burning_cells"][cell].duplicate(true))
+    return result
+
+
+func ignite_actor(actor_id: String, source: String) -> bool:
+    var key := "actor:" + actor_id
+    if deployment_active or finished or source.is_empty() or not actors.has(actor_id) \
+            or str(actors[actor_id].get("combat_state", "")) in ["dead", "knocked_out"] or burning_targets.has(key):
+        return false
+    burning_targets[key] = _burning_state("actor", actor_id, source, "three_start_turn_ticks", 3)
+    _event("burning_started", source, actor_id, burning_targets[key].duplicate(true))
+    return true
+
+
+func ignite_prop(prop_id: String, source: String) -> bool:
+    var key := "prop:" + prop_id
+    if deployment_active or finished or source.is_empty() or burning_targets.has(key):
+        return false
+    for prop in obstacles:
+        if str(prop.get("id", "")) == prop_id and bool(prop.get("flammable", false)):
+            burning_targets[key] = _burning_state("prop", prop_id, source, "authored_prop_rounds", maxi(1, int(prop.get("fuel_rounds", 3))))
+            _event("burning_started", source, "", burning_targets[key].duplicate(true))
+            return true
+    return false
+
+
+func _end_burning(key: String, reason: String) -> void:
+    if not burning_targets.has(key):
+        return
+    var state: Dictionary = burning_targets[key].duplicate(true)
+    state["reason"] = reason
+    burning_targets.erase(key)
+    _event("burning_ended", str(state["source"]), str(state["target_key"]) if state["target_kind"] == "actor" else "", state)
+
+
+func douse_burning(kind: String, target_key: String, source: String) -> bool:
+    # Typed water/future adapter. No weather system or automatic water detection.
+    var key := kind + ":" + target_key
+    if source.is_empty() or not burning_targets.has(key):
+        return false
+    _end_burning(key, "doused:" + source)
+    return true
+
+
+func douse_web_cell(cell: Vector2i, source: String) -> bool:
+    if source.is_empty():
+        return false
+    var changed := false
+    for id in active_effects.keys():
+        if active_effects[id]["burning_cells"].has(cell):
+            var burn: Dictionary = active_effects[id]["burning_cells"][cell].duplicate(true)
+            active_effects[id]["burning_cells"].erase(cell)
+            burn["reason"] = "doused:" + source
+            _event("burning_ended", source, "", burn)
+            _event("area_updated", source, "", _effect_payload(str(id)))
+            changed = true
+    return changed
+
+
+func can_extinguish() -> bool:
+    return not deployment_active and not finished and is_combat_capable(current_id()) \
+        and not action_used and pending_reaction.is_empty() and pending_move.is_empty() \
+        and burning_targets.has("actor:" + current_id())
+
+
+func extinguish() -> bool:
+    if not can_extinguish():
+        return false
+    action_used = true
+    _end_burning("actor:" + current_id(), "extinguish_action")
+    return true
+
+
+func _actor_burning_start_turn(actor_id: String) -> void:
+    var key := "actor:" + actor_id
+    if not burning_targets.has(key):
+        return
+    if str(actors[actor_id].get("combat_state", "")) in ["dead", "knocked_out"]:
+        _end_burning(key, "incapacitated")
+        return
+    var burn: Dictionary = burning_targets[key]
+    if int(burn["last_turn_serial"]) == turn_serial:
+        return
+    burn["last_turn_serial"] = turn_serial
+    burn["ticks_remaining"] -= 1
+    var damage := RulesMath.roll_damage("1d4", rng)
+    var before: int = actors[actor_id]["hp"]
+    _deal_damage(actor_id, damage)
+    _event("hit", str(burn["source"]), actor_id, {"action_id": "burning", "source_kind": "burning",
+        "damage_type": "fire", "amount": damage, "hp_before": before,
+        "hp_after": actors[actor_id]["hp"], "state_after": actors[actor_id]["combat_state"]})
+    _event("burning_updated", str(burn["source"]), actor_id, burn.duplicate(true))
+    if int(burn["ticks_remaining"]) <= 0 or str(actors[actor_id]["combat_state"]) == "dead":
+        _end_burning(key, "fuel_consumed")
+    _check_victory()
+
+
+func _expire_prop_burning() -> void:
+    for key in burning_targets.keys():
+        var burn: Dictionary = burning_targets[key]
+        if burn["target_kind"] == "prop" and (round_number > int(burn["expiry_round"]) or \
+                (round_number == int(burn["expiry_round"]) and turn_index >= int(burn["expiry_turn"]))):
+            _end_burning(str(key), "fuel_consumed")

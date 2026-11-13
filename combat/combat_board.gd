@@ -441,6 +441,9 @@ func _draw() -> void:
                 draw_rect(dest.grow(-4), Color("#d8e7ff", 0.85), false, 2.0)
                 draw_line(dest.position + Vector2(6, 6), dest.end - Vector2(6, 6), Color("#d8e7ff", 0.7), 2.0)
                 draw_line(dest.position + Vector2(6, CELL_SIZE - 6), dest.position + Vector2(CELL_SIZE - 6, 6), Color("#d8e7ff", 0.7), 2.0)
+            for prop in engine.obstacles:
+                if prop["position"] == cell and not engine.burning_snapshot("prop", str(prop.get("id", ""))).is_empty():
+                    draw_string(ThemeDB.fallback_font, dest.position + Vector2(6, 52), "Burning prop", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("#fff2b0"))
             if engine.is_web_burning(cell):
                 draw_rect(dest.grow(-5), Color("#ff762e", 0.4))
                 draw_string(ThemeDB.fallback_font, dest.position + Vector2(7, 20), "FIRE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#fff2b0"))
@@ -550,6 +553,10 @@ func _draw() -> void:
             draw_string(get_theme_default_font(), dest.position + Vector2(23, 43),
                 str(actor["name"]).substr(0, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
 
+        if not engine.burning_snapshot("actor", actor_id).is_empty():
+            draw_rect(Rect2(cell_origin + Vector2(2, 47), Vector2(64, 17)), Color("#502512", 0.95))
+            draw_string(get_theme_default_font(), cell_origin + Vector2(3, 60),
+                "Burning", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#fff2b0"))
         if engine.has_condition(actor_id, "restrained"):
             draw_rect(Rect2(cell_origin + Vector2(2, 2), Vector2(64, 15)), Color("#172031", 0.9))
             draw_string(get_theme_default_font(), cell_origin + Vector2(3, 14),
