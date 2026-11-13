@@ -2,11 +2,11 @@
 
 **Approved:** 13 November 2026, project owner.  
 **Implementation:** [Combat Lab v0.5.4 issue #32](https://github.com/Jonty303/Project-AzureMines/issues/32).  
-**Status:** Approved **visual direction** and integration requirements; the concept-sheet PNGs are **not yet committed as binary files to GitHub**. A packaged set of six original PNG references and checksummed manifest was prepared as a conversation download for import into this branch.
+**Status:** Approved **visual direction** and integration requirements; the six approved reference PNG binaries **are committed to GitHub** under `docs/art-direction/references/`. The checksum manifest is in `docs/art-direction/README.md`.
 
 ## Reference images (approved visual direction)
 
-Intended repository destination: `docs/art-direction/references/`.
+Verified repository destination: [`docs/art-direction/references/`](art-direction/references/).
 
 | Filename in approved reference package | Purpose |
 | --- | --- |
@@ -51,6 +51,6 @@ The same board-to-screen transform applies to all layers at every pan/zoom; use 
 
 Use engine-ready atlases/individual transparent PNGs, documented dimensions, fixed pivots, source IDs, frame sequence, frame duration, facing, weapon variant and tile collision/cover metadata. Include asset provenance and licensing. Prefer source-separated effects (flame, smoke, embers) rather than pre-rendered composites. Run automated seam/pivot/frame checks and Godot smoke tests. See Issue #32 for complete acceptance and exclusions.
 
-## Import checklist
+## Archive verification
 
-The owner-approved PNG package is available in the conversation as `azure_mines_approved_art_direction_v1.zip`. Import the six `references/*.png` and `manifest.json` to `docs/art-direction/` on the v0.5.4 branch using an authenticated GitHub upload or local git commit. **This markdown file alone does not establish that the binary images are present in the repository.** After importing, verify each SHA-256 against the package manifest and update this status line.
+All six approved PNG binaries were uploaded and verified as present in GitHub on `feature/combat-lab-v054-art-pass` on 13 November 2026. Their SHA-256 values were checked by the Codespaces import script against the committed manifest before staging. The images remain **art-direction references**, not production-ready spritesheets or seamless atlases.
