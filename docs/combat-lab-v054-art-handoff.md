@@ -7,7 +7,7 @@
 
 ## Required reading
 
-Read `AGENTS.md`, `workflows/DELIVERY.md`, `docs/combat-art-direction-v1.md`, `docs/combat-art-ui-style.md`, `docs/combat-lab-ipad-art-direction-v02.md`, `combat/combat_board.gd`, relevant fixtures, and Issue #32. The owner-approved visual reference images are packaged in `azure_mines_approved_art_direction_v1.zip` from the conversation. They are **not yet uploaded as binary files to GitHub**; obtain/import them and verify checksums before claiming the reference images are in-repo.
+Read `AGENTS.md`, `workflows/DELIVERY.md`, `docs/combat-art-direction-v1.md`, `docs/combat-art-ui-style.md`, `docs/combat-lab-ipad-art-direction-v02.md`, `combat/combat_board.gd`, relevant fixtures, and Issue #32. The owner-approved visual reference images are packaged in `azure_mines_approved_art_direction_v1.zip` from the conversation. They are **committed as binary files in GitHub** under `docs/art-direction/references/`; use those exact references and the checksums in `docs/art-direction/README.md`.
 
 ## Phased production
 
