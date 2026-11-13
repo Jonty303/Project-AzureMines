@@ -46,6 +46,17 @@ func _initialize() -> void:
     b._roll_death_save("alden")
     check(F.facts(b, "rules_check")[-1]["rule"] == "Death save", "death save audit")
     check(replay() == replay(), "seed replay differs")
+    b = F.battle()
+    b.actors["elyra"]["dodging"] = true
+    b.dexterity_save("elyra")
+    check(b.last_d20["advantage"] and b.last_d20["dice"].size() == 2 and b.last_d20["reason"] == "Dodge", "Dodge DEX save advantage snapshot")
+    b.actors["lab_goblin_melee_01"]["position"] = Vector2i(2, 1)
+    check(b.cast_spell("fire_bolt", "lab_goblin_melee_01"), "spell attack")
+    var attacks: Array = F.facts(b, "rules_check").filter(func(e: Dictionary) -> bool: return e.get("rule") == "Attack")
+    check(attacks.size() == 1 and attacks[0].has("dice") and attacks[0].has("modifiers") and attacks[0].has("ac") and attacks[0].has("cover_bonus"), "attack audit missing dice/modifiers/AC/cover")
+    var cast: Dictionary = F.facts(b, "cast")[0]
+    check(cast["resource_cost"]["economy"] == "action" and cast["resources"]["action_used"], "cast action expenditure")
+    check(b.events.all(func(e: Dictionary) -> bool: return e["kind"] == "sound" or not e["text"].is_empty()), "resolved fact has no full-log text")
     # Real giant spider fixture retains saves/Restrained; only terrain cost changes.
     b = CombatEngine.new()
     check(b.start_from_setup(Builder.build_setup(3, "thief", "spider", 1, "wide", 532), false), "spider setup")

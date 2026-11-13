@@ -24,6 +24,8 @@ func setup(lab: Node, action: String) -> void:
         b._apply_condition("alden", "restrained", effect)
     if action == "extinguish": b.ignite_actor("alden", "test")
     lab._refresh()
+func intent_state(b: RefCounted) -> Array:
+    return [F.state(b), b.bonus_action_used, b.burning_targets.duplicate(true), b.movement_used, b.dash_extra_squares, b.pending_move.duplicate(true), b.pending_reaction.duplicate(true), b.committed_actions.duplicate()]
 func run() -> void:
     var lab = SCENE.instantiate()
     root.add_child(lab)
@@ -33,20 +35,20 @@ func run() -> void:
     for action in ["dash", "disengage", "dodge", "second_wind", "escape", "extinguish"]:
         setup(lab, action)
         var b = lab.engine
-        var before: Array = F.state(b)
+        var before: Array = intent_state(b)
         lab._select_action(action)
         check(lab.pending_action == action and lab.intent_controls.visible, action + " pending controls")
         for field in ["Cost:", "Effect:", "Duration:", "Consequence:"]:
             check(lab.intent_text.text.contains(field), action + " explanation " + field)
         lab._toggle_explanation_details()
-        check(F.state(b) == before and not b.bonus_action_used, action + " selection/details mutated engine")
+        check(intent_state(b) == before and not b.bonus_action_used, action + " selection/details mutated engine")
         lab._cancel_action()
-        check(F.state(b) == before and lab.pending_action.is_empty(), action + " cancellation mutated state")
+        check(intent_state(b) == before and lab.pending_action.is_empty(), action + " cancellation mutated state")
         lab._select_action(action)
         lab._select_action(action) # intentional second press
-        var after: Array = F.state(b)
+        var after: Array = intent_state(b)
         lab._confirm_action()
-        check(F.state(b) == after and lab.pending_action.is_empty(), action + " duplicate confirm")
+        check(intent_state(b) == after and lab.pending_action.is_empty(), action + " duplicate confirm")
         check(b.bonus_action_used if action == "second_wind" else b.action_used, action + " cost not spent")
         if action in ["dash", "disengage"]:
             check(lab.action_mode == "move" and not lab.move_button.disabled, action + " Move unavailable")
@@ -108,9 +110,15 @@ func run() -> void:
     check(lab.log_view.text.contains("sentinel earliest") and lab.log_view.text.contains("sentinel latest"), "full log truncated")
     lab.log_dialog.hide()
     for size in [Vector2(768, 1024), Vector2(1366, 1024)]:
+        root.size = Vector2i(size)
+        await process_frame
+        await process_frame
         lab._apply_responsive_layout(size)
         lab._select_action("dash")
         check(lab.intent_text.autowrap_mode != TextServer.AUTOWRAP_OFF and lab.confirm_action.custom_minimum_size.y >= 48, "layout/touch targets")
+        await process_frame
+        check(root.get_visible_rect().size == size, "viewport letterboxed portrait")
+        check(lab.confirm_action.get_global_rect().end.y <= size.y and lab.confirm_action.get_global_rect().position.y >= 0, "Confirm clipped outside viewport")
         lab._cancel_action()
     lab.queue_free()
     await process_frame

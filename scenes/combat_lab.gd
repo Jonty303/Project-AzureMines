@@ -1113,7 +1113,7 @@ func _refresh() -> void:
     if engine == null:
         return
     _rebuild_pickers()
-    if not pending_action.is_empty() and (pending_actor != engine.current_id() or pending_turn != engine.turn_serial or engine.finished or engine.deployment_active):
+    if not pending_action.is_empty() and (pending_actor != engine.current_id() or pending_turn != engine.turn_serial or engine.finished or engine.deployment_active or not engine.is_combat_capable(engine.current_id())):
         _discard_action()
     # Clear an obsolete targeting highlight as soon as the underlying action
     # becomes unavailable, even when a different bonus-action spell remains.
@@ -1518,6 +1518,8 @@ func _discard_action() -> void:
     pending_turn = -1
     pending_source = ""
     show_explanation_details = false
+    if not action_touch.is_empty():
+        action_touch["cancelled"] = true
 
 
 func _select_action(action_id: String) -> void:
@@ -1654,6 +1656,11 @@ func _action_input_buttons() -> Array:
 func _input(event: InputEvent) -> void:
     if not is_instance_valid(bottom_action_panel) or not bottom_action_panel.visible:
         return
+    if event is InputEventKey and not pending_action.is_empty() and not escape_sources.has_focus():
+        _unhandled_key_input(event)
+        if event.pressed and event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]:
+            get_viewport().set_input_as_handled()
+            return
     if event is InputEventMouseButton and Time.get_ticks_msec() < action_touch_until:
         for button in _action_input_buttons():
             if button.is_visible_in_tree() and button.get_global_rect().has_point(event.position):

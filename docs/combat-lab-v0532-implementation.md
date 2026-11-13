@@ -18,7 +18,30 @@ Dash/Disengage select Move after committing only when movement is legal. Move di
 
 ## Validation evidence
 
-Pending final verification. Physical iPad Safari, gamepad, balance and owner visual acceptance: **NOT RUN**.
+Verified with checksum-pinned Godot `4.5.2.stable.official.6ce3de25a` on Linux. The host's preinstalled 4.6.3 was not used; project/toolchain pins remain 4.5.2.
+
+| Check | Result |
+| --- | --- |
+| All 33 existing + 3 new Godot suites registered in `godot-smoke.yml` | **PASS**, all 36 exit 0; no script/assertion failures |
+| `godot --headless --path . --editor --quit` | **PASS**, no parse/import errors |
+| `godot --headless --path . --quit-after 30` | **PASS** |
+| `python3 scripts/self_test.py` | **PASS**; expected negative-path “Godot not installed” diagnostic is part of its test |
+| `python3 scripts/validate_toolchain.py` | **PASS** |
+| `python3 scripts/validate_template.py --project` | **PASS** |
+| `python3 scripts/test_codespaces_web_preview.py` | **PASS**, both tests, including local HTTP during build |
+| Godot 4.5.2 `--export-release Web build/web/index.html` | **PASS**, nonempty HTML, JS, WASM and PCK; official templates SHA-256 verified |
+| Local private `127.0.0.1:8765` Chromium Web smoke | **PASS**, HTTP 200, one canvas, no page/console errors; title, deployment, battle and pending Dash inspected |
+| Browser layout, 1366×1024 and 768×1024 | **PASS** for inspected Dash explanation, visible Confirm/Cancel, fixed command bar and battlefield; native viewport sizing removes portrait letterboxing |
+| Actual Codespaces inventory/forwarding | **NOT VERIFIED**: read-only `gh codespace list --repo Jonty303/Project-AzureMines --json name,state` returned Forbidden; no Codespace created/resumed |
+| Physical iPad Safari, gamepad, audio/balance and owner acceptance | **NOT RUN** |
+
+The new suites cover captured save/attack dice/modifiers/DC/AC, exact consequence/event rendering, deterministic seed replay, preview/search purity, real spider fixture terrain/save behaviour, all six cancellable intents, duplicate confirmation/revalidation, explicit overlapping restraint sources, resource snapshots, truthful states, lifecycle cleanup, full-log completeness, viewport/control bounds, simulated touch/mouse compatibility, drag/multitouch and keyboard input.
+
+Baseline diagnostics are disclosed rather than counted as clean runtime output: resource/ObjectDB cleanup warnings occur in the older audio/context, deployment, Lab UI, wide-camera and intermittently movement/impact suites; the older Lab UI suite also opens two exclusive dialogs. These suites exit 0 and report PASS; the same resource/exclusive-dialog diagnostics reproduce on untouched base `a3f38f5`. Import/startup and the new suites are clean. Initial sandbox-only socket/data-directory failures were resolved by using writable XDG directories and local socket permissions, without changing game code for those failures.
+
+Screenshots: [landscape](validation/v0532-landscape.png), [portrait](validation/v0532-portrait.png). These are desktop Chromium evidence, **not physical touch acceptance**.
+
+Known limits: the Lab still implements only its existing bounded combat rules and fixture mechanics; no new immunity/resistance system, Web Sense, monster abilities or spells were invented. Web Walker is the narrow movement-cost adaptation requested in #29, with saves/Restrained preserved. Human visual readability, Safari gesture feel and numerical balance require the script below. Details remains optional and presentation-only.
 
 ## Physical iPad acceptance script
 

@@ -2037,6 +2037,12 @@ func _event(kind: String, actor_id: String = "", target_id: String = "",
         var target_cell: Vector2i = actors[target_id]["position"]
         entry["target_cell"] = [target_cell.x, target_cell.y]
     entry["resources"] = {"action_used": action_used, "bonus_action_used": bonus_action_used, "movement_used": movement_used, "dash_extra_squares": dash_extra_squares}
+    if actors.has(actor_id):
+        entry["resources"]["actor_slots"] = actors[actor_id].get("spell_slots_by_level", {}).duplicate(true)
+        entry["resources"]["second_wind_uses"] = actors[actor_id].get("second_wind_remaining", 0)
+    if kind == "cast":
+        var definition := Level1Spells.get_definition(str(payload.get("action_id", "")))
+        entry["resource_cost"] = {"economy": definition.get("time", ""), "slot_level": definition.get("level", 0)}
     for key in payload.keys():
         entry[key] = payload[key]
     if str(entry["text"]).is_empty() and kind != "sound":
