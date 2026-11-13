@@ -222,13 +222,13 @@ func end_effect(effect_id: String, reason: String = "expired") -> void:
 
 func _expire_effects() -> void:
     for id in active_effects.keys():
-        _expire_burning_cells(str(id))
         if not active_effects.has(id):
             continue
         var effect: Dictionary = active_effects[id]
         if round_number > int(effect["expiry_round"]) or (round_number == int(effect["expiry_round"]) \
                 and turn_index >= int(effect["expiry_turn"])):
             end_effect(str(id))
+    _expire_burning_cells()
 
 
 func effect_hook(actor_id: String, trigger: String, previous: Vector2i = Vector2i(-1, -1)) -> void:
@@ -2090,22 +2090,47 @@ func ignite_web_cell(cell: Vector2i, fire_source: String) -> bool:
     return changed
 
 
-func _expire_burning_cells(id: String) -> void:
-    var effect: Dictionary = active_effects[id]
-    for cell in effect["burning_cells"].keys():
-        var burn: Dictionary = effect["burning_cells"][cell]
-        if round_number < int(burn["expiry_round"]) or (round_number == int(burn["expiry_round"]) and turn_index < int(burn["expiry_turn"])):
-            continue
+func _sorted_cells(cells: Array) -> Array:
+    var result := cells.duplicate()
+    result.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
+    return result
+
+
+func _expire_burning_cells() -> void:
+    # Collect the complete boundary before ignition/removal. No new fire can
+    # recursively propagate during this boundary, including overlapping regions.
+    var expired: Array[Dictionary] = []
+    var wave: Dictionary = {}
+    var ids := active_effects.keys()
+    ids.sort()
+    for id in ids:
+        var effect: Dictionary = active_effects[id]
+        for cell in _sorted_cells(effect["burning_cells"].keys()):
+            var burn: Dictionary = effect["burning_cells"][cell]
+            if round_number < int(burn["expiry_round"]) or (round_number == int(burn["expiry_round"]) and turn_index < int(burn["expiry_turn"])):
+                continue
+            expired.append({"id": id, "cell": cell, "source": burn["source"]})
+            for offset in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+                var next: Vector2i = cell + offset
+                if effect["cells"].has(next) and not _area_barrier(next) and not is_web_burning(next) and not wave.has(next):
+                    wave[next] = burn["source"]
+    for cell in _sorted_cells(wave.keys()):
+        ignite_web_cell(cell, str(wave[cell]))
+    for item in expired:
+        var id: String = item["id"]
+        var cell: Vector2i = item["cell"]
+        var effect: Dictionary = active_effects[id]
         effect["cells"].erase(cell)
         effect["burning_cells"].erase(cell)
         for application in effect["applications"].duplicate():
             var actor_id: String = application["actor_id"]
             if actors[actor_id]["position"] == cell:
                 _remove_condition(actor_id, str(application["condition"]), id)
-        _event("web_cell_removed", str(burn["source"]), "", {"effect_id": id, "cell": [cell.x, cell.y]})
+        _event("web_cell_removed", str(item["source"]), "", {"effect_id": id, "cell": [cell.x, cell.y]})
         _event("area_updated", str(effect["source"]), "", _effect_payload(id))
-    if effect["cells"].is_empty():
-        end_effect(id, "burned_away")
+    for id in ids:
+        if active_effects.has(id) and active_effects[id]["cells"].is_empty():
+            end_effect(str(id), "burned_away")
 
 
 func _web_fire_start_turn(actor_id: String, cell: Vector2i) -> void:
