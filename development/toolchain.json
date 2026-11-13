@@ -5,6 +5,8 @@
   "godot": {
     "version": "4.5.2",
     "linux_download_url": "https://github.com/godotengine/godot/releases/download/4.5.2-stable/Godot_v4.5.2-stable_linux.x86_64.zip",
-    "linux_sha256": "87f6e6be292929e363d15ed9052f277b2ba4e95ed994e1e099048097be2dfd03"
+    "linux_sha256": "87f6e6be292929e363d15ed9052f277b2ba4e95ed994e1e099048097be2dfd03",
+    "web_export_templates_url": "https://github.com/godotengine/godot/releases/download/4.5.2-stable/Godot_v4.5.2-stable_export_templates.tpz",
+    "web_export_templates_sha256": "ea50e5183f057d42b22120d0d0340205b98f51f8ff13c33c70fd4ac9077d2019"
   }
 }
