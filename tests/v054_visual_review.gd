@@ -9,7 +9,10 @@ func _ready() -> void:
     lab._start_battle()
     var engine = lab.engine
     var board = lab.board
-    assert(engine.begin_battle())
+    var started: bool = engine.begin_battle()
+    if not started:
+        push_error("Visual QA fixture failed to begin battle")
+        return
     engine.walls.clear()
     for x in range(17):
         engine.walls.append(Vector2i(x, 0))
@@ -33,8 +36,13 @@ func _ready() -> void:
         "concentration": true, "save_dc": 10, "difficult_terrain": true,
         "condition": "restrained", "triggers": ["enter", "start_turn"], "flammable": true
     })
-    assert(not effect_id.is_empty())
-    assert(engine.ignite_web_cell(Vector2i(12, 2), "test_visual"))
+    if effect_id.is_empty():
+        push_error("Visual QA fixture failed to create masked Web")
+        return
+    var ignited: bool = engine.ignite_web_cell(Vector2i(12, 2), "test_visual")
+    if not ignited:
+        push_error("Visual QA fixture failed to ignite Web")
+        return
     engine.ignite_actor("pip", "test_visual")
     lab._refresh()
     board.inspected_cell = Vector2i(6, 3)

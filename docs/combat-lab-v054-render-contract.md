@@ -1,5 +1,7 @@
 # Combat Lab v0.5.4 production/render contract
 
+Feature: [FEAT-020](../specifications/features/FEAT-020-combat-art-rendering.md), extending FEAT-011 and preserving FEAT-016.
+
 Owner-authorized scope: issue #32 and approved art direction v1. Production PNGs are original, source-authored pixel drawings; references are never sampled or cropped. Source resolution is 32 pixels per 64-pixel artwork box, displayed in the existing 68-pixel board pitch (camera/input unchanged). Nearest filtering, lossless imports, fixed alpha gutters and uniform monster pivots are mandatory.
 
 ## Audit
