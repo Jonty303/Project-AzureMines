@@ -16,5 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate documentation and toolchain and negative cases
         run: python3 scripts/self_test.py
+      - name: Test persistent browser preview without Godot
+        run: python3 scripts/test_codespaces_web_preview.py
       - name: Verify project context is completed
         run: python3 scripts/validate_template.py --project

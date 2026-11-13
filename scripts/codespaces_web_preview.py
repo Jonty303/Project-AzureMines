@@ -63,7 +63,7 @@ def revision() -> str:
 
 
 def valid_export(directory: Path) -> bool:
-    return (directory / "index.html").is_file() and all(
+    return (directory / "index.html").is_file() and (directory / "index.html").stat().st_size > 0 and all(
         any(p.is_file() and p.stat().st_size > 0 for p in directory.glob("*." + ext))
         for ext in EXTENSIONS
     )
@@ -150,6 +150,10 @@ class PreviewHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(kwargs.pop("directory", ROOT)), **kwargs)
 
+    def end_headers(self) -> None:
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def do_GET(self) -> None:
         if self.path.split("?", 1)[0] == "/__preview/status":
             payload = json.dumps(self.server.snapshot()).encode("utf-8")
@@ -165,7 +169,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             body = (
                 "<!doctype html><html><head><meta name='viewport' content='width=device-width'>"
                 "<meta http-equiv='refresh' content='8'></head><body>"
-                "<h2>Azure Mines preview is starting</h2><p>" + message +
+                "<h2>Web preview is starting</h2><p>" + message +
                 "</p><p>The page will refresh automatically.</p></body></html>"
             ).encode("utf-8")
             self.send_response(503)
@@ -179,14 +183,15 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
 
-def show_status(port: int) -> int:
+def show_status(port: int, quiet: bool = False) -> int:
     try:
         with urlopen(f"http://127.0.0.1:{port}/__preview/status", timeout=3) as response:
             print(response.read().decode("utf-8"))
         return 0
     except (URLError, OSError) as exc:
-        print("Preview service not responding:", exc)
-        print("Log:", RUNTIME / "service.log")
+        if not quiet:
+            print("Preview service not responding:", exc)
+            print("Log:", RUNTIME / "service.log")
         return 1
 
 
@@ -203,7 +208,7 @@ def main() -> int:
         return 0
     RUNTIME.mkdir(parents=True, exist_ok=True)
     if action == "start":
-        if show_status(cfg["port"]) == 0:
+        if show_status(cfg["port"], quiet=True) == 0:
             print("Web preview already running")
             return 0
         with (RUNTIME / "service.log").open("a", encoding="utf-8") as log:
