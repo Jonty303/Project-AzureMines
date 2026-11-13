@@ -53,3 +53,8 @@ Draft a Proposed ADR before material changes. Never mark an unreviewed change Ac
 **Status:** Owner-agreed, implemented in Combat Lab on 2026-11-12; physical iPad acceptance pending.
 **Decision:** An unconscious hero resolves an automatic death save at initiative but never receives an input turn or End Turn command. Stable, dead and knocked-out creatures are skipped. Natural-20 recovery restores a playable turn. Ordinary AI does not deliberately select downed foes unless an explicit future policy enables it. Smooth per-tile actor motion and delayed fatal projectile collapse are presentation queues sourced from resolved events and snapshots; the combat engine never waits for VFX.
 **Consequences:** Maintain reproducible death-save sequencing, do not duplicate rules state in the board, and keep visual/audio state cancellable on retry. See FEAT-016.
+
+### ADR-AM-010 — Persistent combat regions
+**Status:** Proposed implementation for owner review under issue #18.
+**Proposal:** Add versioned transient region instances and source-owned conditions to CombatEngine, using existing movement/reaction/initiative paths. Keep Bless's public concentration contract compatible. Board reads active-region and condition snapshots; presentation never advances lifecycle. See docs/combat-lab-v052-persistent-effects.md for timing, exclusions and validation.
+**Alternative:** Scene-owned or Web-specific state duplicates rules and cannot provide deterministic replay.
