@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "port": 8765,
+  "output_dir": "build/web",
+  "build_command": [
+    "python3",
+    "scripts/preview_godot_web.py",
+    "--build-only",
+    "--output-dir",
+    "{staging_dir}"
+  ],
+  "poll_seconds": 15
+}

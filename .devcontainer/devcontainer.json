@@ -24,5 +24,6 @@
       }
     }
   },
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  "postStartCommand": "python3 scripts/codespaces_web_preview.py start"
 }

@@ -74,10 +74,12 @@ static func _set_test_spells(hero: Dictionary, level: int) -> void:
             cantrips.append(spell_id)
         else:
             prepared.append(spell_id)
+    if str(hero.get("id", "")) == "elyra" and class_id == "evoker" and level >= 3:
+        prepared.append("web")
     casting["cantrips"] = cantrips
     casting["wizard_cantrips"] = cantrips
     casting["prepared_spells"] = prepared
-    # Current engine implements only first-level spell slots. Higher slots are not simulated.
+    # Lab resource tiers are explicit; spell availability is separately bounded.
     var first_level_slots := 2
     if class_id in ["priest", "evoker"]:
         first_level_slots = 2 if level == 1 else (3 if level == 2 else 4)
@@ -197,4 +199,4 @@ static func build_setup(level: int, fourth_class: String, enemy_kind: String, en
     return {"schema_version": 1, "seed": seed, "party": party, "encounter": arena,
         "lab": {"level": level, "fourth_class": fourth_class, "enemy_type": enemy_kind,
         "enemy_count": enemy_count, "arena": arena_id, "seed": seed,
-        "supported_mechanics": "Level-one ability implementations; higher-level HP and first-level slot capacity only"}}
+        "supported_mechanics": "Level-one abilities and Elyra L3+ Web; tiered slots; remaining progression is HP scaffolding"}}

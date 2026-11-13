@@ -17,6 +17,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--build-only", action="store_true")
+    parser.add_argument("--output-dir", default="build/web", help="Export location relative to project root")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("--port must be between 1 and 65535")
@@ -32,7 +33,10 @@ def main() -> int:
     if not binary.is_file():
         print("FAIL: Godot not installed; run python3 scripts/bootstrap_codespaces.py", file=sys.stderr)
         return 1
-    folder = project / "build/web"
+    folder = (project / args.output_dir).resolve()
+    if not folder.is_relative_to(ROOT) or folder == ROOT:
+        print("FAIL: output directory must be inside the repository", file=sys.stderr)
+        return 1
     folder.mkdir(parents=True, exist_ok=True)
     # Clean old output so a stale index cannot masquerade as a new successful export.
     for suffix in (".html", ".wasm", ".pck", ".js"):

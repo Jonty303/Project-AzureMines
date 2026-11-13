@@ -10,6 +10,10 @@ const BG := Color("#0e141b")
 const CREAM := Color("#e8ddc9")
 const GOLD := Color("#d7aa58")
 
+var web_anchor := Vector2i(-1, -1)
+var web_actor := ""
+var web_controls: HBoxContainer
+var confirm_web: Button
 var engine: CombatEngine
 var board: CombatBoard
 var title_panel: VBoxContainer
@@ -202,7 +206,7 @@ func _build_ui() -> void:
     party_roster.custom_minimum_size = Vector2(0, 210)
     party_roster.fit_content = true
     title_panel.add_child(party_roster)
-    _make_label("The lab exposes every currently implemented class spell for testing. Higher-level class features and higher-level spell slots are not yet implemented.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    _make_label("The lab exposes implemented spells with tiered slots. Elyra gains Web at level 3; other higher-level spells and class features remain unimplemented.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     var menu := HFlowContainer.new()
     menu.add_theme_constant_override("separation", 12)
     title_panel.add_child(menu)
@@ -211,7 +215,7 @@ func _build_ui() -> void:
     _make_button("Last Battle Log", menu, _show_last_battle, 180)
     _make_button("Debug Input / Output", menu, _show_debug, 205)
     title_status = _make_label("", title_panel, 16)
-    _make_label("Test mode only: levels 1–5 provide scaled HP and available first-level resources. Unimplemented progression features are not simulated.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    _make_label("Test mode only: levels 1–5 provide scaled HP, tiered spell slots and bounded spell loadouts. Unimplemented progression features are not simulated.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
     battle_scroll = ScrollContainer.new()
     battle_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -246,6 +250,8 @@ func _build_ui() -> void:
     main_grid.add_child(board_panel)
     board = CombatBoard.new()
     board.cell_clicked.connect(_on_cell_clicked)
+    board.camera_gesture.connect(_clear_web_preview)
+    board.cancel_targeting.connect(_cancel_web)
     board.projectile_impact.connect(_on_projectile_impact)
     board_panel.add_child(board)
 
@@ -447,6 +453,11 @@ func _build_ui() -> void:
     reaction_text = _make_label("", reaction_panel, 16)
     reaction_accept = _make_button("React", reaction_panel, _resolve_reaction.bind(true), 100)
     reaction_decline = _make_button("Decline", reaction_panel, _resolve_reaction.bind(false), 100)
+    web_controls = HBoxContainer.new()
+    bottom_action_layout.add_child(web_controls)
+    confirm_web = _make_button("Confirm Web", web_controls, _confirm_web, 170)
+    _make_button("Cancel", web_controls, _cancel_web, 120)
+    web_controls.visible = false
     action_hint = _make_label("Choose a command, then tap a highlighted tile.", bottom_action_layout, 14)
     action_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     debug_action_button = _make_button("Debug Input / Output", actions_tab, _show_debug, 200)
@@ -562,6 +573,7 @@ func _update_title() -> void:
 
 
 func _show_title() -> void:
+    _clear_web_preview()
     if title_panel == null:
         return
     title_panel.visible = true
@@ -573,6 +585,7 @@ func _show_title() -> void:
 
 
 func _start_battle() -> void:
+    _clear_web_preview()
     var setup: Dictionary = _current_setup()
     if setup.is_empty():
         title_status.text = "Could not construct the requested encounter."
@@ -635,6 +648,7 @@ func _select_mode(mode: String) -> void:
                 if engine.can_cast_current_spell(spell_ids[index]):
                     spell_picker.select(index)
                     break
+    _clear_web_preview()
     action_mode = mode
     _hide_selection_menus()
     _refresh()
@@ -646,6 +660,7 @@ func _on_weapon_change(_index: int) -> void:
 
 
 func _on_spell_change(_index: int) -> void:
+    _clear_web_preview()
     action_mode = "spell"
     _refresh()
 
@@ -687,6 +702,15 @@ func _on_cell_clicked(cell: Vector2i) -> void:
         if engine.attack(target_id, _selected_weapon()):
             action_mode = ""
     elif action_mode == "spell":
+        if _selected_spell() == "web":
+            web_anchor = cell
+            web_actor = engine.current_id()
+            _refresh()
+            return
+        if _selected_spell() == "fire_bolt" and not engine.can_cast_spell("fire_bolt", target_id) and engine.cast_fire_bolt_cell(cell):
+            action_mode = ""
+            _refresh()
+            return
         if not engine.can_cast_spell(_selected_spell(), target_id):
             _refresh()
             action_hint.text = engine.spell_unavailable_reason(_selected_spell(), target_id)
@@ -797,6 +821,9 @@ func _spell_unavailability_hint(spell_id: String) -> String:
             if target_kind == "ally" and candidate["team"] == current_team and candidate.get("combat_state", "") != "dead":
                 chosen_target = candidate_id
                 break
+    if target_kind == "area":
+        var resource_reason := engine.spell_resource_reason(spell_id)
+        return resource_reason if not resource_reason.is_empty() else "No legal 4x4 floor area within range and sight."
     var message: String = engine.spell_unavailable_reason(spell_id, chosen_target)
     return message if not message.is_empty() else "No currently legal target."
 
@@ -952,6 +979,7 @@ func _select_spell_card(spell_id: String) -> void:
     var index: int = spell_ids.find(spell_id)
     if index < 0 or not engine.current_is_party() or not engine.can_cast_current_spell(spell_id):
         return
+    _clear_web_preview()
     spell_picker.select(index)
     action_mode = "spell"
     _hide_selection_menus()
@@ -1045,6 +1073,12 @@ func _refresh() -> void:
         if (action_mode == "attack" and engine.action_used) or (
                 action_mode == "spell" and not engine.can_cast_current_spell(_selected_spell())):
             action_mode = ""
+    if web_actor != engine.current_id() or action_mode != "spell" or _selected_spell() != "web" or engine.finished:
+        _clear_web_preview()
+    board.area_preview = web_anchor
+    board.area_preview_valid = web_anchor.x >= 0 and engine.area_spell_reason("web", web_anchor).is_empty()
+    web_controls.visible = web_anchor.x >= 0
+    confirm_web.disabled = not board.area_preview_valid
     board.action_mode = action_mode if not engine.deployment_active else ""
     board.selected_deployment_actor = deployment_actor
     board.selected_weapon = _selected_weapon()
@@ -1115,6 +1149,11 @@ func _refresh() -> void:
         action_hint.text = "Blue cells are reachable. Tap a blue cell to move."
     elif action_mode == "attack":
         action_hint.text = "Red cells indicate valid weapon targets. Tap a target to attack."
+    elif action_mode == "spell" and _selected_spell() == "web":
+        var reason := engine.area_spell_reason("web", web_anchor) if web_anchor.x >= 0 else ""
+        action_hint.text = "Web: L2 slot + Action; 4x4 floor, 60 ft. Tap top-left cell (arrows + Enter), then Confirm Web."
+        if web_anchor.x >= 0:
+            action_hint.text = ("Valid 4x4 floor anchor (%d, %d). Confirm Web or Cancel." % [web_anchor.x, web_anchor.y]) if reason.is_empty() else reason
     elif action_mode == "spell":
         var target_id: String = engine.target_at(selected_cell)
         var reason: String = engine.spell_unavailable_reason(_selected_spell(), target_id)
@@ -1122,6 +1161,8 @@ func _refresh() -> void:
             action_hint.text = reason if not reason.is_empty() else "Legal spell target. Tap a gold cell to cast."
         else:
             action_hint.text = "Gold cells indicate legal targets for the selected spell. Tap to cast."
+            if _selected_spell() == "fire_bolt":
+                action_hint.text = "Fire Bolt: tap an enemy or a gold intact Web cell to ignite it (Action; 120 ft)."
     else:
         if can_act and engine.action_used and engine.can_cast_any_current_spell():
             action_hint.text = "Action used. Bonus-action spells are still available; choose one under Spell."
@@ -1333,6 +1374,10 @@ func _update_selection_details() -> void:
         parts.append("Wall • impassable")
     elif tile in engine.difficult_terrain:
         parts.append("Difficult terrain")
+    if engine.is_lightly_obscured(tile):
+        parts.append("Web: Difficult Terrain; Lightly Obscured (sight Perception disadvantage; LOS stays clear)")
+    if engine.is_web_burning(tile):
+        parts.append("Burning Web: 2d4 fire at start of turn; burns away after one round")
     for obstacle in engine.obstacles:
         var corner: Vector2i = obstacle["position"]
         var extent: Vector2i = obstacle["size"]
@@ -1355,3 +1400,29 @@ func _dialog_size(preferred: Vector2i) -> Vector2i:
 func _show_live_log() -> void:
     log_view.text = event_log.text
     log_dialog.popup_centered(_dialog_size(Vector2i(840, 520)))
+
+
+func _clear_web_preview() -> void:
+    web_anchor = Vector2i(-1, -1)
+    web_actor = ""
+    if board != null:
+        board.area_preview = web_anchor
+        board.queue_redraw()
+    if web_controls != null:
+        web_controls.hide()
+
+
+func _cancel_web() -> void:
+    _clear_web_preview()
+    action_mode = ""
+    _refresh()
+
+
+func _confirm_web() -> void:
+    if engine == null or web_actor != engine.current_id() or action_mode != "spell" or _selected_spell() != "web":
+        _clear_web_preview()
+        return
+    if engine.cast_area_spell("web", web_anchor):
+        _clear_web_preview()
+        action_mode = ""
+    _refresh()
