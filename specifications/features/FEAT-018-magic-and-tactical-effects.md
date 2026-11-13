@@ -32,3 +32,10 @@ See [Issue #16](https://github.com/Jonty303/Project-AzureMines/issues/16) and [P
 ## v0.5.2 implementation candidate — issue #18 / draft PR #19
 
 The engine owns schema-one transient regions and source-indexed Restrained applications. Explicit enter/start/end hooks and round/initiative expiry drive shared terrain, movement, AI and concentration cleanup; board/UI only read snapshots and submit commands. A non-selectable 4×4 test fixture proves the shared API. Bless/slot contracts remain compatible. Full Web, visibility/obscurement, fire and manual placement remain v0.5.3 work, not implemented spells. See [ownership, exact timing, modified paths and executed validation](../../docs/combat-lab-v052-persistent-effects.md). Owner/physical iPad acceptance is pending.
+
+## v0.5.3 Codex delivery brief — prepared 13 November 2026
+
+**Status: Ready for implementation; no v0.5.3 gameplay code has been implemented or accepted.**
+Issue [#22](https://github.com/Jonty303/Project-AzureMines/issues/22) and the [v0.5.3 Web handoff](../../docs/combat-lab-v053-web-handoff.md) define the next isolated slice: complete castable Web, atomic 4x4 area targeting/confirmation, actual L2 slot expenditure, shared persistent-region/Restrained/concentration/AI mechanics, Lightly Obscured rules and individual fire/burn-away cells. Preserve the owner-tested iPad glyph, spell paging, action/bonus state from PR #21; unrelated bottom action-bar polish is deferred.
+
+Branch: `feature/combat-lab-v053-web` from `feature/combat-lab-ipad-action-ux-fixes`. Draft implementation PR must target the latter feature branch, **not main**; no automatic merges or Pages deployment. Prior PRs #19, #20 and #21 remain independent prerequisites. End-to-end physical iPad acceptance for the **new** Web behaviour is **NOT RUN** until the owner playtests it.
