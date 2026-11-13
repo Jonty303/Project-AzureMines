@@ -206,7 +206,7 @@ func _build_ui() -> void:
     party_roster.custom_minimum_size = Vector2(0, 210)
     party_roster.fit_content = true
     title_panel.add_child(party_roster)
-    _make_label("The lab exposes every currently implemented class spell for testing. Higher-level class features and higher-level spell slots are not yet implemented.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    _make_label("The lab exposes implemented spells with tiered slots. Elyra gains Web at level 3; other higher-level spells and class features remain unimplemented.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     var menu := HFlowContainer.new()
     menu.add_theme_constant_override("separation", 12)
     title_panel.add_child(menu)
@@ -215,7 +215,7 @@ func _build_ui() -> void:
     _make_button("Last Battle Log", menu, _show_last_battle, 180)
     _make_button("Debug Input / Output", menu, _show_debug, 205)
     title_status = _make_label("", title_panel, 16)
-    _make_label("Test mode only: levels 1–5 provide scaled HP and available first-level resources. Unimplemented progression features are not simulated.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    _make_label("Test mode only: levels 1–5 provide scaled HP, tiered spell slots and bounded spell loadouts. Unimplemented progression features are not simulated.", title_panel, 14).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
     battle_scroll = ScrollContainer.new()
     battle_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL

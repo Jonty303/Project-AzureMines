@@ -39,3 +39,7 @@ The engine owns schema-one transient regions and source-indexed Restrained appli
 Issue [#22](https://github.com/Jonty303/Project-AzureMines/issues/22) and the [v0.5.3 Web handoff](../../docs/combat-lab-v053-web-handoff.md) define the next isolated slice: complete castable Web, atomic 4x4 area targeting/confirmation, actual L2 slot expenditure, shared persistent-region/Restrained/concentration/AI mechanics, Lightly Obscured rules and individual fire/burn-away cells. Preserve the owner-tested iPad glyph, spell paging, action/bonus state from PR #21; unrelated bottom action-bar polish is deferred.
 
 Branch: `feature/combat-lab-v053-web` from `feature/combat-lab-ipad-action-ux-fixes`. Draft implementation PR must target the latter feature branch, **not main**; no automatic merges or Pages deployment. Prior PRs #19, #20 and #21 remain independent prerequisites. End-to-end physical iPad acceptance for the **new** Web behaviour is **NOT RUN** until the owner playtests it.
+
+## v0.5.3 implementation candidate — issue #22 / draft PR #23
+
+Web now uses the existing region authority with atomic area validation/casting, Elyra L3+ loadout, explicit touch preview/confirmation, source-owned Restrained/escape, Lightly Obscured queries and per-cell Fire Bolt ignition/burning. See [implementation contracts, validation and physical acceptance gaps](../../docs/combat-lab-v053-web-implementation.md). Physical iPad and owner acceptance remain pending; no other second-level spells are implied.
