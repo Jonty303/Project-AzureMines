@@ -3,6 +3,9 @@ extends RefCounted
 ## The engine enforces costs, targets and effects; this module only declares capabilities.
 
 const DEFINITIONS := {
+    "web": {"level": 2, "school": "conjuration", "time": "action", "target": "area",
+        "range_feet": 60, "effect": "web", "concentration": true,
+        "duration_rounds": 600, "footprint": Vector2i(4, 4), "anchor": "floor_top_left"},
     "fire_bolt": {"level": 0, "time": "action", "target": "enemy", "range_feet": 120,
         "effect": "attack_damage", "damage": "1d10", "damage_type": "fire"},
     "ray_of_frost": {"level": 0, "time": "action", "target": "enemy", "range_feet": 60,

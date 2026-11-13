@@ -169,13 +169,19 @@ func create_area_effect(source_id: String, definition: Dictionary) -> String:
         "concentration_owner": source_id if concentrating else "",
         "difficult_terrain": bool(definition.get("difficult_terrain", false)),
         "condition": condition, "triggers": triggers.duplicate(),
-        "save_dc": save_dc, "applications": [], "occasions": {}
+        "save_dc": save_dc, "applications": [], "occasions": {},
+        "lightly_obscured": bool(definition.get("lightly_obscured", false)),
+        "flammable": bool(definition.get("flammable", false)), "burning_cells": {}
     }
     if concentrating:
         actors[source_id]["concentration"] = {"spell": str(definition["type"]), "effect_id": id}
         _event("concentration_started", source_id, "", {"effect_id": id, "spell": str(definition["type"])})
     _event("effect_started", source_id, "", _effect_payload(id))
     _event("area_updated", source_id, "", _effect_payload(id))
+    if bool(definition.get("flammable", false)):
+        for hazard in hazards:
+            if str(hazard.get("damage_type", "fire")) == "fire":
+                ignite_web_cell(hazard["position"], "hazard:" + str(hazard.get("kind", "fire")))
     return id
 
 
@@ -206,6 +212,9 @@ func end_effect(effect_id: String, reason: String = "expired") -> void:
 
 func _expire_effects() -> void:
     for id in active_effects.keys():
+        _expire_burning_cells(str(id))
+        if not active_effects.has(id):
+            continue
         var effect: Dictionary = active_effects[id]
         if round_number > int(effect["expiry_round"]) or (round_number == int(effect["expiry_round"]) \
                 and turn_index >= int(effect["expiry_turn"])):
@@ -216,6 +225,8 @@ func effect_hook(actor_id: String, trigger: String, previous: Vector2i = Vector2
     if not actors.has(actor_id) or trigger not in ["enter", "start_turn", "end_turn"]:
         return
     var cell: Vector2i = actors[actor_id]["position"]
+    if trigger == "start_turn":
+        _web_fire_start_turn(actor_id, cell)
     for id in active_effects.keys():
         var effect: Dictionary = active_effects[id]
         if not effect["cells"].has(cell):
@@ -1444,6 +1455,8 @@ func _check_victory() -> void:
         victor = "party" if party_can_fight else "enemy"
         pending_move.clear()
         pending_reaction.clear()
+        for effect_id in active_effects.keys():
+            end_effect(str(effect_id), "encounter_ended")
         _record("VICTORY — opposing side incapacitated." if party_can_fight else
             "DEFEAT — no adventurer can fight.")
 
@@ -1576,13 +1589,26 @@ func can_cast_spell(spell_id: String, target_id: String) -> bool:
 
 
 func can_cast_current_spell(spell_id: String) -> bool:
+    if Level1Spells.get_definition(spell_id).get("target", "") == "area":
+        if not spell_resource_reason(spell_id).is_empty():
+            return false
+        for y in range(grid_size.y):
+            for x in range(grid_size.x):
+                if area_spell_reason(spell_id, Vector2i(x, y)).is_empty():
+                    return true
+        return false
+    if spell_id == "fire_bolt" and spell_resource_reason(spell_id).is_empty():
+        for effect in active_effects.values():
+            for cell in effect["cells"]:
+                if fire_bolt_cell_reason(cell).is_empty():
+                    return true
     for target_id in actors.keys():
         if can_cast_spell(spell_id, str(target_id)):
             return true
     return false
 
 
-func spell_unavailable_reason(spell_id: String, target_id: String) -> String:
+func spell_resource_reason(spell_id: String) -> String:
     # Single authority for casting, cards, target highlights and contextual hints.
     # Empty means legal. Check turn/resources before target-specific restrictions.
     if deployment_active:
@@ -1617,6 +1643,17 @@ func spell_unavailable_reason(spell_id: String, target_id: String) -> String:
             return "Mage Armor is already active."
         if caster.get("armor") != null:
             return "Mage Armor requires an unarmored caster."
+    return ""
+
+
+func spell_unavailable_reason(spell_id: String, target_id: String) -> String:
+    var reason := spell_resource_reason(spell_id)
+    if not reason.is_empty():
+        return reason
+    var caster: Dictionary = current_actor()
+    var spell: Dictionary = Level1Spells.get_definition(spell_id)
+    if spell.get("target", "") == "area":
+        return "Choose a top-left floor cell, then Confirm Web."
     if not actors.has(target_id):
         return "Choose a creature on a gold target cell."
     var target: Dictionary = actors[target_id]
@@ -1723,6 +1760,8 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
 func _apply_spell_damage(caster: Dictionary, target_id: String, spell_name: String, damage: int, damage_type: String) -> void:
     var target: Dictionary = actors[target_id]
     var before_hp: int = int(target["hp"])
+    if damage_type == "fire":
+        ignite_web_cell(target["position"], str(caster.get("id", "")))
     _deal_damage(target_id, damage)
     target = actors[target_id]
     _emit_sound("damage")
@@ -1894,3 +1933,151 @@ func _read_json(path: String) -> Dictionary:
         return {}
     var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
     return parsed if parsed is Dictionary else {}
+
+
+# Area queries never mutate resources, concentration, events or RNG.
+func area_spell_reason(spell_id: String, anchor: Vector2i) -> String:
+    var reason := spell_resource_reason(spell_id)
+    if not reason.is_empty():
+        return reason
+    var spell: Dictionary = Level1Spells.get_definition(spell_id)
+    if spell.get("target", "") != "area":
+        return "This spell targets creatures."
+    var footprint: Vector2i = spell["footprint"]
+    for y in range(footprint.y):
+        for x in range(footprint.x):
+            var cell := anchor + Vector2i(x, y)
+            if cell.x < 0 or cell.y < 0 or cell.x >= grid_size.x or cell.y >= grid_size.y:
+                return "The full 4x4 footprint must be on the floor."
+            if cell in walls or cell in blocked_cells:
+                return "The full 4x4 footprint must avoid walls and obstacles."
+    if _distance(current_actor()["position"], anchor) * 5 > int(spell["range_feet"]):
+        return "Point is beyond 60 feet."
+    if not _line_clear(current_actor()["position"], anchor):
+        return "Line of sight to the point is blocked."
+    return ""
+
+
+func cast_area_spell(spell_id: String, anchor: Vector2i) -> bool:
+    if not area_spell_reason(spell_id, anchor).is_empty():
+        return false
+    var caster_id := current_id()
+    var spell: Dictionary = Level1Spells.get_definition(spell_id)
+    var id := create_area_effect(caster_id, {
+        "schema_version": 1, "type": spell_id, "anchor": anchor,
+        "footprint": spell["footprint"], "duration_rounds": spell["duration_rounds"],
+        "concentration": true, "save_dc": int(current_actor()["spellcasting"]["save_dc"]),
+        "difficult_terrain": true, "lightly_obscured": true, "flammable": true,
+        "condition": "restrained", "triggers": ["enter", "start_turn"]})
+    if id.is_empty():
+        return false
+    action_used = true
+    slotted_cast_this_turn = true
+    actors[caster_id]["spell_slots_by_level"]["2"] = spell_slots_left(caster_id, 2) - 1
+    _event("cast", caster_id, "", {"action_id": spell_id, "effect_id": id,
+        "anchor": [anchor.x, anchor.y], "slot_level": 2})
+    _emit_sound("magic")
+    return true
+
+
+func is_lightly_obscured(cell: Vector2i) -> bool:
+    for effect in area_effects_at(cell):
+        if effect.get("lightly_obscured", false):
+            return true
+    return false
+
+
+func sight_perception_disadvantage(cell: Vector2i) -> bool:
+    # Lab has no Perception resolver. This typed seam does not alter LOS/attacks.
+    return is_lightly_obscured(cell)
+
+
+func is_web_burning(cell: Vector2i) -> bool:
+    for effect in active_effects.values():
+        if effect.get("burning_cells", {}).has(cell):
+            return true
+    return false
+
+
+func fire_bolt_cell_reason(cell: Vector2i) -> String:
+    var reason := spell_resource_reason("fire_bolt")
+    if not reason.is_empty():
+        return reason
+    var eligible := false
+    for effect in area_effects_at(cell):
+        if effect.get("flammable", false) and not effect["burning_cells"].has(cell):
+            eligible = true
+    if not eligible:
+        return "Choose an intact Web cell or an enemy."
+    if _distance(current_actor()["position"], cell) * 5 > 120:
+        return "Web cell is out of Fire Bolt range."
+    if not _line_clear(current_actor()["position"], cell):
+        return "Line of sight is blocked."
+    return ""
+
+
+func cast_fire_bolt_cell(cell: Vector2i) -> bool:
+    if not fire_bolt_cell_reason(cell).is_empty():
+        return false
+    action_used = true
+    _event("cast", current_id(), "", {"action_id": "fire_bolt", "cell": [cell.x, cell.y],
+        "effect": "ignite_web", "damage_type": "fire"})
+    ignite_web_cell(cell, current_id())
+    _emit_sound("magic")
+    return true
+
+
+func ignite_web_cell(cell: Vector2i, fire_source: String) -> bool:
+    var changed := false
+    for id in active_effects.keys():
+        var effect: Dictionary = active_effects[id]
+        if not effect.get("flammable", false) or not effect["cells"].has(cell) or effect["burning_cells"].has(cell):
+            continue
+        effect["burning_cells"][cell] = {"expiry_round": round_number + 1,
+            "expiry_turn": turn_index, "source": fire_source}
+        _event("web_ignited", fire_source, "", {"effect_id": id, "cell": [cell.x, cell.y]})
+        _event("area_updated", str(effect["source"]), "", _effect_payload(str(id)))
+        changed = true
+    return changed
+
+
+func _expire_burning_cells(id: String) -> void:
+    var effect: Dictionary = active_effects[id]
+    for cell in effect["burning_cells"].keys():
+        var burn: Dictionary = effect["burning_cells"][cell]
+        if round_number < int(burn["expiry_round"]) or (round_number == int(burn["expiry_round"]) and turn_index < int(burn["expiry_turn"])):
+            continue
+        effect["cells"].erase(cell)
+        effect["burning_cells"].erase(cell)
+        for application in effect["applications"].duplicate():
+            var actor_id: String = application["actor_id"]
+            if actors[actor_id]["position"] == cell:
+                _remove_condition(actor_id, str(application["condition"]), id)
+        _event("web_cell_removed", str(burn["source"]), "", {"effect_id": id, "cell": [cell.x, cell.y]})
+        _event("area_updated", str(effect["source"]), "", _effect_payload(id))
+    if effect["cells"].is_empty():
+        end_effect(id, "burned_away")
+
+
+func _web_fire_start_turn(actor_id: String, cell: Vector2i) -> void:
+    # Overlapping burning webs are one fire exposure per start, never per source.
+    for id in active_effects.keys():
+        var effect: Dictionary = active_effects[id]
+        if not effect["burning_cells"].has(cell):
+            continue
+        var key := "%d:%s:fire" % [turn_serial, actor_id]
+        if effect["occasions"].has(key):
+            return
+        for other in active_effects.values():
+            if other["burning_cells"].has(cell):
+                other["occasions"][key] = true
+        var source: String = effect["burning_cells"][cell]["source"]
+        var damage := RulesMath.roll_damage("2d4", rng)
+        var before: int = actors[actor_id]["hp"]
+        _deal_damage(actor_id, damage)
+        _event("hit", source, actor_id, {"action_id": "web_fire", "effect_id": id,
+            "source_kind": "area", "damage_type": "fire", "amount": damage,
+            "hp_before": before, "hp_after": actors[actor_id]["hp"],
+            "state_after": actors[actor_id]["combat_state"]})
+        _check_victory()
+        return

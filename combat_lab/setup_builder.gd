@@ -74,6 +74,8 @@ static func _set_test_spells(hero: Dictionary, level: int) -> void:
             cantrips.append(spell_id)
         else:
             prepared.append(spell_id)
+    if str(hero.get("id", "")) == "elyra" and class_id == "evoker" and level >= 3:
+        prepared.append("web")
     casting["cantrips"] = cantrips
     casting["wizard_cantrips"] = cantrips
     casting["prepared_spells"] = prepared

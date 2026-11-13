@@ -3,6 +3,7 @@ extends Control
 ## The approved mock-up drives the warm stone palette and strong target highlights.
 
 signal cell_clicked(cell: Vector2i)
+signal camera_gesture()
 signal projectile_impact(target_id: String, final_state: String)
 
 const CombatEngine = preload("res://combat/combat_engine.gd")
@@ -19,6 +20,8 @@ var engine: CombatEngine
 var action_mode := ""
 var selected_weapon := ""
 var selected_spell := ""
+var area_preview := Vector2i(-1, -1)
+var area_preview_valid := false
 var selected_deployment_actor := ""
 var _sprite_cache: Dictionary = {}
 var display_cell_size: int = CELL_SIZE
@@ -338,12 +341,14 @@ func _clamp_camera() -> void:
 
 
 func pan_by(delta: Vector2) -> void:
+    camera_gesture.emit()
     camera_offset += delta
     _clamp_camera()
     queue_redraw()
 
 
 func zoom_at(focal_point: Vector2, magnification: float) -> void:
+    camera_gesture.emit()
     if magnification <= 0.0:
         return
     var next_zoom: float = clampf(camera_zoom * magnification, MIN_ZOOM, MAX_ZOOM)
@@ -433,6 +438,13 @@ func _draw() -> void:
                 draw_rect(dest.grow(-4), Color("#d8e7ff", 0.85), false, 2.0)
                 draw_line(dest.position + Vector2(6, 6), dest.end - Vector2(6, 6), Color("#d8e7ff", 0.7), 2.0)
                 draw_line(dest.position + Vector2(6, CELL_SIZE - 6), dest.position + Vector2(CELL_SIZE - 6, 6), Color("#d8e7ff", 0.7), 2.0)
+            if engine.is_web_burning(cell):
+                draw_rect(dest.grow(-5), Color("#ff762e", 0.4))
+                draw_string(ThemeDB.fallback_font, dest.position + Vector2(7, 20), "FIRE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#fff2b0"))
+            if area_preview.x >= 0 and cell.x >= area_preview.x and cell.y >= area_preview.y and cell.x < area_preview.x + 4 and cell.y < area_preview.y + 4:
+                var preview_color := Color("#62edbb") if area_preview_valid else Color("#ff706e")
+                draw_rect(dest.grow(-6), Color(preview_color, 0.18))
+                draw_rect(dest.grow(-6), preview_color, false, 3.0)
             if cell in engine.difficult_terrain:
                 draw_rect(dest, Color("#8c6b35", 0.32))
             if reachable.has(cell) and cell != engine.current_actor()["position"]:
@@ -564,6 +576,13 @@ func get_highlights() -> Dictionary:
             if not engine.available_attack(target_id, selected_weapon).is_empty():
                 indicators["attack"][engine.actors[target_id]["position"]] = true
     elif action_mode == "spell" and not selected_spell.is_empty():
+        if selected_spell == "web":
+            return indicators
+        if selected_spell == "fire_bolt":
+            for effect in engine.active_effects.values():
+                for cell in effect["cells"]:
+                    if engine.fire_bolt_cell_reason(cell).is_empty():
+                        indicators["spell"][cell] = true
         for id_variant in engine.actors.keys():
             var target_id: String = str(id_variant)
             if engine.can_cast_spell(selected_spell, target_id):
