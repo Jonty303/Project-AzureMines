@@ -68,15 +68,23 @@ def install_editor(cfg: dict, cache: Path, home: Path) -> Path:
     if not isinstance(version, str) or not version.startswith("4."):
         raise ValueError("Godot 4 requires a pinned version")
     binary = home / ".local/bin/godot"
-    if version_ok(binary, version):
-        print(f"Existing verified-version editor: {binary}")
-        return binary
     archive = cache / "editor.zip"
     verified_download(cfg["linux_download_url"], cfg["linux_sha256"], archive)
     with zipfile.ZipFile(archive) as zipped:
         entries = [item for item in zipped.infolist() if not item.is_dir()]
         if len(entries) != 1 or PurePosixPath(entries[0].filename).name != entries[0].filename or entries[0].file_size > 500_000_000:
             raise ValueError("unexpected Godot editor ZIP structure")
+        if version_ok(binary, version):
+            sha_archive = hashlib.sha256()
+            sha_installed = hashlib.sha256()
+            with zipped.open(entries[0]) as source, binary.open("rb") as installed:
+                for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                    sha_archive.update(chunk)
+                for chunk in iter(lambda: installed.read(1024 * 1024), b""):
+                    sha_installed.update(chunk)
+            if sha_archive.digest() == sha_installed.digest():
+                print(f"Existing checksum-verified editor: {binary}")
+                return binary
         binary.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(dir=binary.parent, prefix=".godot-", delete=False) as tmp:
             temp = Path(tmp.name)
