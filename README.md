@@ -76,3 +76,18 @@ The GitHub Actions Godot workflow verifies the pinned release SHA-256, parses/im
 ## Branch isolation
 
 `feature/standalone-combat-lab` was created from `feature/combat-lab-polish-level2`, which itself inherits the adopted development template. The earlier narrative/combat feature branches and their unmerged PRs remain intact. This branch is intended for combat iteration, not for reintroducing campaign orchestration.
+
+## Codespaces Godot setup and current-branch iPad preview
+
+For this Godot **4.5.2** project, Codespaces creation/rebuild now uses `scripts/bootstrap_codespaces.py` to download the checksum-pinned official Linux editor and Web templates from `development/toolchain.json`, install `~/.local/bin/godot` and perform a headless import. Godot Tools points at `/home/vscode/.local/bin/godot` and uses headless language-server mode. This replaces the old documentation-only Codespace, but an **existing Codespace must rebuild or run the installer manually** after pulling the change.
+
+On the intended development branch, use:
+
+```sh
+python3 scripts/bootstrap_codespaces.py
+python3 scripts/preview_godot_web.py
+```
+
+Then open **Ports → 8765 → Open in Browser** from the iPad Codespaces editor. The second command builds the **currently checked-out commit**, verifies nonempty HTML/JS/WASM/PCK output and only then serves the site; it cannot silently display an empty directory. Keep the forwarded port private. The server runs until Ctrl+C, and it does not publish Pages or merge any branch.
+
+Check `git branch --show-current` before playtesting. The v0.5.2 Web-shaped region is test-only; this preview is not a promise of a castable Web spell or formal iPad acceptance. If a persisted local VS Code setting still points to `/workspaces/Project-AzureMines/godot`, remove that override in favour of `/home/vscode/.local/bin/godot`.
