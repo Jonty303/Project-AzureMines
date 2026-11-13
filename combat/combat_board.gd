@@ -361,6 +361,7 @@ func zoom_at(focal_point: Vector2, magnification: float) -> void:
 
 
 func reset_camera() -> void:
+    camera_gesture.emit()
     camera_zoom = 1.0
     camera_offset = Vector2.ZERO
     _touch_points.clear()

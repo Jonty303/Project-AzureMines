@@ -2,7 +2,7 @@
 
 Issue [#22](https://github.com/Jonty303/Project-AzureMines/issues/22), approved scope #16 / FEAT-018; foundation #18. Draft [PR #23](https://github.com/Jonty303/Project-AzureMines/pull/23) targets `feature/combat-lab-ipad-action-ux-fixes` and depends on the open, unmerged PRs #19–#21. No merge, deployment, narrative work or canonical fixture edits.
 
-Implementation recovery commits: `0568375` (engine and controls), `825c554cab9fc3e977f503967c58bc8cd7598aec` (acceptance suites and final gameplay implementation). Subsequent delivery changes update title help and this evidence record. The final pushed delivery SHA and its runtime/governance CI links are recorded in PR #23. Status: implemented candidate; physical acceptance pending.
+Implementation recovery commits: `0568375` (engine and controls), `825c554cab9fc3e977f503967c58bc8cd7598aec` (acceptance suites and final gameplay implementation). Subsequent delivery changes update title help, reset-view cancellation and this evidence record. The final pushed delivery SHA and its runtime/governance CI links are recorded in PR #23. Status: implemented candidate; physical acceptance pending.
 
 ## Rules and lifecycle contracts
 

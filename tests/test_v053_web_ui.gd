@@ -51,6 +51,9 @@ func run() -> void:
         check(lab.web_anchor == Vector2i(4, 4), "pointer preview transform")
         lab.board.zoom_at(point, 1.1)
         check(lab.web_anchor.x < 0, "zoom stale anchor")
+    lab._on_cell_clicked(Vector2i(4, 4))
+    lab.board.reset_camera()
+    check(lab.web_anchor.x < 0, "reset view stale anchor")
     lab.board.keyboard_cell = Vector2i(4, 4)
     var key := InputEventKey.new()
     key.keycode = KEY_ENTER
