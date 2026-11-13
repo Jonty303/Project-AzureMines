@@ -28,6 +28,11 @@ The launch screen also has a demonstration d20 roller. It is an example of an is
 
 See [architecture](docs/architecture.md), [character rules](docs/ruleset-design.md), [combat rules](docs/combat-rules.md), [data formats](docs/data-contracts.md) and [roadmap](docs/roadmap.md).
 
+## Worldbuilding and research
+
+- [World bible](docs/world-bible.md): established world and narrative decisions; author reference containing campaign spoilers.
+- [Research notebook](docs/research/README.md): 32 Yorkshire Dales / Cumbria location references and 17 folklore topics, with sources, adventure hooks and design ideas. These are retained inspiration, **not automatically canon or implementation commitments**.
+
 ## Repository layout
 
 ```text
