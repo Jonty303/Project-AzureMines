@@ -251,6 +251,7 @@ func _build_ui() -> void:
     board = CombatBoard.new()
     board.cell_clicked.connect(_on_cell_clicked)
     board.camera_gesture.connect(_clear_web_preview)
+    board.cancel_targeting.connect(_cancel_web)
     board.projectile_impact.connect(_on_projectile_impact)
     board_panel.add_child(board)
 
@@ -706,7 +707,7 @@ func _on_cell_clicked(cell: Vector2i) -> void:
             web_actor = engine.current_id()
             _refresh()
             return
-        if _selected_spell() == "fire_bolt" and target_id.is_empty() and engine.cast_fire_bolt_cell(cell):
+        if _selected_spell() == "fire_bolt" and not engine.can_cast_spell("fire_bolt", target_id) and engine.cast_fire_bolt_cell(cell):
             action_mode = ""
             _refresh()
             return
@@ -1148,6 +1149,11 @@ func _refresh() -> void:
         action_hint.text = "Blue cells are reachable. Tap a blue cell to move."
     elif action_mode == "attack":
         action_hint.text = "Red cells indicate valid weapon targets. Tap a target to attack."
+    elif action_mode == "spell" and _selected_spell() == "web":
+        var reason := engine.area_spell_reason("web", web_anchor) if web_anchor.x >= 0 else ""
+        action_hint.text = "Web: L2 slot + Action; 4x4 floor, 60 ft. Tap top-left cell (arrows + Enter), then Confirm Web."
+        if web_anchor.x >= 0:
+            action_hint.text = ("Valid 4x4 floor anchor (%d, %d). Confirm Web or Cancel." % [web_anchor.x, web_anchor.y]) if reason.is_empty() else reason
     elif action_mode == "spell":
         var target_id: String = engine.target_at(selected_cell)
         var reason: String = engine.spell_unavailable_reason(_selected_spell(), target_id)
@@ -1155,6 +1161,8 @@ func _refresh() -> void:
             action_hint.text = reason if not reason.is_empty() else "Legal spell target. Tap a gold cell to cast."
         else:
             action_hint.text = "Gold cells indicate legal targets for the selected spell. Tap to cast."
+            if _selected_spell() == "fire_bolt":
+                action_hint.text = "Fire Bolt: tap an enemy or a gold intact Web cell to ignite it (Action; 120 ft)."
     else:
         if can_act and engine.action_used and engine.can_cast_any_current_spell():
             action_hint.text = "Action used. Bonus-action spells are still available; choose one under Spell."

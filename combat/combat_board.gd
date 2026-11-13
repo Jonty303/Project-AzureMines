@@ -4,6 +4,7 @@ extends Control
 
 signal cell_clicked(cell: Vector2i)
 signal camera_gesture()
+signal cancel_targeting()
 signal projectile_impact(target_id: String, final_state: String)
 
 const CombatEngine = preload("res://combat/combat_engine.gd")
@@ -705,6 +706,10 @@ func _gui_input(event: InputEvent) -> void:
     if event is InputEventKey and event.pressed and not event.echo:
         var offset := Vector2i.ZERO
         match event.keycode:
+            KEY_ESCAPE:
+                cancel_targeting.emit()
+                accept_event()
+                return
             KEY_LEFT: offset = Vector2i.LEFT
             KEY_RIGHT: offset = Vector2i.RIGHT
             KEY_UP: offset = Vector2i.UP

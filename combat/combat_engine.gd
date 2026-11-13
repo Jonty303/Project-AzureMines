@@ -180,7 +180,7 @@ func create_area_effect(source_id: String, definition: Dictionary) -> String:
     _event("area_updated", source_id, "", _effect_payload(id))
     if bool(definition.get("flammable", false)):
         for hazard in hazards:
-            if str(hazard.get("damage_type", "fire")) == "fire":
+            if str(hazard.get("damage_type", "")) == "fire":
                 ignite_web_cell(hazard["position"], "hazard:" + str(hazard.get("kind", "fire")))
     return id
 
@@ -1106,7 +1106,7 @@ func _advance_initiative() -> void:
             _record("--- Round %d ---" % round_number)
         var id: String = turn_order[turn_index]
         var state: String = str(actors[id].get("combat_state", "active"))
-        if state == "unconscious" or is_combat_capable(id):
+        if state in ["unconscious", "stable"] or is_combat_capable(id):
             _begin_turn()
             if finished:
                 return
@@ -1393,6 +1393,8 @@ func _begin_turn() -> void:
         actors[current_id()] = actor
         _tick_concentration(current_id())
         var was_unconscious: bool = actor.get("combat_state", "") == "unconscious"
+        if str(actor.get("combat_state", "")) in ["unconscious", "stable"]:
+            _web_fire_start_turn(current_id(), actor["position"])
         if not was_unconscious and int(actor["hp"]) > 0:
             effect_hook(current_id(), "start_turn")
             _trigger_hazards(current_id(), actor["position"], "start_turn")
@@ -1634,8 +1636,7 @@ func spell_resource_reason(spell_id: String) -> String:
     if int(spell["level"]) > 0:
         if slotted_cast_this_turn:
             return "A slotted spell was already cast this turn."
-        # v0.5.1: only defined level-one spells can be cast. No implicit
-        # higher-slot upcasting until spell-specific scaling is implemented.
+        # Spend the defined tier only; no implicit higher-slot upcasting.
         if spell_slots_left(current_id(), int(spell["level"])) <= 0:
             return "No level %d spell slots remaining." % int(spell["level"])
     if spell["effect"] == "mage_armor":
@@ -2060,6 +2061,8 @@ func _expire_burning_cells(id: String) -> void:
 
 
 func _web_fire_start_turn(actor_id: String, cell: Vector2i) -> void:
+    if actors[actor_id].get("combat_state", "") == "dead":
+        return
     # Overlapping burning webs are one fire exposure per start, never per source.
     for id in active_effects.keys():
         var effect: Dictionary = active_effects[id]
