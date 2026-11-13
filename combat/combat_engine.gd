@@ -47,6 +47,210 @@ var victor := ""
 var rng := RandomNumberGenerator.new()
 
 
+# Transient schema v1. No fixture is installed by production setup or spell menus.
+var active_effects: Dictionary = {}
+var condition_sources: Dictionary = {}
+var effect_sequence := 0
+var turn_serial := 0
+
+
+func area_effects_at(cell: Vector2i) -> Array[Dictionary]:
+    var result: Array[Dictionary] = []
+    for effect in active_effects.values():
+        if effect["cells"].has(cell):
+            result.append(effect.duplicate(true))
+    return result
+
+
+func movement_cost(cell: Vector2i) -> int:
+    if cell in difficult_terrain:
+        return 2
+    for effect in area_effects_at(cell):
+        if effect.get("difficult_terrain", false):
+            return 2
+    return 1
+
+
+func has_condition(actor_id: String, condition: String) -> bool:
+    return not condition_sources.get(actor_id, {}).get(condition, []).is_empty()
+
+
+func condition_snapshot(actor_id: String) -> Dictionary:
+    return condition_sources.get(actor_id, {}).duplicate(true)
+
+
+func _apply_condition(actor_id: String, condition: String, effect_id: String) -> void:
+    if not condition_sources.has(actor_id):
+        condition_sources[actor_id] = {}
+    if not condition_sources[actor_id].has(condition):
+        condition_sources[actor_id][condition] = []
+    var sources: Array = condition_sources[actor_id][condition]
+    if sources.has(effect_id):
+        return
+    sources.append(effect_id)
+    active_effects[effect_id]["applications"].append(actor_id)
+    _event("condition_applied", str(active_effects[effect_id]["source"]), actor_id,
+        {"effect_id": effect_id, "condition": condition})
+
+
+func _remove_condition(actor_id: String, condition: String, effect_id: String) -> void:
+    var sources: Array = condition_sources.get(actor_id, {}).get(condition, [])
+    if not sources.has(effect_id):
+        return
+    sources.erase(effect_id)
+    if sources.is_empty():
+        condition_sources[actor_id].erase(condition)
+    if condition_sources[actor_id].is_empty():
+        condition_sources.erase(actor_id)
+    if active_effects.has(effect_id):
+        active_effects[effect_id]["applications"].erase(actor_id)
+    _event("condition_removed", "", actor_id, {"effect_id": effect_id, "condition": condition})
+
+
+func create_test_web_area(source_id: String, anchor: Vector2i, duration_rounds: int = 2,
+        concentrating: bool = true, save_dc: int = 13) -> String:
+    # Explicit test command, never a spell definition or UI cast.
+    if deployment_active or finished or not is_combat_capable(source_id) or duration_rounds < 1 or save_dc < 1:
+        return ""
+    var cells: Array[Vector2i] = []
+    for y in range(4):
+        for x in range(4):
+            var cell := anchor + Vector2i(x, y)
+            if cell.x < 0 or cell.y < 0 or cell.x >= grid_size.x or cell.y >= grid_size.y \
+                    or cell in walls or cell in blocked_cells:
+                return ""
+            cells.append(cell)
+    if concentrating:
+        _stop_concentration(source_id, "replacement")
+    effect_sequence += 1
+    var id := "%s:effect:%06d" % [encounter_id, effect_sequence]
+    active_effects[id] = {
+        "schema_version": 1, "id": id, "type": "test_web_area", "source": source_id,
+        "anchor": anchor, "footprint": Vector2i(4, 4), "cells": cells,
+        "start_round": round_number, "start_turn": turn_index, "duration_rounds": duration_rounds,
+        "expiry_round": round_number + duration_rounds, "expiry_turn": turn_index,
+        "concentration_owner": source_id if concentrating else "", "difficult_terrain": true,
+        "save_dc": save_dc, "applications": [], "occasions": {}
+    }
+    if concentrating:
+        actors[source_id]["concentration"] = {"spell": "test_web_area", "effect_id": id}
+    _event("effect_started", source_id, "", _effect_payload(id))
+    _event("area_updated", source_id, "", _effect_payload(id))
+    return id
+
+
+func _effect_payload(effect_id: String) -> Dictionary:
+    var effect: Dictionary = active_effects[effect_id]
+    var cells: Array = []
+    for cell in effect["cells"]:
+        cells.append([cell.x, cell.y])
+    return {"effect_id": effect_id, "effect_type": effect["type"], "cells": cells}
+
+
+func end_effect(effect_id: String, reason: String = "expired") -> void:
+    if not active_effects.has(effect_id):
+        return
+    var effect: Dictionary = active_effects[effect_id]
+    var payload := _effect_payload(effect_id)
+    payload["reason"] = reason
+    for actor_id in effect["applications"].duplicate():
+        _remove_condition(str(actor_id), "restrained", effect_id)
+    active_effects.erase(effect_id)
+    var owner: String = effect["concentration_owner"]
+    if not owner.is_empty() and actors[owner].get("concentration", {}).get("effect_id", "") == effect_id:
+        actors[owner]["concentration"] = {}
+        _event("concentration_ended", owner, "", {"effect_id": effect_id, "reason": reason})
+    _event("effect_ended", str(effect["source"]), "", payload)
+    _event("area_updated", str(effect["source"]), "", {"effect_id": effect_id, "cells": []})
+
+
+func _expire_effects() -> void:
+    for id in active_effects.keys():
+        var effect: Dictionary = active_effects[id]
+        if round_number > int(effect["expiry_round"]) or (round_number == int(effect["expiry_round"]) \
+                and turn_index >= int(effect["expiry_turn"])):
+            end_effect(str(id))
+
+
+func effect_hook(actor_id: String, trigger: String, previous: Vector2i = Vector2i(-1, -1)) -> void:
+    if not actors.has(actor_id) or trigger not in ["enter", "start_turn", "end_turn"]:
+        return
+    var cell: Vector2i = actors[actor_id]["position"]
+    for id in active_effects.keys():
+        var effect: Dictionary = active_effects[id]
+        if not effect["cells"].has(cell):
+            _remove_condition(actor_id, "restrained", str(id))
+            continue
+        if trigger == "end_turn" or not is_combat_capable(actor_id):
+            continue
+        if trigger == "enter" and effect["cells"].has(previous):
+            continue
+        var key := "%d:%s:%s" % [turn_serial, actor_id, trigger]
+        if effect["occasions"].has(key):
+            continue
+        effect["occasions"][key] = true
+        var total := dexterity_save(actor_id)
+        _event("effect_applied", str(effect["source"]), actor_id,
+            {"effect_id": id, "trigger": trigger, "total": total, "dc": effect["save_dc"]})
+        if total < int(effect["save_dc"]):
+            _apply_condition(actor_id, "restrained", str(id))
+
+
+func dexterity_save(actor_id: String) -> int:
+    var natural: int = Dice.roll_d20(rng)
+    if has_condition(actor_id, "restrained"):
+        natural = mini(natural, Dice.roll_d20(rng))
+    var actor: Dictionary = actors[actor_id]
+    return natural + Dice.ability_modifier(int(actor.get("ability_scores", {}).get("dexterity", 10))) \
+        + int(actor.get("saving_throw_bonuses", {}).get("dexterity", 0)) + _bless_bonus(actor_id)
+
+
+func _attack_d20(source_id: String, target_id: String, advantage: bool = false,
+        disadvantage: bool = false) -> int:
+    advantage = advantage or has_condition(target_id, "restrained")
+    disadvantage = disadvantage or has_condition(source_id, "restrained")
+    var first: int = Dice.roll_d20(rng)
+    if advantage == disadvantage:
+        return first
+    var second: int = Dice.roll_d20(rng)
+    return maxi(first, second) if advantage else mini(first, second)
+
+
+func can_escape_effect(effect_id: String) -> bool:
+    return not deployment_active and not finished and not current_id().is_empty() \
+        and is_combat_capable(current_id()) and not action_used \
+        and pending_reaction.is_empty() and pending_move.is_empty() \
+        and condition_sources.get(current_id(), {}).get("restrained", []).has(effect_id) \
+        and active_effects.has(effect_id)
+
+
+func escapable_effects() -> Array[String]:
+    var result: Array[String] = []
+    for id in condition_sources.get(current_id(), {}).get("restrained", []):
+        if can_escape_effect(str(id)):
+            result.append(str(id))
+    result.sort()
+    return result
+
+
+func escape_effect(effect_id: String) -> bool:
+    if not can_escape_effect(effect_id):
+        return false
+    action_used = true
+    var actor: Dictionary = current_actor()
+    var proficiency := 0
+    if actor.get("skill_expertise", []).has("athletics"):
+        proficiency = 2 * int(actor.get("proficiency_bonus", 0))
+    elif actor.get("skill_proficiencies", []).has("athletics"):
+        proficiency = int(actor.get("proficiency_bonus", 0))
+    var total: int = Dice.roll_d20(rng) + Dice.ability_modifier(int(actor.get("ability_scores", {}).get("strength", 10))) + proficiency
+    var dc: int = active_effects[effect_id]["save_dc"]
+    _event("escape_check", current_id(), "", {"effect_id": effect_id, "total": total, "dc": dc, "success": total >= dc})
+    if total >= dc:
+        _remove_condition(current_id(), "restrained", effect_id)
+    return true
+
+
 func start(seed: int = 42024, with_deployment: bool = false, encounter_path: String = ENCOUNTER_FIXTURE) -> bool:
     if not encounter_path.begins_with("res://combat_lab/fixtures/encounters/") or not encounter_path.ends_with(".json"):
         return false
@@ -78,6 +282,10 @@ func _start_from_data(party: Dictionary, encounter: Dictionary, seed: int, with_
     encounter_name = str(encounter.get("name", encounter_id))
     if encounter_id.is_empty():
         return false
+    active_effects.clear()
+    condition_sources.clear()
+    effect_sequence = 0
+    turn_serial = 0
     actors.clear()
     walls.clear()
     difficult_terrain.clear()
@@ -369,7 +577,7 @@ func get_reachable(id: String) -> Dictionary:
     if not actors.has(id):
         return result
     var actor: Dictionary = actors[id]
-    if not is_combat_capable(id):
+    if not is_combat_capable(id) or has_condition(id, "restrained"):
         return result
     var origin: Vector2i = actor["position"]
     var remaining := maxi(0, int(actor.get("speed_feet", 30)) / 5 + dash_extra_squares - movement_used)
@@ -390,7 +598,7 @@ func get_reachable(id: String) -> Dictionary:
                 var next := cell + Vector2i(dx, dy)
                 if not _can_step(id, cell, next):
                     continue
-                var cost := 2 if next in difficult_terrain else 1
+                var cost := movement_cost(next)
                 var next_spent := spent + cost
                 if next_spent > remaining:
                     continue
@@ -426,7 +634,7 @@ func move_to(destination: Vector2i) -> bool:
 func _advance_move() -> void:
     while not pending_move.is_empty() and pending_reaction.is_empty() and not finished:
         var mover_id: String = str(pending_move["actor"])
-        if int(actors[mover_id]["hp"]) <= 0:
+        if int(actors[mover_id]["hp"]) <= 0 or has_condition(mover_id, "restrained"):
             pending_move.clear()
             reaction_checked.clear()
             return
@@ -454,7 +662,7 @@ func _advance_move() -> void:
             _make_opportunity_attack(reactor_id, mover_id)
             continue
         var mover: Dictionary = actors[mover_id]
-        var cost: int = 2 if next_cell in difficult_terrain else 1
+        var cost: int = movement_cost(next_cell)
         if movement_used + cost > int(mover.get("speed_feet", 30)) / 5 + dash_extra_squares:
             pending_move.clear()
             return
@@ -470,6 +678,7 @@ func _advance_move() -> void:
             "from": [from_cell.x, from_cell.y], "to": [next_cell.x, next_cell.y]
         })
         _emit_sound("footstep")
+        effect_hook(mover_id, "enter", from_cell)
         _trigger_hazards(mover_id, next_cell, "enter")
         if finished or int(actors[mover_id]["hp"]) <= 0:
             pending_move.clear()
@@ -535,7 +744,7 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
         return
     reactor["reaction_used"] = true
     actors[reactor_id] = reactor
-    var natural: int = Dice.roll_d20(rng)
+    var natural: int = _attack_d20(reactor_id, target_id)
     var result: Dictionary = RulesMath.attack_hits(natural, int(weapon.get("to_hit", 0)) + _bless_bonus(reactor_id),
         effective_ac(target) + cover_bonus(reactor["position"], target["position"]))
     if not bool(result["hit"]):
@@ -733,11 +942,8 @@ func attack(target_id: String, weapon_id: String = "", nonlethal: bool = false) 
     var advantage: bool = source.get("vex_target", "") == target_id
     if bool(source.get("sap_pending", false)) or bool(target.get("dodging", false)):
         disadvantage = true
-    var first: int = Dice.roll_d20(rng)
-    var natural: int = first
-    if advantage != disadvantage:
-        var second: int = Dice.roll_d20(rng)
-        natural = maxi(first, second) if advantage else mini(first, second)
+    disadvantage = disadvantage or has_condition(source_id, "restrained")
+    var natural: int = _attack_d20(source_id, target_id, advantage, disadvantage)
     if source.get("race_id", "") == "halfling" and natural == 1:
         natural = Dice.roll_d20(rng)
         _record("%s uses Halfling Luck to reroll a natural 1." % source["name"])
@@ -833,6 +1039,7 @@ func end_turn() -> void:
         return
     if is_combat_capable(current_id()):
         _record("%s ends their turn." % current_actor()["name"])
+    effect_hook(current_id(), "end_turn")
     _advance_initiative()
 
 
@@ -883,6 +1090,11 @@ func take_ai_turn() -> void:
         # The AI does not act on their behalf; simply move initiative forward.
         end_turn()
         return
+    for effect_id in condition_sources.get(actor_id, {}).get("restrained", []).duplicate():
+        if can_escape_effect(str(effect_id)):
+            escape_effect(str(effect_id))
+            end_turn()
+            return
     var intent: Dictionary = choose_ai_intent()
     if intent.is_empty():
         _check_victory()
@@ -911,6 +1123,9 @@ func choose_ai_intent() -> Dictionary:
     var origin: Vector2i = source["position"]
     if action_used:
         return {"cell": origin}
+    if has_condition(actor_id, "restrained"):
+        var escapes := escapable_effects()
+        return {"cell": origin, "escape_effect": escapes[0] if not escapes.is_empty() else ""}
     var goals: Dictionary = {}
     for y in grid_size.y:
         for x in grid_size.x:
@@ -984,7 +1199,7 @@ func _ai_approach_costs(actor_id: String, goals: Dictionary) -> Dictionary:
                 var previous := cell + Vector2i(dx, dy)
                 if not _is_open(actor_id, previous) or not _can_step(actor_id, previous, cell):
                     continue
-                var step_cost: int = (2 if cell in difficult_terrain else 1) * 100
+                var step_cost: int = movement_cost(cell) * 100
                 step_cost += _ai_hazard_cost(cell, "enter")
                 var cost: int = int(costs[cell]) + step_cost
                 if not costs.has(previous) or cost < int(costs[previous]):
@@ -1017,6 +1232,9 @@ func _ai_position_score(actor_id: String, cell: Vector2i, reachable: Dictionary,
 
 func _ai_hazard_cost(cell: Vector2i, trigger: String) -> int:
     var cost := 0
+    for effect in area_effects_at(cell):
+        if effect["type"] == "test_web_area":
+            cost += 1200
     for hazard in hazards:
         if hazard.get("position") == cell and hazard.get("trigger", []).has(trigger):
             cost += 1200
@@ -1036,7 +1254,7 @@ func target_at(cell: Vector2i) -> String:
 
 
 func movement_remaining() -> int:
-    if finished or current_id().is_empty() or int(current_actor().get("hp", 0)) <= 0:
+    if finished or current_id().is_empty() or int(current_actor().get("hp", 0)) <= 0 or has_condition(current_id(), "restrained"):
         return 0
     return maxi(0, int(current_actor().get("speed_feet", 30)) / 5 + dash_extra_squares - movement_used)
 
@@ -1104,6 +1322,10 @@ func _nearest_opponent(source_id: String) -> String:
 
 
 func _begin_turn() -> void:
+    turn_serial += 1
+    _expire_effects()
+    for effect in active_effects.values():
+        effect["occasions"].clear()
     action_used = false
     bonus_action_used = false
     slotted_cast_this_turn = false
@@ -1120,6 +1342,7 @@ func _begin_turn() -> void:
         _tick_concentration(current_id())
         var was_unconscious: bool = actor.get("combat_state", "") == "unconscious"
         if not was_unconscious and int(actor["hp"]) > 0:
+            effect_hook(current_id(), "start_turn")
             _trigger_hazards(current_id(), actor["position"], "start_turn")
         _record("Turn: %s." % current_actor()["name"])
         if was_unconscious and not finished:
@@ -1425,8 +1648,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
             var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
             _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
         "dex_save_damage":
-            var roll: int = Dice.roll_d20(rng) + \
-                Dice.ability_modifier(int(target.get("ability_scores", {}).get("dexterity", 10))) + _bless_bonus(target_id)
+            var roll: int = dexterity_save(target_id)
             var dc: int = int(caster["spellcasting"]["save_dc"])
             if roll >= dc:
                 _record("%s resists %s (Dex save %d vs DC %d)." % [target["name"], title, roll, dc])
@@ -1438,7 +1660,7 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
                 var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
                 _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
         "attack_damage":
-            var d20: int = Dice.roll_d20(rng)
+            var d20: int = _attack_d20(caster_id, target_id)
             var attack_bonus: int = int(caster["spellcasting"]["spell_attack_bonus"])
             var hit: Dictionary = RulesMath.attack_hits(d20, attack_bonus,
                 effective_ac(target) + cover_bonus(caster["position"], target["position"]))
@@ -1503,11 +1725,16 @@ func _bless_bonus(actor_id: String) -> int:
     return bonus
 
 
-func _stop_concentration(caster_id: String) -> void:
+func _stop_concentration(caster_id: String, reason: String = "ended") -> void:
     var caster: Dictionary = actors[caster_id]
     var concentration: Dictionary = caster.get("concentration", {})
     if concentration.is_empty():
         return
+    caster["concentration"] = {}
+    actors[caster_id] = caster
+    for effect_id in active_effects.keys():
+        if active_effects[effect_id]["concentration_owner"] == caster_id:
+            end_effect(str(effect_id), reason)
     for target_id_variant in concentration.get("targets", []):
         var target_id: String = str(target_id_variant)
         if actors.has(target_id):
@@ -1517,11 +1744,12 @@ func _stop_concentration(caster_id: String) -> void:
                 actors[target_id] = target
     caster["concentration"] = {}
     actors[caster_id] = caster
+    _event("concentration_ended", caster_id, "", {"spell": concentration.get("spell", ""), "reason": reason})
     _record("%s's concentration ends." % caster["name"])
 
 
 func _start_bless(caster_id: String, first_target: String) -> void:
-    _stop_concentration(caster_id)
+    _stop_concentration(caster_id, "replacement")
     var caster: Dictionary = actors[caster_id]
     var targets: Array[String] = [first_target]
     # The clicked target receives priority; fill the remaining spots with
@@ -1562,13 +1790,13 @@ func _start_bless(caster_id: String, first_target: String) -> void:
 func _tick_concentration(caster_id: String) -> void:
     var caster: Dictionary = actors[caster_id]
     var concentration: Dictionary = caster.get("concentration", {})
-    if concentration.is_empty():
+    if concentration.is_empty() or concentration.has("effect_id"):
         return
     concentration["turns_left"] = int(concentration.get("turns_left", 1)) - 1
     caster["concentration"] = concentration
     actors[caster_id] = caster
     if int(concentration["turns_left"]) <= 0:
-        _stop_concentration(caster_id)
+        _stop_concentration(caster_id, "expired")
 
 
 func _check_concentration_after_damage(actor_id: String, damage: int) -> void:
@@ -1576,16 +1804,17 @@ func _check_concentration_after_damage(actor_id: String, damage: int) -> void:
     var concentration: Dictionary = actor.get("concentration", {})
     if concentration.is_empty() or damage <= 0:
         return
-    if int(actor["hp"]) <= 0:
-        _stop_concentration(actor_id)
+    if not is_combat_capable(actor_id):
+        _stop_concentration(actor_id, "incapacitated")
         return
-    var dc: int = maxi(10, ceili(float(damage) / 2.0))
+    var dc: int = maxi(10, floori(float(damage) / 2.0))
     var natural: int = Dice.roll_d20(rng)
     var con_mod: int = Dice.ability_modifier(int(actor.get("ability_scores", {}).get("constitution", 10)))
     var total: int = natural + con_mod + _bless_bonus(actor_id)
     _record("%s Concentration Save: %d vs DC %d." % [actor["name"], total, dc])
+    _event("concentration_save", actor_id, "", {"total": total, "dc": dc, "success": total >= dc})
     if total < dc:
-        _stop_concentration(actor_id)
+        _stop_concentration(actor_id, "damage")
 
 
 func _event(kind: String, actor_id: String = "", target_id: String = "",

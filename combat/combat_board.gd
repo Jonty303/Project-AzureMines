@@ -108,6 +108,9 @@ func _pending_fatal_projectile(actor_id: String) -> Dictionary:
 # Non-authoritative presentation driven only by engine-resolved combat facts.
 func enqueue_combat_event(event: Dictionary) -> void:
     var kind: String = str(event.get("kind", ""))
+    if kind in ["area_updated", "condition_applied", "condition_removed"]:
+        queue_redraw()
+        return
     if kind not in ["hit", "miss", "heal", "cast", "death", "move"]:
         return
     if engine == null:
@@ -425,6 +428,11 @@ func _draw() -> void:
                 if (x + y) % 3 == 0:
                     stone = stone.lightened(0.065)
                 draw_rect(dest, stone)
+            if not engine.area_effects_at(cell).is_empty():
+                draw_rect(dest.grow(-3), Color("#c8d3f0", 0.26))
+                draw_rect(dest.grow(-4), Color("#d8e7ff", 0.85), false, 2.0)
+                draw_line(dest.position + Vector2(6, 6), dest.end - Vector2(6, 6), Color("#d8e7ff", 0.7), 2.0)
+                draw_line(dest.position + Vector2(6, CELL_SIZE - 6), dest.position + Vector2(CELL_SIZE - 6, 6), Color("#d8e7ff", 0.7), 2.0)
             if cell in engine.difficult_terrain:
                 draw_rect(dest, Color("#8c6b35", 0.32))
             if reachable.has(cell) and cell != engine.current_actor()["position"]:
@@ -522,6 +530,10 @@ func _draw() -> void:
             draw_string(get_theme_default_font(), dest.position + Vector2(23, 43),
                 str(actor["name"]).substr(0, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
 
+        if engine.has_condition(actor_id, "restrained"):
+            draw_rect(Rect2(cell_origin + Vector2(2, 2), Vector2(64, 15)), Color("#172031", 0.9))
+            draw_string(get_theme_default_font(), cell_origin + Vector2(3, 14),
+                "Restrained", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#e5efff"))
         if not active:
             var glyph: String = "Z" if actor.get("combat_state", "") in ["unconscious", "stable", "knocked_out"] else "X"
             var status_color: Color = PARTY_BLUE if glyph == "Z" else ENEMY_RED
