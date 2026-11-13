@@ -50,6 +50,7 @@ var attack_button: Button
 var spell_button: Button
 var dash_button: Button
 var dodge_button: Button
+var escape_button: Button
 var disengage_button: Button
 var wind_button: Button
 var begin_button: Button
@@ -380,6 +381,8 @@ func _build_ui() -> void:
     wind_button = _make_button("Second Wind", player_commands, _use_second_wind, 120)
     dash_button = _make_button("Dash", player_commands, _use_dash, 76)
     dodge_button = _make_button("Dodge", player_commands, _use_dodge, 85)
+    escape_button = _make_button("Escape (Action)", player_commands, _escape_effect, 140)
+    escape_button.visible = false
     disengage_button = _make_button("Disengage", player_commands, _use_disengage, 118)
     end_turn_button = _make_button("END TURN", command_row, _end_turn, 155)
     end_turn_button.custom_minimum_size.y = 98
@@ -692,6 +695,14 @@ func _use_dodge() -> void:
     _refresh()
 
 
+func _escape_effect() -> void:
+    if engine != null and engine.current_is_party():
+        var effects: Array[String] = engine.escapable_effects()
+        if not effects.is_empty():
+            engine.escape_effect(effects[0])
+    _refresh()
+
+
 func _use_disengage() -> void:
     if engine != null and engine.use_disengage():
         action_mode = "move"
@@ -946,7 +957,7 @@ func _play_events() -> void:
     for i in range(heard_events, engine.events.size()):
         var event: Dictionary = engine.events[i]
         var kind: String = str(event.get("kind", ""))
-        if kind in ["hit", "miss", "cast", "heal", "death", "move"]:
+        if kind in ["hit", "miss", "cast", "heal", "death", "move", "area_updated", "condition_applied", "condition_removed"]:
             if kind != "death" or not _death_waits_for_projectile(i):
                 board.enqueue_combat_event(event)
         var line: String = str(event.get("text", ""))
@@ -1003,6 +1014,8 @@ func _refresh() -> void:
             resources.append("Second Wind: %d" % int(a.get("second_wind_remaining", 0)))
         if not str(a.get("blessed_by", "")).is_empty():
             resources.append("Blessed")
+        for condition in engine.condition_snapshot(id):
+            resources.append(str(condition).capitalize())
         if bool(a.get("mage_armor_active", false)):
             resources.append("Mage Armor")
         if bool(a.get("dodging", false)):
@@ -1079,6 +1092,10 @@ func _refresh() -> void:
                 "◇".repeat(total - remaining), remaining, total])
     slot_gems.text = "  ".join(gem_rows)
     slot_gems.visible = not gem_rows.is_empty()
+    escape_button.visible = engine.has_condition(engine.current_id(), "restrained") and engine.current_is_party()
+    var escape_options: Array[String] = engine.escapable_effects()
+    escape_button.disabled = not can_act or escape_options.is_empty()
+    escape_button.tooltip_text = "Strength (Athletics); Action; source: " + (escape_options[0] if not escape_options.is_empty() else "unavailable")
     dash_button.disabled = not can_act or not engine.can_dash()
     dodge_button.disabled = not can_act or not engine.can_dodge()
     disengage_button.disabled = not can_act or not engine.can_disengage()
@@ -1131,7 +1148,8 @@ func _record_result() -> void:
             "second_wind_remaining": int(actor.get("second_wind_remaining", 0)),
             "equipment": actor.get("equipment", []).duplicate(true),
             "inventory": actor.get("inventory", []).duplicate(true),
-            "conditions": actor.get("conditions", []).duplicate(true)})
+            "conditions": actor.get("conditions", []).duplicate(true),
+            "effect_condition_sources": engine.condition_snapshot(str(id))})
     last_report = {
         "schema_version": 1, "setup": last_setup.duplicate(true),
         "result": {"outcome": engine.victor, "rounds": engine.round_number,

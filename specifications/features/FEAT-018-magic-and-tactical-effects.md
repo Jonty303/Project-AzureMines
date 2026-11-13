@@ -27,3 +27,8 @@
 - No automatic merges, Web deployment or campaign integration.
 
 See [Issue #16](https://github.com/Jonty303/Project-AzureMines/issues/16) and [PR #15](https://github.com/Jonty303/Project-AzureMines/pull/15).
+
+
+## v0.5.2 implementation candidate — issue #18 / draft PR #19
+
+The engine owns schema-one transient regions and source-indexed Restrained applications. Explicit enter/start/end hooks and round/initiative expiry drive shared terrain, movement, AI and concentration cleanup; board/UI only read snapshots and submit commands. A non-selectable 4×4 test fixture proves the shared API. Bless/slot contracts remain compatible. Full Web, visibility/obscurement, fire and manual placement remain v0.5.3 work, not implemented spells. See [ownership, exact timing, modified paths and executed validation](../../docs/combat-lab-v052-persistent-effects.md). Owner/physical iPad acceptance is pending.
