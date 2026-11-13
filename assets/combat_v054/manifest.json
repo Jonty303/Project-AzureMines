@@ -1,0 +1,629 @@
+{
+  "schema_version": 1,
+  "source_pixels_per_cell": 32,
+  "display_art_pixels": 64,
+  "board_pitch": 68,
+  "filter": "nearest",
+  "provenance": "Original coordinate-authored pixel art; scripts/build_combat_art.py; no reference pixels used.",
+  "license": "Project-original; same license as repository original artwork (docs/licensing.md).",
+  "assets": {
+    "terrain": {
+      "file": "terrain.png",
+      "size": [
+        256,
+        32
+      ],
+      "frame_size": [
+        32,
+        32
+      ],
+      "frames": 8,
+      "seam": "All floor variant/opposite boundaries equal",
+      "ids": [
+        "stone_a",
+        "stone_b",
+        "stone_c",
+        "moss_a",
+        "moss_b",
+        "cracked",
+        "rubble",
+        "wet"
+      ]
+    },
+    "walls": {
+      "file": "walls.png",
+      "size": [
+        512,
+        48
+      ],
+      "frame_size": [
+        32,
+        48
+      ],
+      "frames": 16,
+      "neighbor_bits": {
+        "north": 1,
+        "east": 2,
+        "south": 4,
+        "west": 8
+      },
+      "height_offset": 16,
+      "collision": "fixture walls only"
+    },
+    "decals": {
+      "file": "decals.png",
+      "size": [
+        256,
+        32
+      ],
+      "frame_size": [
+        32,
+        32
+      ],
+      "frames": 8,
+      "ids": [
+        "moss_n",
+        "moss_e",
+        "moss_s",
+        "moss_w",
+        "rubble",
+        "wet_a",
+        "wet_b",
+        "wet_c"
+      ],
+      "collision": "none"
+    },
+    "wagon": {
+      "file": "wagon.png",
+      "size": [
+        96,
+        80
+      ],
+      "footprint": [
+        3,
+        2
+      ],
+      "pivot": [
+        48,
+        76
+      ],
+      "height_offset": 16,
+      "cover": "total",
+      "collision": "fixture"
+    },
+    "boulder": {
+      "file": "boulder.png",
+      "size": [
+        32,
+        80
+      ],
+      "footprint": [
+        1,
+        2
+      ],
+      "pivot": [
+        16,
+        76
+      ],
+      "height_offset": 16,
+      "cover": "total",
+      "collision": "fixture"
+    },
+    "chest": {
+      "file": "chest.png",
+      "size": [
+        32,
+        40
+      ],
+      "footprint": [
+        1,
+        1
+      ],
+      "pivot": [
+        16,
+        36
+      ],
+      "height_offset": 8,
+      "cover": "half",
+      "collision": "fixture"
+    },
+    "crate": {
+      "file": "crate.png",
+      "size": [
+        32,
+        40
+      ],
+      "footprint": [
+        1,
+        1
+      ],
+      "pivot": [
+        16,
+        36
+      ],
+      "height_offset": 8,
+      "cover": "fixture",
+      "collision": "fixture"
+    },
+    "barrel": {
+      "file": "barrel.png",
+      "size": [
+        32,
+        40
+      ],
+      "footprint": [
+        1,
+        1
+      ],
+      "pivot": [
+        16,
+        36
+      ],
+      "height_offset": 8,
+      "cover": "fixture",
+      "collision": "fixture"
+    },
+    "table": {
+      "file": "table.png",
+      "size": [
+        64,
+        72
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "pivot": [
+        32,
+        68
+      ],
+      "height_offset": 8,
+      "cover": "half",
+      "collision": "fixture"
+    },
+    "campfire": {
+      "file": "campfire.png",
+      "size": [
+        32,
+        40
+      ],
+      "footprint": [
+        1,
+        1
+      ],
+      "pivot": [
+        16,
+        36
+      ],
+      "height_offset": 8,
+      "cover": "fixture",
+      "collision": "walkable hazard"
+    },
+    "goblin": {
+      "file": "goblin.png",
+      "size": [
+        528,
+        192
+      ],
+      "frame_size": [
+        48,
+        48
+      ],
+      "pivot": [
+        24,
+        41
+      ],
+      "rows": [
+        "melee_left",
+        "melee_right",
+        "ranged_left",
+        "ranged_right"
+      ],
+      "states": [
+        "idle_0",
+        "idle_1",
+        "walk_0",
+        "walk_1",
+        "walk_2",
+        "melee_0",
+        "melee_1",
+        "hit",
+        "defeated",
+        "ranged_0",
+        "ranged_1"
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1
+          ],
+          "frame_ms": 420,
+          "loop": true
+        },
+        "walk": {
+          "frames": [
+            2,
+            3,
+            4
+          ],
+          "frame_ms": 100,
+          "loop": true
+        },
+        "melee": {
+          "frames": [
+            5,
+            6
+          ],
+          "frame_ms": 140,
+          "loop": false
+        },
+        "hit": {
+          "frames": [
+            7
+          ],
+          "frame_ms": 200,
+          "loop": false
+        },
+        "defeated": {
+          "frames": [
+            8
+          ],
+          "frame_ms": 1000,
+          "loop": false
+        },
+        "ranged": {
+          "frames": [
+            9,
+            10
+          ],
+          "frame_ms": 170,
+          "loop": false
+        }
+      },
+      "ranged_equipment": "shortbow",
+      "integration": "existing monster"
+    },
+    "kobold": {
+      "file": "kobold.png",
+      "size": [
+        528,
+        192
+      ],
+      "frame_size": [
+        48,
+        48
+      ],
+      "pivot": [
+        24,
+        41
+      ],
+      "rows": [
+        "melee_left",
+        "melee_right",
+        "ranged_left",
+        "ranged_right"
+      ],
+      "states": [
+        "idle_0",
+        "idle_1",
+        "walk_0",
+        "walk_1",
+        "walk_2",
+        "melee_0",
+        "melee_1",
+        "hit",
+        "defeated",
+        "ranged_0",
+        "ranged_1"
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1
+          ],
+          "frame_ms": 420,
+          "loop": true
+        },
+        "walk": {
+          "frames": [
+            2,
+            3,
+            4
+          ],
+          "frame_ms": 100,
+          "loop": true
+        },
+        "melee": {
+          "frames": [
+            5,
+            6
+          ],
+          "frame_ms": 140,
+          "loop": false
+        },
+        "hit": {
+          "frames": [
+            7
+          ],
+          "frame_ms": 200,
+          "loop": false
+        },
+        "defeated": {
+          "frames": [
+            8
+          ],
+          "frame_ms": 1000,
+          "loop": false
+        },
+        "ranged": {
+          "frames": [
+            9,
+            10
+          ],
+          "frame_ms": 170,
+          "loop": false
+        }
+      },
+      "ranged_equipment": "sling",
+      "integration": "existing monster"
+    },
+    "bugbear": {
+      "file": "bugbear.png",
+      "size": [
+        432,
+        96
+      ],
+      "frame_size": [
+        48,
+        48
+      ],
+      "pivot": [
+        24,
+        41
+      ],
+      "rows": [
+        "melee_left",
+        "melee_right"
+      ],
+      "states": [
+        "idle_0",
+        "idle_1",
+        "walk_0",
+        "walk_1",
+        "walk_2",
+        "melee_0",
+        "melee_1",
+        "hit",
+        "defeated"
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1
+          ],
+          "frame_ms": 420,
+          "loop": true
+        },
+        "walk": {
+          "frames": [
+            2,
+            3,
+            4
+          ],
+          "frame_ms": 100,
+          "loop": true
+        },
+        "melee": {
+          "frames": [
+            5,
+            6
+          ],
+          "frame_ms": 140,
+          "loop": false
+        },
+        "hit": {
+          "frames": [
+            7
+          ],
+          "frame_ms": 200,
+          "loop": false
+        },
+        "defeated": {
+          "frames": [
+            8
+          ],
+          "frame_ms": 1000,
+          "loop": false
+        }
+      },
+      "ranged_equipment": null,
+      "integration": "asset only; no new stat block"
+    },
+    "spider": {
+      "file": "spider.png",
+      "size": [
+        432,
+        96
+      ],
+      "frame_size": [
+        48,
+        48
+      ],
+      "pivot": [
+        24,
+        41
+      ],
+      "rows": [
+        "melee_left",
+        "melee_right"
+      ],
+      "states": [
+        "idle_0",
+        "idle_1",
+        "walk_0",
+        "walk_1",
+        "walk_2",
+        "melee_0",
+        "melee_1",
+        "hit",
+        "defeated"
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1
+          ],
+          "frame_ms": 420,
+          "loop": true
+        },
+        "walk": {
+          "frames": [
+            2,
+            3,
+            4
+          ],
+          "frame_ms": 100,
+          "loop": true
+        },
+        "melee": {
+          "frames": [
+            5,
+            6
+          ],
+          "frame_ms": 140,
+          "loop": false
+        },
+        "hit": {
+          "frames": [
+            7
+          ],
+          "frame_ms": 200,
+          "loop": false
+        },
+        "defeated": {
+          "frames": [
+            8
+          ],
+          "frame_ms": 1000,
+          "loop": false
+        }
+      },
+      "ranged_equipment": null,
+      "integration": "existing monster"
+    },
+    "skeleton": {
+      "file": "skeleton.png",
+      "size": [
+        432,
+        96
+      ],
+      "frame_size": [
+        48,
+        48
+      ],
+      "pivot": [
+        24,
+        41
+      ],
+      "rows": [
+        "melee_left",
+        "melee_right"
+      ],
+      "states": [
+        "idle_0",
+        "idle_1",
+        "walk_0",
+        "walk_1",
+        "walk_2",
+        "melee_0",
+        "melee_1",
+        "hit",
+        "defeated"
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1
+          ],
+          "frame_ms": 420,
+          "loop": true
+        },
+        "walk": {
+          "frames": [
+            2,
+            3,
+            4
+          ],
+          "frame_ms": 100,
+          "loop": true
+        },
+        "melee": {
+          "frames": [
+            5,
+            6
+          ],
+          "frame_ms": 140,
+          "loop": false
+        },
+        "hit": {
+          "frames": [
+            7
+          ],
+          "frame_ms": 200,
+          "loop": false
+        },
+        "defeated": {
+          "frames": [
+            8
+          ],
+          "frame_ms": 1000,
+          "loop": false
+        }
+      },
+      "ranged_equipment": null,
+      "integration": "existing monster"
+    },
+    "vfx": {
+      "file": "vfx.png",
+      "size": [
+        128,
+        544
+      ],
+      "frame_size": [
+        32,
+        32
+      ],
+      "frames": 4,
+      "frame_ms": 140,
+      "rows": [
+        "flame",
+        "smoke",
+        "ember",
+        "web",
+        "burning_web",
+        "fire_bolt",
+        "magic_missile",
+        "frost",
+        "bless",
+        "healing",
+        "shield",
+        "radiant",
+        "impact",
+        "arcane",
+        "slash",
+        "arrow",
+        "sling"
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "collision": "none; cosmetic only"
+    }
+  }
+}
