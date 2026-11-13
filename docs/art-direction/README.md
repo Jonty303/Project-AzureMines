@@ -1,6 +1,6 @@
 # Approved visual references — checksum manifest
 
-**Approved:** 2026-11-13. **Status:** Binary reference PNGs prepared in `azure_mines_approved_art_direction_v1.zip` and **awaiting import into this GitHub branch**. Do not mark as imported until verified.
+**Approved:** 2026-11-13. **Status: Archived in GitHub.** All six binary PNGs are present under `docs/art-direction/references/` on `feature/combat-lab-v054-art-pass`. The Codespaces import script checked SHA-256 values before committing.
 
 | Target file under `docs/art-direction/references/` | SHA-256 |
 |---|---|
