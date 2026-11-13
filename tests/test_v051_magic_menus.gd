@@ -36,7 +36,8 @@ func _run() -> void:
     _check(not lab.spell_chip.disabled, "Ready caster cannot inspect spells")
     _check(lab.slot_gems.text.contains("4/4") and lab.slot_gems.text.contains("2/2"),
         "Tiered gem resource display missing level-one/two capacities")
-    _check(lab.slot_gems.text.contains("◆"), "No illuminated spell-slot gems")
+    _check(lab.slot_gems.text.contains("L1:") and not lab.slot_gems.text.contains("◆"),
+        "Slot display should use legible tier counts rather than unsupported Web-font glyphs")
     lab._toggle_spell_menu()
     await create_timer(0.22).timeout
     _check(lab.spell_popup.visible, "Tapping spell chip did not open menu")
