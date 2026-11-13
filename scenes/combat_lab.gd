@@ -703,6 +703,9 @@ func _on_cell_clicked(cell: Vector2i) -> void:
             action_mode = ""
     elif action_mode == "spell":
         if _selected_spell() == "web":
+            if web_anchor == cell and web_actor == engine.current_id():
+                _confirm_web()
+                return
             web_anchor = cell
             web_actor = engine.current_id()
             _refresh()
@@ -1075,6 +1078,7 @@ func _refresh() -> void:
             action_mode = ""
     if web_actor != engine.current_id() or action_mode != "spell" or _selected_spell() != "web" or engine.finished:
         _clear_web_preview()
+    board.area_shape = engine.preview_area_spell("web", web_anchor) if web_anchor.x >= 0 else {}
     board.area_preview = web_anchor
     board.area_preview_valid = web_anchor.x >= 0 and engine.area_spell_reason("web", web_anchor).is_empty()
     web_controls.visible = web_anchor.x >= 0
@@ -1151,9 +1155,9 @@ func _refresh() -> void:
         action_hint.text = "Red cells indicate valid weapon targets. Tap a target to attack."
     elif action_mode == "spell" and _selected_spell() == "web":
         var reason := engine.area_spell_reason("web", web_anchor) if web_anchor.x >= 0 else ""
-        action_hint.text = "Web: L2 slot + Action; 4x4 floor, 60 ft. Tap top-left cell (arrows + Enter), then Confirm Web."
+        action_hint.text = "Web: L2 slot + Action; 4x4 floor, 60 ft. Tap centre (arrows + Enter), then same square again or Confirm Web."
         if web_anchor.x >= 0:
-            action_hint.text = ("Valid 4x4 floor anchor (%d, %d). Confirm Web or Cancel." % [web_anchor.x, web_anchor.y]) if reason.is_empty() else reason
+            action_hint.text = ("Centre (%d, %d). Tap again / Enter to cast; Confirm Web or Cancel." % [web_anchor.x, web_anchor.y]) if reason.is_empty() else reason
     elif action_mode == "spell":
         var target_id: String = engine.target_at(selected_cell)
         var reason: String = engine.spell_unavailable_reason(_selected_spell(), target_id)
@@ -1406,6 +1410,7 @@ func _clear_web_preview() -> void:
     web_anchor = Vector2i(-1, -1)
     web_actor = ""
     if board != null:
+        board.area_shape = {}
         board.area_preview = web_anchor
         board.queue_redraw()
     if web_controls != null:
