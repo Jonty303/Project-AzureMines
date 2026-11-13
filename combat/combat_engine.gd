@@ -62,11 +62,18 @@ func area_effects_at(cell: Vector2i) -> Array[Dictionary]:
     return result
 
 
+func has_area_effect_at(cell: Vector2i) -> bool:
+    for effect in active_effects.values():
+        if effect["cells"].has(cell):
+            return true
+    return false
+
+
 func movement_cost(cell: Vector2i) -> int:
     if cell in difficult_terrain:
         return 2
-    for effect in area_effects_at(cell):
-        if effect.get("difficult_terrain", false):
+    for effect in active_effects.values():
+        if effect["cells"].has(cell) and effect.get("difficult_terrain", false):
             return 2
     return 1
 
@@ -88,7 +95,7 @@ func _apply_condition(actor_id: String, condition: String, effect_id: String) ->
     if sources.has(effect_id):
         return
     sources.append(effect_id)
-    active_effects[effect_id]["applications"].append(actor_id)
+    active_effects[effect_id]["applications"].append({"actor_id": actor_id, "condition": condition})
     _event("condition_applied", str(active_effects[effect_id]["source"]), actor_id,
         {"effect_id": effect_id, "condition": condition})
 
@@ -103,18 +110,48 @@ func _remove_condition(actor_id: String, condition: String, effect_id: String) -
     if condition_sources[actor_id].is_empty():
         condition_sources.erase(actor_id)
     if active_effects.has(effect_id):
-        active_effects[effect_id]["applications"].erase(actor_id)
+        active_effects[effect_id]["applications"].erase({"actor_id": actor_id, "condition": condition})
     _event("condition_removed", "", actor_id, {"effect_id": effect_id, "condition": condition})
 
 
 func create_test_web_area(source_id: String, anchor: Vector2i, duration_rounds: int = 2,
         concentrating: bool = true, save_dc: int = 13) -> String:
-    # Explicit test command, never a spell definition or UI cast.
-    if deployment_active or finished or not is_combat_capable(source_id) or duration_rounds < 1 or save_dc < 1:
+    # Explicit fixture adapter; no production setup or spell menu invokes it.
+    return create_area_effect(source_id, {
+        "schema_version": 1, "type": "test_web_area", "anchor": anchor,
+        "footprint": Vector2i(4, 4), "duration_rounds": duration_rounds,
+        "concentration": concentrating, "save_dc": save_dc,
+        "difficult_terrain": true, "condition": "restrained",
+        "triggers": ["enter", "start_turn"]
+    })
+
+
+func create_area_effect(source_id: String, definition: Dictionary) -> String:
+    # Bounded v1 resolver: rectangular floor regions with optional Restrained.
+    # Reject unsupported mechanics rather than silently implementing a spell.
+    if int(definition.get("schema_version", 0)) != 1 \
+            or not definition.get("anchor") is Vector2i or not definition.get("footprint") is Vector2i:
+        return ""
+    var anchor: Vector2i = definition["anchor"]
+    var footprint: Vector2i = definition["footprint"]
+    var duration_rounds: int = int(definition.get("duration_rounds", 0))
+    var concentrating: bool = bool(definition.get("concentration", false))
+    var save_dc: int = int(definition.get("save_dc", 0))
+    var condition: String = str(definition.get("condition", ""))
+    var triggers: Array = definition.get("triggers", [])
+    if condition not in ["", "restrained"] or str(definition.get("type", "")).is_empty():
+        return ""
+    if not condition.is_empty() and save_dc < 1:
+        return ""
+    for trigger in triggers:
+        if trigger not in ["enter", "start_turn", "end_turn"]:
+            return ""
+    if deployment_active or finished or not is_combat_capable(source_id) or duration_rounds < 1 \
+            or footprint.x < 1 or footprint.y < 1 or footprint.x > grid_size.x or footprint.y > grid_size.y:
         return ""
     var cells: Array[Vector2i] = []
-    for y in range(4):
-        for x in range(4):
+    for y in range(footprint.y):
+        for x in range(footprint.x):
             var cell := anchor + Vector2i(x, y)
             if cell.x < 0 or cell.y < 0 or cell.x >= grid_size.x or cell.y >= grid_size.y \
                     or cell in walls or cell in blocked_cells:
@@ -125,15 +162,18 @@ func create_test_web_area(source_id: String, anchor: Vector2i, duration_rounds: 
     effect_sequence += 1
     var id := "%s:effect:%06d" % [encounter_id, effect_sequence]
     active_effects[id] = {
-        "schema_version": 1, "id": id, "type": "test_web_area", "source": source_id,
-        "anchor": anchor, "footprint": Vector2i(4, 4), "cells": cells,
+        "schema_version": 1, "id": id, "type": str(definition["type"]), "source": source_id,
+        "anchor": anchor, "footprint": footprint, "cells": cells,
         "start_round": round_number, "start_turn": turn_index, "duration_rounds": duration_rounds,
         "expiry_round": round_number + duration_rounds, "expiry_turn": turn_index,
-        "concentration_owner": source_id if concentrating else "", "difficult_terrain": true,
+        "concentration_owner": source_id if concentrating else "",
+        "difficult_terrain": bool(definition.get("difficult_terrain", false)),
+        "condition": condition, "triggers": triggers.duplicate(),
         "save_dc": save_dc, "applications": [], "occasions": {}
     }
     if concentrating:
-        actors[source_id]["concentration"] = {"spell": "test_web_area", "effect_id": id}
+        actors[source_id]["concentration"] = {"spell": str(definition["type"]), "effect_id": id}
+        _event("concentration_started", source_id, "", {"effect_id": id, "spell": str(definition["type"])})
     _event("effect_started", source_id, "", _effect_payload(id))
     _event("area_updated", source_id, "", _effect_payload(id))
     return id
@@ -153,8 +193,8 @@ func end_effect(effect_id: String, reason: String = "expired") -> void:
     var effect: Dictionary = active_effects[effect_id]
     var payload := _effect_payload(effect_id)
     payload["reason"] = reason
-    for actor_id in effect["applications"].duplicate():
-        _remove_condition(str(actor_id), "restrained", effect_id)
+    for application in effect["applications"].duplicate():
+        _remove_condition(str(application["actor_id"]), str(application["condition"]), effect_id)
     active_effects.erase(effect_id)
     var owner: String = effect["concentration_owner"]
     if not owner.is_empty() and actors[owner].get("concentration", {}).get("effect_id", "") == effect_id:
@@ -181,7 +221,7 @@ func effect_hook(actor_id: String, trigger: String, previous: Vector2i = Vector2
         if not effect["cells"].has(cell):
             _remove_condition(actor_id, "restrained", str(id))
             continue
-        if trigger == "end_turn" or not is_combat_capable(actor_id):
+        if trigger not in effect["triggers"] or effect["condition"].is_empty() or not is_combat_capable(actor_id):
             continue
         if trigger == "enter" and effect["cells"].has(previous):
             continue
@@ -193,7 +233,7 @@ func effect_hook(actor_id: String, trigger: String, previous: Vector2i = Vector2
         _event("effect_applied", str(effect["source"]), actor_id,
             {"effect_id": id, "trigger": trigger, "total": total, "dc": effect["save_dc"]})
         if total < int(effect["save_dc"]):
-            _apply_condition(actor_id, "restrained", str(id))
+            _apply_condition(actor_id, str(effect["condition"]), str(id))
 
 
 func dexterity_save(actor_id: String) -> int:
@@ -245,7 +285,8 @@ func escape_effect(effect_id: String) -> bool:
         proficiency = int(actor.get("proficiency_bonus", 0))
     var total: int = Dice.roll_d20(rng) + Dice.ability_modifier(int(actor.get("ability_scores", {}).get("strength", 10))) + proficiency
     var dc: int = active_effects[effect_id]["save_dc"]
-    _event("escape_check", current_id(), "", {"effect_id": effect_id, "total": total, "dc": dc, "success": total >= dc})
+    _event("escape_check", current_id(), "", {"effect_id": effect_id, "total": total, "dc": dc, "success": total >= dc,
+        "text": "%s attempts escape: %d vs DC %d — %s." % [actor["name"], total, dc, "success" if total >= dc else "failure"]})
     if total >= dc:
         _remove_condition(current_id(), "restrained", effect_id)
     return true
@@ -940,7 +981,7 @@ func attack(target_id: String, weapon_id: String = "", nonlethal: bool = false) 
                     disadvantage = true
                     break
     var advantage: bool = source.get("vex_target", "") == target_id
-    if bool(source.get("sap_pending", false)) or bool(target.get("dodging", false)):
+    if bool(source.get("sap_pending", false)) or (bool(target.get("dodging", false)) and not has_condition(target_id, "restrained")):
         disadvantage = true
     disadvantage = disadvantage or has_condition(source_id, "restrained")
     var natural: int = _attack_d20(source_id, target_id, advantage, disadvantage)
@@ -1232,8 +1273,8 @@ func _ai_position_score(actor_id: String, cell: Vector2i, reachable: Dictionary,
 
 func _ai_hazard_cost(cell: Vector2i, trigger: String) -> int:
     var cost := 0
-    for effect in area_effects_at(cell):
-        if effect["type"] == "test_web_area":
+    for effect in active_effects.values():
+        if effect["cells"].has(cell) and trigger in effect["triggers"] and effect["condition"] == "restrained":
             cost += 1200
     for hazard in hazards:
         if hazard.get("position") == cell and hazard.get("trigger", []).has(trigger):
@@ -1744,7 +1785,7 @@ func _stop_concentration(caster_id: String, reason: String = "ended") -> void:
                 actors[target_id] = target
     caster["concentration"] = {}
     actors[caster_id] = caster
-    _event("concentration_ended", caster_id, "", {"spell": concentration.get("spell", ""), "reason": reason})
+    _event("concentration_ended", caster_id, "", {"spell": concentration.get("spell", ""), "effect_id": concentration.get("effect_id", ""), "reason": reason})
     _record("%s's concentration ends." % caster["name"])
 
 
@@ -1779,6 +1820,7 @@ func _start_bless(caster_id: String, first_target: String) -> void:
     caster = actors[caster_id]
     caster["concentration"] = {"spell": "bless", "targets": targets, "turns_left": 10}
     actors[caster_id] = caster
+    _event("concentration_started", caster_id, "", {"spell": "bless", "targets": targets.duplicate()})
     var names: PackedStringArray = []
     for id in targets:
         names.append(str(actors[id]["name"]))
@@ -1807,7 +1849,7 @@ func _check_concentration_after_damage(actor_id: String, damage: int) -> void:
     if not is_combat_capable(actor_id):
         _stop_concentration(actor_id, "incapacitated")
         return
-    var dc: int = maxi(10, floori(float(damage) / 2.0))
+    var dc: int = clampi(floori(float(damage) / 2.0), 10, 30)
     var natural: int = Dice.roll_d20(rng)
     var con_mod: int = Dice.ability_modifier(int(actor.get("ability_scores", {}).get("constitution", 10)))
     var total: int = natural + con_mod + _bless_bonus(actor_id)

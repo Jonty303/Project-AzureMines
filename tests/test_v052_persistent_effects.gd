@@ -9,6 +9,7 @@ func _initialize() -> void:
     _occasions_and_sources()
     _movement_and_routes()
     _escape_and_ai()
+    _generic_hooks()
     _condition_rules()
     _concentration()
     _reaction_entry(false)
@@ -289,3 +290,37 @@ func _replay() -> Array:
     b.round_number = 3
     b._begin_turn()
     return b.events.duplicate(true)
+
+func _generic_hooks() -> void:
+    var b := _fixture()
+    var definition := {"schema_version": 1, "type": "test_end_area", "anchor": Vector2i(3, 3),
+        "footprint": Vector2i(2, 1), "duration_rounds": 2, "condition": "restrained",
+        "save_dc": 100, "triggers": ["end_turn"], "difficult_terrain": false}
+    var id := b.create_area_effect("elyra", definition)
+    _check(not id.is_empty() and b.active_effects[id]["cells"].size() == 2, "general area definition failed")
+    b.actors["alden"]["position"] = Vector2i(3, 3)
+    b.effect_hook("alden", "enter")
+    _check(not b.has_condition("alden", "restrained"), "undefined enter trigger resolved")
+    b.end_turn()
+    _check(b.has_condition("alden", "restrained"), "end-turn lifecycle hook did not resolve")
+    definition["condition"] = "paralyzed"
+    _check(b.create_area_effect("elyra", definition).is_empty(), "unsupported future condition was faked")
+    b = _fixture()
+    var a := b.create_test_web_area("elyra", Vector2i(3, 3), 3, false, 100)
+    var c := b.create_test_web_area("brunna", Vector2i(3, 3), 3, false, 100)
+    b.actors["alden"]["position"] = Vector2i(4, 4)
+    b.effect_hook("alden", "enter")
+    b.active_effects[a]["save_dc"] = 1
+    b.escape_effect(a)
+    _check(b.has_condition("alden", "restrained") and b.condition_snapshot("alden")["restrained"] == [c], "escape removed unrelated source")
+    b.actors["elyra"]["position"] = Vector2i(4, 3)
+    b.effect_hook("elyra", "enter")
+    _check(b.has_condition("elyra", "restrained"), "caster incorrectly immune to own/overlapping area")
+    b = _fixture()
+    b._start_bless("brunna", "alden")
+    for i in 10:
+        b._tick_concentration("brunna")
+    _check(b.actors["alden"]["blessed_by"] == "" and b.actors["brunna"]["concentration"].is_empty(), "Bless duration regressed")
+    b._start_bless("brunna", "alden")
+    b._deal_damage("brunna", 1000)
+    _check(b.actors["alden"]["blessed_by"] == "", "downed Bless concentration regressed")

@@ -1148,7 +1148,8 @@ func _record_result() -> void:
             "second_wind_remaining": int(actor.get("second_wind_remaining", 0)),
             "equipment": actor.get("equipment", []).duplicate(true),
             "inventory": actor.get("inventory", []).duplicate(true),
-            "conditions": actor.get("conditions", []).duplicate(true)})
+            "conditions": actor.get("conditions", []).duplicate(true),
+            "effect_condition_sources": engine.condition_snapshot(str(id))})
     last_report = {
         "schema_version": 1, "setup": last_setup.duplicate(true),
         "result": {"outcome": engine.victor, "rounds": engine.round_number,

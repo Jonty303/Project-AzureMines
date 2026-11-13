@@ -428,7 +428,7 @@ func _draw() -> void:
                 if (x + y) % 3 == 0:
                     stone = stone.lightened(0.065)
                 draw_rect(dest, stone)
-            if not engine.area_effects_at(cell).is_empty():
+            if engine.has_area_effect_at(cell):
                 draw_rect(dest.grow(-3), Color("#c8d3f0", 0.26))
                 draw_rect(dest.grow(-4), Color("#d8e7ff", 0.85), false, 2.0)
                 draw_line(dest.position + Vector2(6, 6), dest.end - Vector2(6, 6), Color("#d8e7ff", 0.7), 2.0)
