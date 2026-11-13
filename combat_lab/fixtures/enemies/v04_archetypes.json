@@ -48,7 +48,11 @@
       ],
       "art": {
         "combat_sprite": "assets/characters/sprites/giant_spider_64.svg"
-      }
+      },
+      "traits": {
+        "web_walker": true
+      },
+      "trait_source": "SRD 5.2.1 pp. 353\u2013354; Web Walker movement-cost adaptation; see docs/combat-lab-v0532-implementation.md"
     },
     {
       "id": "kobold",

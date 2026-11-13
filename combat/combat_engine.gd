@@ -2,6 +2,7 @@ extends RefCounted
 ## Headless, fixture-driven v0.1 combat state. Rendering and UI do not live here.
 ## Movement, action economy and damage are deliberately small, not a full SRD implementation.
 
+const Audit = preload("res://combat/combat_audit.gd")
 const Dice = preload("res://core/dice_roller.gd")
 const RulesMath = preload("res://combat/rules_math.gd")
 const Level1Spells = preload("res://combat/level1_spells.gd")
@@ -53,6 +54,7 @@ var condition_sources: Dictionary = {}
 var effect_sequence := 0
 var turn_serial := 0
 var burning_targets: Dictionary = {}
+var last_d20: Dictionary = {}
 
 
 func area_effects_at(cell: Vector2i) -> Array[Dictionary]:
@@ -70,11 +72,13 @@ func has_area_effect_at(cell: Vector2i) -> bool:
     return false
 
 
-func movement_cost(cell: Vector2i) -> int:
+func movement_cost(cell: Vector2i, actor_id: String = "") -> int:
     if cell in difficult_terrain:
         return 2
     for effect in active_effects.values():
         if effect["cells"].has(cell) and effect.get("difficult_terrain", false):
+            if actors.get(actor_id, {}).get("traits", {}).get("web_walker", false) and effect["type"] in ["web", "test_web_area"]:
+                continue
             return 2
     return 1
 
@@ -251,12 +255,17 @@ func effect_hook(actor_id: String, trigger: String, previous: Vector2i = Vector2
         if trigger not in effect["triggers"] or effect["condition"].is_empty() or not is_combat_capable(actor_id):
             continue
         if trigger == "enter" and effect["cells"].has(previous):
+            _audit("Web DEX save", actor_id, str(effect["source"]), {"effect_id": id, "trigger": trigger, "outcome": "SKIPPED", "reason": "step stays inside the same Web; no new entry", "movement_cost": movement_cost(cell, actor_id)})
             continue
         var key := "%d:%s:%s" % [turn_serial, actor_id, trigger]
         if effect["occasions"].has(key):
+            _audit("Web DEX save", actor_id, str(effect["source"]), {"effect_id": id, "trigger": trigger, "outcome": "SKIPPED", "reason": "already checked this entry/start this turn"})
             continue
         effect["occasions"][key] = true
         var total := dexterity_save(actor_id)
+        var check := last_d20.duplicate(true)
+        check.merge({"effect_id": id, "trigger": trigger, "dc": effect["save_dc"], "outcome": "SUCCESS" if total >= int(effect["save_dc"]) else "FAILURE", "consequence": "no new Restrained" if total >= int(effect["save_dc"]) else "Restrained from " + str(id), "terrain": "Web Walker ignores Web terrain cost; no save immunity" if actors[actor_id].get("traits", {}).get("web_walker", false) else "Web difficult terrain applies"})
+        _audit("Web DEX save", actor_id, str(effect["source"]), check)
         _event("effect_applied", str(effect["source"]), actor_id,
             {"effect_id": id, "trigger": trigger, "total": total, "dc": effect["save_dc"]})
         if total < int(effect["save_dc"]):
@@ -264,23 +273,66 @@ func effect_hook(actor_id: String, trigger: String, previous: Vector2i = Vector2
 
 
 func dexterity_save(actor_id: String) -> int:
-    var natural: int = Dice.roll_d20(rng)
-    if has_condition(actor_id, "restrained"):
-        natural = mini(natural, Dice.roll_d20(rng))
     var actor: Dictionary = actors[actor_id]
-    return natural + Dice.ability_modifier(int(actor.get("ability_scores", {}).get("dexterity", 10))) \
-        + int(actor.get("saving_throw_bonuses", {}).get("dexterity", 0)) + _bless_bonus(actor_id)
+    var disadvantage := has_condition(actor_id, "restrained")
+    var advantage := bool(actor.get("dodging", false)) and not disadvantage
+    var first := Dice.roll_d20(rng)
+    var rolls: Array = [first]
+    if advantage or disadvantage:
+        rolls.append(Dice.roll_d20(rng))
+    var natural: int = mini(first, int(rolls[-1])) if disadvantage else maxi(first, int(rolls[-1]))
+    var modifiers := {"Dexterity": Dice.ability_modifier(int(actor.get("ability_scores", {}).get("dexterity", 10))),
+        "save bonus": int(actor.get("saving_throw_bonuses", {}).get("dexterity", 0)), "Bless": _bless_bonus(actor_id)}
+    var total: int = natural + int(modifiers["Dexterity"]) + int(modifiers["save bonus"]) + int(modifiers["Bless"])
+    last_d20 = {"dice": rolls, "die": "d20", "natural": natural, "modifiers": modifiers, "total": total,
+        "advantage": advantage, "disadvantage": disadvantage, "reason": "Restrained" if disadvantage else ("Dodge" if advantage else "normal")}
+    return total
 
 
 func _attack_d20(source_id: String, target_id: String, advantage: bool = false,
-        disadvantage: bool = false) -> int:
+        disadvantage: bool = false, reasons: Array = []) -> int:
+    reasons = reasons.duplicate()
+    if has_condition(target_id, "restrained"): reasons.append("target Restrained: advantage")
+    if has_condition(source_id, "restrained"): reasons.append("attacker Restrained: disadvantage")
     advantage = advantage or has_condition(target_id, "restrained")
     disadvantage = disadvantage or has_condition(source_id, "restrained")
-    var first: int = Dice.roll_d20(rng)
-    if advantage == disadvantage:
-        return first
-    var second: int = Dice.roll_d20(rng)
-    return maxi(first, second) if advantage else mini(first, second)
+    var first := Dice.roll_d20(rng)
+    var rolls: Array = [first]
+    if advantage != disadvantage:
+        rolls.append(Dice.roll_d20(rng))
+    var natural: int = first if advantage == disadvantage else (maxi(first, int(rolls[-1])) if advantage else mini(first, int(rolls[-1])))
+    last_d20 = {"dice": rolls, "die": "d20", "natural": natural, "advantage": advantage, "disadvantage": disadvantage,
+        "reason": "; ".join(reasons) if not reasons.is_empty() else "normal", "cancelled": advantage and disadvantage}
+    return natural
+
+
+func _audit(rule: String, actor_id: String, target_id: String, details: Dictionary) -> void:
+    var payload := details.duplicate(true)
+    payload["rule"] = rule
+    _event("rules_check", actor_id, target_id, payload)
+
+
+func _attack_check(actor_id: String, target_id: String, natural: int, bonus: int, ac: int,
+        source: String, bless: int = 0, critical_from: int = 20) -> Dictionary:
+    var result := RulesMath.attack_hits(natural, bonus + bless, ac, critical_from)
+    var details := last_d20.duplicate(true)
+    details.merge({"source": source, "natural": natural, "base_ac": actors[target_id].get("armor_class", 10), "shield_bonus": actors[target_id].get("shield_bonus", 0), "cover_bonus": cover_bonus(actors[actor_id]["position"], actors[target_id]["position"]), "modifiers": {"attack bonus": bonus, "Bless": bless},
+        "total": result["total"], "ac": ac, "outcome": "CRITICAL" if result["critical"] else ("HIT" if result["hit"] else "MISS"),
+        "consequence": "hit subject to reactions" if result["hit"] else "no damage"}, true)
+    _audit("Attack", actor_id, target_id, details)
+    return result
+
+
+func _roll_formula(formula: String, critical: bool = false, actor_id: String = "", target_id: String = "", source: String = "", trigger: String = "") -> int:
+    var roll := RulesMath.damage_roll(formula, rng, critical)
+    roll.merge({"source": source, "trigger": trigger})
+    _audit("Damage/healing dice", actor_id, target_id, roll)
+    return int(roll["total"])
+
+
+func _reject(command: String, reason: String, target_id: String = "") -> bool:
+    _audit(command, current_id(), target_id, {"outcome": "REJECTED", "reason": reason, "consequence": "no resources spent"})
+    return false
 
 
 func can_escape_effect(effect_id: String) -> bool:
@@ -302,7 +354,7 @@ func escapable_effects() -> Array[String]:
 
 func escape_effect(effect_id: String) -> bool:
     if not can_escape_effect(effect_id):
-        return false
+        return _reject("escape_effect", "unavailable: action/resource, actor, source or pending resolution")
     action_used = true
     var actor: Dictionary = current_actor()
     var proficiency := 0
@@ -310,8 +362,11 @@ func escape_effect(effect_id: String) -> bool:
         proficiency = 2 * int(actor.get("proficiency_bonus", 0))
     elif actor.get("skill_proficiencies", []).has("athletics"):
         proficiency = int(actor.get("proficiency_bonus", 0))
-    var total: int = Dice.roll_d20(rng) + Dice.ability_modifier(int(actor.get("ability_scores", {}).get("strength", 10))) + proficiency
+    var natural := Dice.roll_d20(rng)
+    var strength := Dice.ability_modifier(int(actor.get("ability_scores", {}).get("strength", 10)))
+    var total: int = natural + strength + proficiency
     var dc: int = active_effects[effect_id]["save_dc"]
+    _audit("Escape Athletics", current_id(), str(active_effects[effect_id]["source"]), {"effect_id": effect_id, "dice": [natural], "die": "d20", "modifiers": {"Strength": strength, "Athletics proficiency": proficiency}, "total": total, "dc": dc, "outcome": "SUCCESS" if total >= dc else "FAILURE", "consequence": "Action spent; remove this restraint source" if total >= dc else "Action spent; still Restrained"})
     _event("escape_check", current_id(), "", {"effect_id": effect_id, "total": total, "dc": dc, "success": total >= dc,
         "text": "%s attempts escape: %d vs DC %d — %s." % [actor["name"], total, dc, "success" if total >= dc else "failure"]})
     if total >= dc:
@@ -352,6 +407,7 @@ func _start_from_data(party: Dictionary, encounter: Dictionary, seed: int, with_
         return false
     active_effects.clear()
     burning_targets.clear()
+    last_d20.clear()
     condition_sources.clear()
     effect_sequence = 0
     turn_serial = 0
@@ -496,6 +552,7 @@ func _roll_initiative_and_start() -> void:
             roll2 = Dice.roll_d20(rng)
             roll = mini(roll1, roll2)
         var result: int = roll + Dice.ability_modifier(dexterity)
+        _audit("Initiative", id, "", {"dice": [roll1, roll2] if disadvantage else [roll1], "die": "d20", "modifiers": {"Dexterity": Dice.ability_modifier(dexterity)}, "total": result, "disadvantage": disadvantage, "reason": "Surprised" if disadvantage else "normal", "consequence": "initiative order; stable fixture tie-break"})
         rolls.append({"id": id, "initiative": result, "tie": tie_order})
         tie_order += 1
         if disadvantage:
@@ -667,7 +724,7 @@ func get_reachable(id: String) -> Dictionary:
                 var next := cell + Vector2i(dx, dy)
                 if not _can_step(id, cell, next):
                     continue
-                var cost := movement_cost(next)
+                var cost := movement_cost(next, id)
                 var next_spent := spent + cost
                 if next_spent > remaining:
                     continue
@@ -680,14 +737,14 @@ func get_reachable(id: String) -> Dictionary:
 
 func move_to(destination: Vector2i) -> bool:
     if deployment_active or finished or current_id().is_empty() or not pending_reaction.is_empty() or not pending_move.is_empty():
-        return false
+        return _reject("Move", "actor unavailable or resolution pending")
     var actor_id: String = current_id()
     var actor: Dictionary = actors[actor_id]
     if int(actor["hp"]) <= 0:
         return false
     var reachable: Dictionary = get_reachable(actor_id)
     if not reachable.has(destination) or int(reachable[destination]["cost"]) <= 0:
-        return false
+        return _reject("Move", "destination blocked/unreachable, Restrained or movement exhausted")
     var path: Array[Vector2i] = []
     var current: Vector2i = destination
     var origin: Vector2i = actor["position"]
@@ -704,6 +761,7 @@ func _advance_move() -> void:
     while not pending_move.is_empty() and pending_reaction.is_empty() and not finished:
         var mover_id: String = str(pending_move["actor"])
         if int(actors[mover_id]["hp"]) <= 0 or has_condition(mover_id, "restrained"):
+            _audit("Movement stopped", mover_id, "", {"reason": "downed or Restrained", "remaining_squares": movement_remaining()})
             pending_move.clear()
             reaction_checked.clear()
             return
@@ -716,6 +774,7 @@ func _advance_move() -> void:
         var from_cell: Vector2i = actors[mover_id]["position"]
         var next_cell: Vector2i = path[idx]
         if not _can_step(mover_id, from_cell, next_cell):
+            _audit("Movement stopped", mover_id, "", {"reason": "next step blocked", "destination": [next_cell.x, next_cell.y]})
             pending_move.clear()
             reaction_checked.clear()
             return
@@ -731,8 +790,9 @@ func _advance_move() -> void:
             _make_opportunity_attack(reactor_id, mover_id)
             continue
         var mover: Dictionary = actors[mover_id]
-        var cost: int = movement_cost(next_cell)
+        var cost: int = movement_cost(next_cell, mover_id)
         if movement_used + cost > int(mover.get("speed_feet", 30)) / 5 + dash_extra_squares:
+            _audit("Movement stopped", mover_id, "", {"reason": "movement allowance exhausted", "cost": cost})
             pending_move.clear()
             return
         mover["position"] = next_cell
@@ -744,7 +804,7 @@ func _advance_move() -> void:
             mover["name"], from_cell.x, from_cell.y, next_cell.x, next_cell.y
         ])
         _event("move", mover_id, "", {
-            "from": [from_cell.x, from_cell.y], "to": [next_cell.x, next_cell.y]
+            "from": [from_cell.x, from_cell.y], "to": [next_cell.x, next_cell.y], "cost_squares": cost, "remaining_squares": movement_remaining(), "disengaged": mover.get("disengaged", false)
         })
         _emit_sound("footstep")
         effect_hook(mover_id, "enter", from_cell)
@@ -761,7 +821,7 @@ func _trigger_hazards(actor_id: String, cell: Vector2i, trigger: String) -> void
     for hazard in hazards:
         if hazard["position"] != cell or not hazard.get("trigger", []).has(trigger):
             continue
-        var damage: int = RulesMath.roll_damage(str(hazard.get("damage", "1d4")), rng)
+        var damage: int = _roll_formula(str(hazard.get("damage", "1d4")), false, "", actor_id, str(hazard.get("kind", "hazard")), trigger)
         _record("%s is burned by the %s for %d fire damage (%s)." % [
             actors[actor_id]["name"], str(hazard.get("kind", "hazard")), damage,
             "entry" if trigger == "enter" else "start of turn"
@@ -814,8 +874,8 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
     reactor["reaction_used"] = true
     actors[reactor_id] = reactor
     var natural: int = _attack_d20(reactor_id, target_id)
-    var result: Dictionary = RulesMath.attack_hits(natural, int(weapon.get("to_hit", 0)) + _bless_bonus(reactor_id),
-        effective_ac(target) + cover_bonus(reactor["position"], target["position"]))
+    var result: Dictionary = _attack_check(reactor_id, target_id, natural, int(weapon.get("to_hit", 0)),
+        effective_ac(target) + cover_bonus(reactor["position"], target["position"]), "opportunity:" + str(weapon.get("id", "")), _bless_bonus(reactor_id))
     if not bool(result["hit"]):
         _emit_sound("miss")
         _record("%s Opportunity Attack against %s: %d — MISS." % [
@@ -826,7 +886,7 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
             "attack_kind": str(weapon.get("kind", ""))
         })
         return
-    var damage: int = RulesMath.roll_damage(str(weapon["damage"]), rng, bool(result["critical"]))
+    var damage: int = _roll_formula(str(weapon["damage"]), bool(result["critical"]), reactor_id, target_id, str(weapon.get("id", "")), "opportunity attack")
     var before_hp: int = int(target["hp"])
     _emit_sound("melee_hit")
     _emit_sound("damage")
@@ -846,6 +906,7 @@ func _make_opportunity_attack(reactor_id: String, target_id: String) -> void:
 func resolve_reaction(accept: bool) -> bool:
     if pending_reaction.is_empty():
         return false
+    _event("reaction_choice", str(pending_reaction.get("reactor", "")), str(pending_reaction.get("target", "")), {"accepted": accept, "reaction": pending_reaction.get("kind", "")})
     var decision: Dictionary = pending_reaction.duplicate()
     pending_reaction.clear()
     if decision["kind"] == "opportunity":
@@ -870,6 +931,7 @@ func resolve_reaction(accept: bool) -> bool:
             ])
             _event("cast", defender_id, defender_id, {"action_id": "shield", "effect": "shield"})
         var result: Dictionary = decision["roll"]
+        _audit("Attack after Shield decision", str(decision["source"]), defender_id, {"total": result["total"], "ac": effective_ac(actors[defender_id]), "outcome": "MISS" if int(result["total"]) < effective_ac(actors[defender_id]) else "HIT", "reason": "same attack; no reroll"})
         if int(result["total"]) < effective_ac(actors[defender_id]):
             _emit_sound("miss")
             _record("Shield deflects the incoming attack on %s." % defender["name"])
@@ -930,6 +992,7 @@ func _deal_damage(target_id: String, damage: int, critical: bool = false) -> voi
                 target["death_successes"] = 0
                 target["death_failures"] = 0
     actors[target_id] = target
+    _audit("Damage consequence", "", target_id, {"amount": damage, "hp_before": old_hp, "hp_after": target["hp"], "state_after": target["combat_state"], "death_failures": target.get("death_failures", 0)})
     _check_concentration_after_damage(target_id, damage)
     if target["combat_state"] == "dead" and previous_state != "dead":
         _end_burning("actor:" + target_id, "dead")
@@ -939,17 +1002,18 @@ func _deal_damage(target_id: String, damage: int, critical: bool = false) -> voi
 
 
 func can_disengage() -> bool:
-    return not finished and current_is_party() and not action_used and int(current_actor().get("hp", 0)) > 0
+    return _utility_ready() and not action_used
 
 
 func use_disengage() -> bool:
     if not can_disengage():
-        return false
+        return _reject("use_disengage", "unavailable: action/resource, actor, source or pending resolution")
     action_used = true
     var actor: Dictionary = current_actor()
     actor["disengaged"] = true
     actors[current_id()] = actor
     _record("%s Disengages, preventing Opportunity Attacks from their movement this turn." % actor["name"])
+    _event("action_committed", current_id(), "", {"action_id": "disengage", "cost": "Action", "action_used": action_used, "movement_remaining": movement_remaining()})
     return true
 
 
@@ -989,41 +1053,46 @@ func _attack_from(source_id: String, target_id: String, from_cell: Vector2i,
 
 func attack(target_id: String, weapon_id: String = "", nonlethal: bool = false) -> bool:
     if deployment_active:
-        return false
+        return _reject("Attack", "deployment active", target_id)
     var weapon: Dictionary = available_attack(target_id, weapon_id)
     if weapon.is_empty():
-        return false
+        return _reject("Attack", "no legal weapon/target, Action used or actor unavailable", target_id)
     if nonlethal and weapon.get("kind", "") != "melee_weapon":
-        return false
+        return _reject("Attack", "nonlethal requires melee", target_id)
     var source_id := current_id()
     var source: Dictionary = actors[source_id]
     var target: Dictionary = actors[target_id]
     action_used = true
     var distance := _distance(source["position"], target["position"])
     var disadvantage := false
+    var roll_reasons: Array = []
     if weapon.get("kind", "") == "ranged_weapon":
         disadvantage = distance > int(weapon.get("normal_range_feet", 0)) / 5
+        if disadvantage: roll_reasons.append("long range: disadvantage")
         for other_id in actors.keys():
             var nearby: Dictionary = actors[other_id]
             if nearby["team"] != source["team"] and int(nearby["hp"]) > 0:
                 if _distance(source["position"], nearby["position"]) <= 1:
                     disadvantage = true
+                    roll_reasons.append("adjacent enemy: disadvantage")
                     break
     var advantage: bool = source.get("vex_target", "") == target_id
+    if advantage: roll_reasons.append("Vex: advantage")
+    if source.get("sap_pending", false): roll_reasons.append("Sap: disadvantage")
+    if target.get("dodging", false) and not has_condition(target_id, "restrained"): roll_reasons.append("Dodge: disadvantage")
     if bool(source.get("sap_pending", false)) or (bool(target.get("dodging", false)) and not has_condition(target_id, "restrained")):
         disadvantage = true
     disadvantage = disadvantage or has_condition(source_id, "restrained")
-    var natural: int = _attack_d20(source_id, target_id, advantage, disadvantage)
+    var natural: int = _attack_d20(source_id, target_id, advantage, disadvantage, roll_reasons)
     if source.get("race_id", "") == "halfling" and natural == 1:
         natural = Dice.roll_d20(rng)
+        last_d20["reroll"] = natural
         _record("%s uses Halfling Luck to reroll a natural 1." % source["name"])
     source["sap_pending"] = false
     source["vex_target"] = ""
     actors[source_id] = source
-    var roll: Dictionary = RulesMath.attack_hits(
-        natural, int(weapon.get("to_hit", 0)) + _bless_bonus(source_id),
-        effective_ac(target) + cover_bonus(source["position"], target["position"])
-    )
+    var roll: Dictionary = _attack_check(source_id, target_id, natural, int(weapon.get("to_hit", 0)),
+        effective_ac(target) + cover_bonus(source["position"], target["position"]), str(weapon.get("id", "")), _bless_bonus(source_id))
     var attack_name := str(weapon.get("id", "attack")).replace("_", " ")
     var disadvantage_label := " (Disadvantage)" if disadvantage else ""
     if not roll["hit"]:
@@ -1060,10 +1129,10 @@ func _resolve_hit(source_id: String, target_id: String, weapon: Dictionary, roll
     var target: Dictionary = actors[target_id]
     var attack_name := str(weapon.get("id", "attack")).replace("_", " ")
     var disadvantage_label := " (Disadvantage)" if disadvantage else ""
-    var damage: int = RulesMath.roll_damage(str(weapon.get("damage", "1d4")), rng, bool(roll["critical"]))
+    var damage: int = _roll_formula(str(weapon.get("damage", "1d4")), bool(roll["critical"]), source_id, target_id, str(weapon.get("id", "")), "hit")
     _emit_sound("ranged" if weapon.get("kind", "") == "ranged_weapon" else "melee_hit")
     if _sneak_attack_eligible(source_id, target_id, weapon, disadvantage):
-        var sneak_damage: int = RulesMath.roll_damage("1d6", rng, bool(roll["critical"]))
+        var sneak_damage: int = _roll_formula("1d6", bool(roll["critical"]), source_id, target_id, "Sneak Attack", "eligible hit")
         damage += sneak_damage
         sneak_attack_used = true
         _record("%s uses Sneak Attack for %d extra damage." % [source["name"], sneak_damage])
@@ -1166,6 +1235,7 @@ func take_ai_turn() -> void:
             end_turn()
             return
     var intent: Dictionary = choose_ai_intent()
+    _event("ai_choice", actor_id, "", {"choice": intent.duplicate(true), "reason": "committed tactical choice; revalidate after movement"})
     if intent.is_empty():
         _check_victory()
         return
@@ -1269,7 +1339,7 @@ func _ai_approach_costs(actor_id: String, goals: Dictionary) -> Dictionary:
                 var previous := cell + Vector2i(dx, dy)
                 if not _is_open(actor_id, previous) or not _can_step(actor_id, previous, cell):
                     continue
-                var step_cost: int = movement_cost(cell) * 100
+                var step_cost: int = movement_cost(cell, actor_id) * 100
                 step_cost += _ai_hazard_cost(cell, "enter")
                 var cost: int = int(costs[cell]) + step_cost
                 if not costs.has(previous) or cost < int(costs[previous]):
@@ -1346,32 +1416,34 @@ func can_cast_any_current_spell() -> bool:
 
 
 func can_dash() -> bool:
-    return not finished and current_is_party() and not action_used and int(current_actor().get("hp", 0)) > 0
+    return _utility_ready() and not action_used
 
 
 func use_dash() -> bool:
     if not can_dash():
-        return false
+        return _reject("use_dash", "unavailable: action/resource, actor, source or pending resolution")
     action_used = true
     dash_extra_squares = int(current_actor().get("speed_feet", 30)) / 5
     _record("%s Dashes, gaining %d extra squares of movement." % [
         current_actor()["name"], dash_extra_squares
     ])
+    _event("action_committed", current_id(), "", {"action_id": "dash", "cost": "Action", "action_used": action_used, "movement_remaining": movement_remaining()})
     return true
 
 
 func can_dodge() -> bool:
-    return not finished and current_is_party() and not action_used and int(current_actor().get("hp", 0)) > 0
+    return _utility_ready() and not action_used
 
 
 func use_dodge() -> bool:
     if not can_dodge():
-        return false
+        return _reject("use_dodge", "unavailable: action/resource, actor, source or pending resolution")
     action_used = true
     var actor: Dictionary = current_actor()
     actor["dodging"] = true
     actors[current_id()] = actor
     _record("%s Dodges until their next turn." % actor["name"])
+    _event("action_committed", current_id(), "", {"action_id": "dodge", "cost": "Action", "action_used": action_used, "movement_remaining": movement_remaining()})
     return true
 
 
@@ -1420,6 +1492,8 @@ func _begin_turn() -> void:
         _record("Turn: %s." % current_actor()["name"])
         if was_unconscious and not finished:
             _roll_death_save(current_id())
+        elif actor.get("combat_state", "") == "stable":
+            _audit("Death save", current_id(), "", {"outcome": "SKIPPED", "reason": "stable; no player turn"})
 
 
 
@@ -1454,6 +1528,7 @@ func _roll_death_save(actor_id: String) -> void:
             actor["death_successes"] = 0
             actor["death_failures"] = 0
             _record("%s is stable but unconscious." % actor["name"])
+    _audit("Death save", actor_id, actor_id, {"dice": [natural], "die": "d20", "total": natural, "dc": 10, "outcome": "SUCCESS" if natural >= 10 else "FAILURE", "consequence": {"hp": actor["hp"], "state": actor["combat_state"], "successes": actor["death_successes"], "failures": actor["death_failures"]}})
     actors[actor_id] = actor
     if actor.get("combat_state", "") == "dead":
         _event("death", actor_id, actor_id, {"source_kind": "death_save"})
@@ -1544,7 +1619,7 @@ func cover_bonus(from_cell: Vector2i, to_cell: Vector2i) -> int:
 # Level-1 action/bonus-action features. The immutable fixture never mutates:
 # these resources live on the combatant's runtime state.
 func can_use_second_wind() -> bool:
-    if finished or bonus_action_used or current_id().is_empty():
+    if not _utility_ready() or bonus_action_used:
         return false
     var actor: Dictionary = current_actor()
     return actor.get("class_id", "") == "champion" \
@@ -1554,10 +1629,12 @@ func can_use_second_wind() -> bool:
 
 func use_second_wind() -> bool:
     if not can_use_second_wind():
-        return false
+        return _reject("use_second_wind", "unavailable: action/resource, actor, source or pending resolution")
     var actor_id: String = current_id()
     var actor: Dictionary = actors[actor_id]
-    var amount: int = Dice.roll(10, rng) + int(actor["level"])
+    var natural := Dice.roll(10, rng)
+    var amount: int = natural + int(actor["level"])
+    _audit("Second Wind", actor_id, actor_id, {"dice": [natural], "die": "d10", "modifiers": {"level": actor["level"]}, "total": amount, "consequence": "Bonus Action and one use spent; healing capped at missing HP"})
     var restored: int = mini(amount, int(actor["max_hp"]) - int(actor["hp"]))
     actor["hp"] = int(actor["hp"]) + restored
     actor["second_wind_remaining"] = int(actor["second_wind_remaining"]) - 1
@@ -1695,7 +1772,7 @@ func spell_unavailable_reason(spell_id: String, target_id: String) -> String:
 
 func cast_spell(spell_id: String, target_id: String) -> bool:
     if not can_cast_spell(spell_id, target_id):
-        return false
+        return _reject(spell_id, spell_unavailable_reason(spell_id, target_id), target_id)
     var caster_id: String = current_id()
     var caster: Dictionary = actors[caster_id]
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
@@ -1731,8 +1808,9 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
             actors[target_id] = target
             _record("%s casts Mage Armor; AC is now %d." % [caster["name"], target["armor_class"]])
         "heal":
-            var healing: int = RulesMath.roll_damage(str(spell["healing"]), rng) + \
-                Dice.ability_modifier(int(caster["ability_scores"][str(caster["spellcasting"]["ability"])]))
+            var ability_bonus := Dice.ability_modifier(int(caster["ability_scores"][str(caster["spellcasting"]["ability"])]))
+            var healing: int = _roll_formula(str(spell["healing"]), false, caster_id, target_id, spell_id, "healing") + ability_bonus
+            _audit("Healing modifier", caster_id, target_id, {"source": spell_id, "modifiers": {"spell ability": ability_bonus}, "total": healing, "consequence": "healing capped at missing HP"})
             var gained: int = mini(maxi(0, healing), int(target["max_hp"]) - int(target["hp"]))
             target["hp"] = int(target["hp"]) + gained
             if int(target["hp"]) > 0 and target.get("combat_state", "") in ["unconscious", "stable"]:
@@ -1746,11 +1824,14 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
             ])
             _event("heal", caster_id, target_id, {"amount": gained, "action_id": spell_id})
         "automatic_damage":
-            var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
+            var damage: int = _roll_formula(str(spell["damage"]), false, caster_id, target_id, spell_id, "spell damage")
             _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
         "dex_save_damage":
             var roll: int = dexterity_save(target_id)
             var dc: int = int(caster["spellcasting"]["save_dc"])
+            var details := last_d20.duplicate(true)
+            details.merge({"source": spell_id, "dc": dc, "outcome": "SUCCESS" if roll >= dc else "FAILURE", "consequence": "no damage" if roll >= dc else "roll damage"})
+            _audit("DEX save", target_id, caster_id, details)
             if roll >= dc:
                 _record("%s resists %s (Dex save %d vs DC %d)." % [target["name"], title, roll, dc])
                 _event("miss", caster_id, target_id, {
@@ -1758,15 +1839,15 @@ func cast_spell(spell_id: String, target_id: String) -> bool:
                     "damage_type": str(spell.get("damage_type", ""))
                 })
             else:
-                var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng)
+                var damage: int = _roll_formula(str(spell["damage"]), false, caster_id, target_id, spell_id, "spell damage")
                 _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
         "attack_damage":
             var d20: int = _attack_d20(caster_id, target_id)
             var attack_bonus: int = int(caster["spellcasting"]["spell_attack_bonus"])
-            var hit: Dictionary = RulesMath.attack_hits(d20, attack_bonus,
-                effective_ac(target) + cover_bonus(caster["position"], target["position"]))
+            var hit: Dictionary = _attack_check(caster_id, target_id, d20, attack_bonus,
+                effective_ac(target) + cover_bonus(caster["position"], target["position"]), spell_id)
             if hit["hit"]:
-                var damage: int = RulesMath.roll_damage(str(spell["damage"]), rng, bool(hit["critical"]))
+                var damage: int = _roll_formula(str(spell["damage"]), bool(hit["critical"]), caster_id, target_id, spell_id, "spell hit")
                 _apply_spell_damage(caster, target_id, title, damage, str(spell["damage_type"]))
             else:
                 _emit_sound("miss")
@@ -1824,6 +1905,7 @@ func _bless_bonus(actor_id: String) -> int:
     if concentration.get("spell", "") != "bless":
         return 0
     var bonus: int = rng.randi_range(1, 4)
+    _audit("Bless", actor_id, blessed_by, {"dice": [bonus], "die": "d4", "total": bonus, "consequence": "added to current test"})
     _record("%s gains +%d from Bless." % [actors[actor_id]["name"], bonus])
     return bonus
 
@@ -1909,12 +1991,15 @@ func _check_concentration_after_damage(actor_id: String, damage: int) -> void:
     if concentration.is_empty() or damage <= 0:
         return
     if not is_combat_capable(actor_id):
+        _audit("Concentration", actor_id, "", {"outcome": "SKIPPED", "reason": "incapacitated; concentration ends automatically"})
         _stop_concentration(actor_id, "incapacitated")
         return
     var dc: int = clampi(floori(float(damage) / 2.0), 10, 30)
     var natural: int = Dice.roll_d20(rng)
     var con_mod: int = Dice.ability_modifier(int(actor.get("ability_scores", {}).get("constitution", 10)))
-    var total: int = natural + con_mod + _bless_bonus(actor_id)
+    var bless := _bless_bonus(actor_id)
+    var total: int = natural + con_mod + bless
+    _audit("Concentration CON save", actor_id, "", {"dice": [natural], "die": "d20", "modifiers": {"Constitution": con_mod, "Bless": bless}, "total": total, "dc": dc, "outcome": "SUCCESS" if total >= dc else "FAILURE", "consequence": "concentration maintained" if total >= dc else "concentration ends"})
     _record("%s Concentration Save: %d vs DC %d." % [actor["name"], total, dc])
     _event("concentration_save", actor_id, "", {"total": total, "dc": dc, "success": total >= dc})
     if total < dc:
@@ -1927,7 +2012,7 @@ func _event(kind: String, actor_id: String = "", target_id: String = "",
     # Each resolved event gets a stable sequence ID in this encounter session.
     var entry: Dictionary = {
         "schema_version": 1, "event_id": "%s:%06d" % [encounter_id, events.size()],
-        "round": round_number, "kind": kind, "actor_id": actor_id,
+        "round": round_number, "turn": turn_serial, "kind": kind, "actor_id": actor_id,
         "target_id": target_id, "text": "", "sound": ""
     }
     # Position snapshots are captured when combat resolves, before the UI
@@ -1938,8 +2023,11 @@ func _event(kind: String, actor_id: String = "", target_id: String = "",
     if actors.has(target_id):
         var target_cell: Vector2i = actors[target_id]["position"]
         entry["target_cell"] = [target_cell.x, target_cell.y]
+    entry["resources"] = {"action_used": action_used, "bonus_action_used": bonus_action_used, "movement_used": movement_used, "dash_extra_squares": dash_extra_squares}
     for key in payload.keys():
         entry[key] = payload[key]
+    if str(entry["text"]).is_empty() and kind != "sound":
+        entry["text"] = Audit.format_event(entry, actors)
     events.append(entry)
 
 
@@ -2020,7 +2108,7 @@ func area_spell_reason(spell_id: String, selected: Vector2i) -> String:
 
 func cast_area_spell(spell_id: String, anchor: Vector2i) -> bool:
     if not area_spell_reason(spell_id, anchor).is_empty():
-        return false
+        return _reject(spell_id, area_spell_reason(spell_id, anchor))
     var caster_id := current_id()
     var spell: Dictionary = Level1Spells.get_definition(spell_id)
     var id := create_area_effect(caster_id, {
@@ -2180,7 +2268,7 @@ func _web_fire_start_turn(actor_id: String, cell: Vector2i) -> void:
             if other["burning_cells"].has(cell):
                 other["occasions"][key] = true
         var source: String = effect["burning_cells"][cell]["source"]
-        var damage := RulesMath.roll_damage("2d4", rng)
+        var damage := _roll_formula("2d4", false, source, actor_id, str(id), "start in burning Web")
         var before: int = actors[actor_id]["hp"]
         _deal_damage(actor_id, damage)
         _event("hit", source, actor_id, {"action_id": "web_fire", "effect_id": id,
@@ -2280,9 +2368,10 @@ func can_extinguish() -> bool:
 
 func extinguish() -> bool:
     if not can_extinguish():
-        return false
+        return _reject("extinguish", "unavailable: action/resource, actor, source or pending resolution")
     action_used = true
     _end_burning("actor:" + current_id(), "extinguish_action")
+    _event("action_committed", current_id(), "", {"action_id": "extinguish", "cost": "Action"})
     return true
 
 
@@ -2298,7 +2387,7 @@ func _actor_burning_start_turn(actor_id: String) -> void:
         return
     burn["last_turn_serial"] = turn_serial
     burn["ticks_remaining"] -= 1
-    var damage := RulesMath.roll_damage("1d4", rng)
+    var damage := _roll_formula("1d4", false, str(burn["source"]), actor_id, "Burning", "start_turn")
     var before: int = actors[actor_id]["hp"]
     _deal_damage(actor_id, damage)
     _event("hit", str(burn["source"]), actor_id, {"action_id": "burning", "source_kind": "burning",
@@ -2316,3 +2405,96 @@ func _expire_prop_burning() -> void:
         if burn["target_kind"] == "prop" and (round_number > int(burn["expiry_round"]) or \
                 (round_number == int(burn["expiry_round"]) and turn_index >= int(burn["expiry_turn"]))):
             _end_burning(str(key), "fuel_consumed")
+
+
+func _utility_ready() -> bool:
+    return not deployment_active and not finished and current_is_party() and is_combat_capable(current_id()) and pending_reaction.is_empty() and pending_move.is_empty()
+
+
+func action_info(action_id: String, source_id: String = "", target_id: String = "") -> Dictionary:
+    # Schema 1 is the sole UI explanation/legality seam; queries are side-effect free.
+    var info := {"schema_version": 1, "id": action_id, "name": action_id.replace("_", " ").capitalize(),
+        "cost": "1 Action", "effect": "", "duration": "instant", "consequence": "Action is spent on commitment",
+        "details": "Select to inspect; Confirm or a second distinct press commits. Cancel spends nothing.", "legal": false, "reason": ""}
+    var actor := current_actor()
+    match action_id:
+        "dash":
+            info["legal"] = can_dash()
+            info["effect"] = "gain %d ft of movement" % int(actor.get("speed_feet", 30))
+            info["duration"] = "rest of this turn"
+            info["consequence"] = "movement can still provoke opportunity attacks; cancelling Move does not refund the Action"
+        "disengage":
+            info["legal"] = can_disengage()
+            info["effect"] = "your movement does not provoke opportunity attacks"
+            info["duration"] = "rest of this turn"
+            info["consequence"] = "does not grant movement; cancelling Move does not refund the Action"
+        "dodge":
+            info["legal"] = can_dodge()
+            info["effect"] = "incoming attacks have disadvantage; Dexterity saves have advantage"
+            info["duration"] = "until your next turn"
+            info["consequence"] = "defence is lost while Restrained (speed zero) or incapacitated"
+        "second_wind":
+            info["legal"] = can_use_second_wind()
+            info["cost"] = "1 Bonus Action + 1 use (%d left)" % int(actor.get("second_wind_remaining", 0))
+            info["effect"] = "heal 1d10 + %d HP" % int(actor.get("level", 1))
+            info["consequence"] = "healing capped at missing HP; Action remains independent"
+        "escape":
+            info["legal"] = can_escape_effect(source_id)
+            var source: Dictionary = active_effects.get(source_id, {})
+            info["effect"] = "Strength (Athletics) vs DC %d; remove Restrained from %s (%s, caster %s) on success" % [int(source.get("save_dc", 0)), source.get("type", "choose source"), source_id, source.get("source", "unknown")]
+            info["consequence"] = "failure still spends Action; other restraint sources remain"
+            info["details"] = "Choose a specific restraint source. Leaving or ending that source also removes its condition. " + str(info["details"])
+        "extinguish":
+            info["legal"] = can_extinguish()
+            info["effect"] = "end your Burning (%d ticks left)" % int(burning_snapshot("actor", current_id()).get("ticks_remaining", 0))
+            info["consequence"] = "does not extinguish surrounding Web or props; later ignition remains possible"
+        "move":
+            info["legal"] = can_move_current() and pending_reaction.is_empty() and pending_move.is_empty()
+            info["cost"] = "movement only (%d ft left)" % (movement_remaining() * 5)
+            info["effect"] = "tap a reachable destination"
+            info["duration"] = "this turn's movement allowance"
+            info["consequence"] = "terrain costs extra; movement may provoke unless Disengaged"
+            info["details"] = "Move is not another Action. Cancel only clears targeting. Restrained prevents movement."
+        "attack":
+            info["legal"] = _utility_ready() and not action_used
+            info["effect"] = "attack a legal target with " + source_id.replace("_", " ")
+            info["consequence"] = "target tap commits; hit and damage are rolled"
+            info["details"] = "Red targets are legal. Range, cover, defence and conditions affect the roll."
+            if not target_id.is_empty() and available_attack(target_id, source_id).is_empty():
+                info["legal"] = false
+                info["reason"] = "selected target is not legal for this weapon"
+        "spell":
+            var spell := Level1Spells.get_definition(source_id)
+            info["name"] = source_id.replace("_", " ").capitalize()
+            info["legal"] = can_cast_current_spell(source_id)
+            info["reason"] = spell_resource_reason(source_id)
+            info["cost"] = ("1 Bonus Action" if spell.get("time", "") == "bonus" else "1 Action")
+            var level := int(spell.get("level", 0))
+            if level > 0:
+                info["cost"] += " + L%d slot (%d left)" % [level, spell_slots_left(current_id(), level)]
+            info["effect"] = str(spell.get("effect", "unimplemented")).replace("_", " ")
+            if spell.has("damage"):
+                info["effect"] += " " + str(spell["damage"]) + " " + str(spell.get("damage_type", ""))
+            if spell.has("healing"):
+                info["effect"] += " " + str(spell["healing"]) + " + spell ability modifier"
+            info["duration"] = "%d rounds%s" % [int(spell["duration_rounds"]), " (concentration)" if spell.get("concentration", false) else ""] if spell.has("duration_rounds") else ("8 hours" if source_id == "mage_armor" else "instant")
+            info["consequence"] = "target tap commits; one spell-slot expenditure per turn"
+            info["details"] = "Range: %d ft. Resource and target legality are revalidated when casting." % int(spell.get("range_feet", 0))
+            if source_id == "web":
+                info["effect"] = "4x4 Web; difficult terrain, lightly obscured; DEX vs DC %d or Restrained" % int(actor.get("spellcasting", {}).get("save_dc", 0))
+                info["consequence"] = "same-square second tap or Confirm Web casts; replaces concentration; flammable"
+            elif not target_id.is_empty():
+                info["reason"] = spell_unavailable_reason(source_id, target_id)
+                info["legal"] = info["reason"].is_empty()
+        _:
+            info["reason"] = "unknown action"
+    if not info["legal"] and str(info["reason"]).is_empty():
+        if not _utility_ready():
+            info["reason"] = "actor unavailable, deployment, battle ended or resolution pending"
+        elif action_id == "move":
+            info["reason"] = "Restrained, no reachable destinations or movement exhausted"
+        elif action_id == "second_wind":
+            info["reason"] = "Bonus Action used, no uses, full HP or class unavailable"
+        else:
+            info["reason"] = "Action used or required condition/source unavailable"
+    return info

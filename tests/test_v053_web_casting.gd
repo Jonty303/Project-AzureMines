@@ -46,7 +46,10 @@ func _initialize() -> void:
         var before := F.state(b)
         check(not b.area_spell_reason("web", anchor).is_empty(), "missing invalid reason " + variant)
         check(not b.cast_area_spell("web", anchor), "invalid cast " + variant)
-        check(F.state(b) == before, "invalid cast mutated resources/concentration/RNG " + variant)
+        var after := F.state(b)
+        check(after[1].size() == before[1].size() + 1 and after[1][-1].get("outcome", "") == "REJECTED", "invalid cast missing rejection " + variant)
+        after[1] = before[1]
+        check(after == before, "invalid cast mutated resources/concentration/RNG " + variant)
     var b := F.battle()
     check(b.area_spell_reason("web", Vector2i(13, 1)).is_empty(), "60ft inclusive boundary")
     b._start_bless("elyra", "alden")
