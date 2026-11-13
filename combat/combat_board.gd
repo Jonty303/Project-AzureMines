@@ -14,7 +14,8 @@ const PARTY_BLUE := Color("#399bd5")
 const ENEMY_RED := Color("#cb4c43")
 const GOLD := Color("#d7aa58")
 const DOWNED_ATLAS := "assets/characters/sprites/downed_party_atlas_64.png"
-const TERRAIN_ATLAS := "assets/environment/dungeon_tiles_64.svg"
+const Art = preload("res://combat/combat_art.gd")
+const TERRAIN_ATLAS := "assets/combat_v054/terrain.png"
 const PROPS_ATLAS := "assets/environment/dungeon_props_64.png"
 
 var engine: CombatEngine
@@ -52,6 +53,9 @@ var _projectiles: Array[Dictionary] = []
 var _movement_queue: Array[Dictionary] = []
 var _last_motion_end: Dictionary = {}
 var _next_projectile_start_ms := 0
+var _actor_actions: Dictionary = {}
+var _actor_facing: Dictionary = {}
+var _last_cosmetic_frame := -1
 const EFFECT_DURATION_MS := 720
 const PROJECTILE_DURATION_MS := 450
 const MOVE_TILE_DURATION_MS := 115
@@ -64,6 +68,7 @@ func _queue_movement(event: Dictionary) -> void:
     var to_data: Array = event.get("to", [])
     if from_data.size() != 2 or to_data.size() != 2 or actor_id.is_empty():
         return
+    _actor_facing[actor_id] = 1 if int(to_data[0]) >= int(from_data[0]) else -1
     var from_cell := Vector2(float(from_data[0]), float(from_data[1]))
     var to_cell := Vector2(float(to_data[0]), float(to_data[1]))
     var now: int = Time.get_ticks_msec()
@@ -123,6 +128,14 @@ func enqueue_combat_event(event: Dictionary) -> void:
     if kind == "move":
         _queue_movement(event)
         return
+    var source_actor: String = str(event.get("actor_id", ""))
+    var target_actor: String = str(event.get("target_id", ""))
+    if kind in ["hit", "miss"] and engine.actors.has(source_actor):
+        if engine.actors.has(target_actor):
+            _actor_facing[source_actor] = 1 if engine.actors[target_actor]["position"].x >= engine.actors[source_actor]["position"].x else -1
+        _actor_actions[source_actor] = {"state": "melee", "start_ms": maxi(Time.get_ticks_msec(), int(_last_motion_end.get(source_actor, 0)))}
+        if kind == "hit":
+            _actor_actions[target_actor] = {"state": "hit", "start_ms": Time.get_ticks_msec()}
     var ranged: bool = kind in ["hit", "miss"] and (
         str(event.get("attack_kind", "")) == "ranged_weapon" or (
             str(event.get("source_kind", "")) == "spell" and
@@ -139,7 +152,10 @@ func enqueue_combat_event(event: Dictionary) -> void:
         start_time = maxi(start_time, int(_last_motion_end.get(source_id, now)))
         start_time = maxi(start_time, int(_last_motion_end.get(target_id, now)))
         _next_projectile_start_ms = start_time + PROJECTILE_DURATION_MS + 70
+        _actor_actions[source_id] = {"state": "ranged", "start_ms": start_time}
+        _actor_actions.erase(target_id)
         _projectiles.append({
+            "action_id": str(event.get("action_id", "")),
             "kind": kind, "amount": int(event.get("amount", 0)),
             "damage_type": str(event.get("damage_type", "")),
             "source_kind": str(event.get("source_kind", "")),
@@ -161,6 +177,7 @@ func enqueue_combat_event(event: Dictionary) -> void:
         return
     var cell: Vector2i = engine.actors[target_id]["position"]
     _effects.append({
+        "action_id": str(event.get("action_id", "")),
         "kind": kind,
         "cell": cell,
         "amount": int(event.get("amount", 0)),
@@ -181,6 +198,8 @@ func reset_presentation() -> void:
     _movement_queue.clear()
     _last_motion_end.clear()
     _next_projectile_start_ms = 0
+    _actor_actions.clear()
+    _actor_facing.clear()
     inspected_cell = Vector2i(-1, -1)
     set_process(false)
     queue_redraw()
@@ -192,6 +211,7 @@ func _process(_delta: float) -> void:
         var projectile: Dictionary = _projectiles[i]
         if now - int(projectile["start_ms"]) >= PROJECTILE_DURATION_MS:
             _effects.append({
+                "action_id": str(projectile.get("action_id", "")),
                 "kind": str(projectile["kind"]), "amount": int(projectile["amount"]),
                 "source_kind": str(projectile["source_kind"]),
                 "damage_type": str(projectile["damage_type"]),
@@ -205,6 +225,7 @@ func _process(_delta: float) -> void:
                     "critical": false, "start_ms": now
                 })
                 projectile_impact.emit(str(projectile.get("target_id", "")), "dead")
+            _actor_actions[str(projectile.get("target_id", ""))] = {"state": "hit", "start_ms": now}
             _projectiles.remove_at(i)
     for i in range(_movement_queue.size() - 1, -1, -1):
         var motion: Dictionary = _movement_queue[i]
@@ -213,9 +234,13 @@ func _process(_delta: float) -> void:
     for i in range(_effects.size() - 1, -1, -1):
         if now - int(_effects[i]["start_ms"]) >= EFFECT_DURATION_MS:
             _effects.remove_at(i)
-    if _effects.is_empty() and _projectiles.is_empty() and _movement_queue.is_empty():
+    # Bounded cosmetic loops; no particle nodes, random rolls or simulation writes.
+    var frame: int = now / 83
+    if frame != _last_cosmetic_frame or not _movement_queue.is_empty() or not _projectiles.is_empty() or not _effects.is_empty():
+        _last_cosmetic_frame = frame
+        queue_redraw()
+    if engine == null:
         set_process(false)
-    queue_redraw()
 
 
 func _effect_color(kind: String, damage_type: String) -> Color:
@@ -238,7 +263,7 @@ func _effect_color(kind: String, damage_type: String) -> Color:
                 _: return Color("#ff7470")
 
 
-func _draw_effects() -> void:
+func _draw_effects(labels_only: bool = false) -> void:
     var now := Time.get_ticks_msec()
     for effect in _effects:
         var age: float = float(now - int(effect["start_ms"])) / float(EFFECT_DURATION_MS)
@@ -248,14 +273,10 @@ func _draw_effects() -> void:
         var center := Vector2(cell * CELL_SIZE) + Vector2(CELL_SIZE / 2.0, CELL_SIZE / 2.0)
         var tint: Color = _effect_color(kind, str(effect.get("damage_type", "")))
         tint.a = 1.0 - progress
-        var radius := 16.0 + progress * 22.0
-        if kind in ["cast", "heal"] or (kind == "hit" and effect.get("source_kind", "") == "spell"):
-            draw_arc(center, radius, 0.0, TAU, 28, tint, 4.0, true)
-        elif kind == "hit":
-            draw_line(center + Vector2(-19.0, 16.0), center + Vector2(19.0, -16.0),
-                tint, 5.0, true)
-            draw_line(center + Vector2(-17.0, -12.0), center + Vector2(15.0, 13.0),
-                tint, 2.0, true)
+        if not labels_only:
+            var effect_name: String = _effect_art(effect)
+            _draw_vfx(effect_name, Rect2(center - Vector2(32, 32), Vector2(64, 64)), mini(3, int(progress * 4.0)), Color(1, 1, 1, 1.0 - progress * 0.65))
+            continue
         var caption := ""
         match kind:
             "hit":
@@ -290,21 +311,16 @@ func _draw_projectiles() -> void:
         var end_pt := (destination + Vector2(0.5, 0.5)) * CELL_SIZE
         var pos := start_pt.lerp(end_pt, p)
         var direction := (end_pt - start_pt).normalized()
-        var tint := _effect_color("hit", str(projectile.get("damage_type", "")))
-        if str(projectile.get("source_kind", "")) == "weapon":
-            # Arrow / sling-bolt silhouette plus a modest warm trail.
-            draw_line(pos - direction * 22.0, pos, Color("#efbd73", 0.85), 3.0, true)
-            var side := Vector2(-direction.y, direction.x)
-            draw_colored_polygon(PackedVector2Array([
-                pos + direction * 11.0,
-                pos - direction * 5.0 + side * 4.0,
-                pos - direction * 5.0 - side * 4.0
-            ]), Color("#f9e6b7"))
-        else:
-            draw_circle(pos - direction * 12.0, 6.0, Color(tint.r, tint.g, tint.b, 0.35))
-            draw_circle(pos - direction * 6.0, 7.0, Color(tint.r, tint.g, tint.b, 0.55))
-            draw_circle(pos, 9.0, tint)
-            draw_circle(pos, 3.5, Color("#f4f0ff"))
+        var action: String = str(projectile.get("action_id", ""))
+        var effect_name := "arrow"
+        if str(projectile.get("source_kind", "")) == "spell":
+            effect_name = {"fire_bolt": "fire_bolt", "ray_of_frost": "frost", "magic_missile": "magic_missile"}.get(action, "magic_missile")
+        elif action == "sling":
+            effect_name = "sling"
+        var scale_factor := float(display_cell_size) * camera_zoom / float(CELL_SIZE)
+        draw_set_transform(camera_offset + pos * scale_factor, direction.angle(), Vector2.ONE * scale_factor)
+        _draw_vfx(effect_name, Rect2(-32, -32, 64, 64), (age_ms / 90) % 4)
+        _board_transform()
 
 
 func set_display_cell_size(value: int) -> void:
@@ -411,169 +427,317 @@ func _ready() -> void:
     set_process(false)
 
 
+func _board_transform() -> void:
+    draw_set_transform(camera_offset, 0.0, Vector2.ONE * (float(display_cell_size) * camera_zoom / float(CELL_SIZE)))
+
+
 func _draw() -> void:
     if engine == null:
         return
-    draw_set_transform(camera_offset, 0.0, Vector2.ONE * (float(display_cell_size) * camera_zoom / float(CELL_SIZE)))
-    var current: String = engine.current_id()
-    var highlights: Dictionary = get_highlights()
-    var reachable: Dictionary = highlights["move"]
-    var attack_cells: Dictionary = highlights["attack"]
-    var spell_cells: Dictionary = highlights["spell"]
-    var terrain: Texture2D = _texture_for(TERRAIN_ATLAS)
+    set_process(true)
+    _board_transform()
+    _draw_terrain()
+    _draw_ground()
+    _draw_contact_shadows()
+    for entry in render_entries():
+        if entry["kind"] == "actor":
+            _draw_actor(str(entry["id"]))
+        else:
+            _draw_obstacle(entry["prop"])
+    _draw_wall_foreground()
+    _draw_environment()
+    _draw_projectiles()
+    _draw_effects()
+    _draw_tactical()
+    for actor_id in engine.actors:
+        _draw_actor(str(actor_id), true)
+    _draw_effects(true)
 
+
+func render_entries() -> Array[Dictionary]:
+    var entries: Array[Dictionary] = []
+    if engine == null:
+        return entries
+    for prop in engine.obstacles:
+        entries.append({"kind": "prop", "id": str(prop.get("id", "")), "anchor": Art.prop_anchor(prop), "prop": prop})
+    for actor_id in engine.actors:
+        var cell: Vector2 = _render_actor_cell(str(actor_id), engine.actors[actor_id]["position"])
+        entries.append({"kind": "actor", "id": str(actor_id), "anchor": cell + Vector2(0.5, 0.90)})
+    entries.sort_custom(Art.depth_before)
+    return entries
+
+
+func _draw_terrain() -> void:
+    var terrain: Texture2D = _texture_for(TERRAIN_ATLAS)
     for y in range(engine.grid_size.y):
         for x in range(engine.grid_size.x):
             var cell := Vector2i(x, y)
             var dest := Rect2(Vector2(cell * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
-            var wall: bool = cell in engine.walls
-            if terrain != null:
-                var tile_idx: int = 3 if wall else (x * 13 + y * 7) % 3
-                var source := Rect2(Vector2(tile_idx * SOURCE_SIZE, 0), Vector2(SOURCE_SIZE, SOURCE_SIZE))
-                draw_texture_rect_region(terrain, dest, source)
-            else:
-                var stone: Color = Color("#25242a") if wall else Color("#51453d")
-                if (x + y) % 3 == 0:
-                    stone = stone.lightened(0.065)
-                draw_rect(dest, stone)
-            if engine.has_area_effect_at(cell):
-                draw_rect(dest.grow(-3), Color("#c8d3f0", 0.26))
-                draw_rect(dest.grow(-4), Color("#d8e7ff", 0.85), false, 2.0)
-                draw_line(dest.position + Vector2(6, 6), dest.end - Vector2(6, 6), Color("#d8e7ff", 0.7), 2.0)
-                draw_line(dest.position + Vector2(6, CELL_SIZE - 6), dest.position + Vector2(CELL_SIZE - 6, 6), Color("#d8e7ff", 0.7), 2.0)
-            for prop in engine.obstacles:
-                if prop["position"] == cell and not engine.burning_snapshot("prop", str(prop.get("id", ""))).is_empty():
-                    draw_string(ThemeDB.fallback_font, dest.position + Vector2(6, 52), "Burning prop", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("#fff2b0"))
-            if engine.is_web_burning(cell):
-                draw_rect(dest.grow(-5), Color("#ff762e", 0.4))
-                draw_string(ThemeDB.fallback_font, dest.position + Vector2(7, 20), "FIRE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#fff2b0"))
-            if area_shape.get("nominal_cells", []).has(cell):
-                var affected: bool = area_shape.get("affected_cells", []).has(cell)
-                var preview_color := Color("#62edbb") if area_preview_valid and affected else Color("#ff706e")
-                draw_rect(dest.grow(-6), Color(preview_color, 0.18))
-                draw_rect(dest.grow(-6), preview_color, false, 3.0)
-                draw_string(ThemeDB.fallback_font, dest.position + Vector2(6, 38),
-                    "WEB" if affected else "BLOCK", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, preview_color)
-                if cell == area_preview:
-                    draw_circle(dest.get_center(), 7, Color.WHITE, false, 2.0)
+            var hash_value: int = posmod(x * 7919 + y * 104729 + x * y * 31, 101)
+            var tile: int = hash_value % 3
+            if hash_value > 88:
+                tile = 3 + hash_value % 5
+            draw_texture_rect_region(terrain, dest, Rect2(tile * 32, 0, 32, 32))
+            draw_rect(dest, Color("#141b23", 0.40), false, 1.0)
+
+
+func _draw_ground() -> void:
+    var decals: Texture2D = _texture_for(Art.ROOT + "decals.png")
+    for y in range(engine.grid_size.y):
+        for x in range(engine.grid_size.x):
+            var cell := Vector2i(x, y)
+            var dest := Rect2(Vector2(cell * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
             if cell in engine.difficult_terrain:
-                draw_rect(dest, Color("#8c6b35", 0.32))
-            if reachable.has(cell) and cell != engine.current_actor()["position"]:
-                draw_rect(dest, Color("#399bd5", 0.22))
-            if attack_cells.has(cell):
-                draw_rect(dest, Color("#cb4c43", 0.25))
-                draw_rect(dest.grow(-2), Color("#f77869"), false, 2.0)
-            if spell_cells.has(cell):
-                draw_rect(dest, Color("#d7aa58", 0.24))
-                draw_rect(dest.grow(-2), GOLD, false, 2.0)
-            if engine.deployment_active and not selected_deployment_actor.is_empty() \
-                    and engine.can_place_character(selected_deployment_actor, cell):
-                draw_rect(dest.grow(-3), Color("#399bd5", 0.18))
-                draw_rect(dest.grow(-3), Color("#65b3df", 0.65), false, 1.5)
-            draw_rect(dest, Color("#1c232b", 0.58), false, 1.0)
+                draw_texture_rect_region(decals, dest, Rect2(128, 0, 32, 32))
+            for direction in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
+                if cell not in engine.walls and cell + direction in engine.walls:
+                    var index: int = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT].find(direction)
+                    draw_texture_rect_region(decals, dest, Rect2(index * 32, 0, 32, 32))
+            if engine.has_area_effect_at(cell):
+                _draw_vfx("burning_web" if engine.is_web_burning(cell) else "web", dest, _loop_frame(cell))
 
-    if inspected_cell.x >= 0 and inspected_cell.y >= 0:
-        var selected := Rect2(Vector2(inspected_cell * CELL_SIZE) + Vector2(3, 3), Vector2(62, 62))
-        draw_rect(selected, Color("#faf0c1"), false, 2.5)
-    if has_focus():
-        var cursor := Rect2(Vector2(keyboard_cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64))
-        draw_rect(cursor, Color("#f0da86"), false, 3.0)
 
-    # Layered scene art: forest backdrop first, then persistent physical props.
-    var forest_path: String = str(engine.backdrop.get("art", "")).trim_prefix("res://")
-    var forest: Texture2D = _texture_for(forest_path)
-    if forest != null:
-        var forest_height: int = int(engine.backdrop.get("rows", 2)) * CELL_SIZE
-        # Scenery must not conceal tactical terrain or targeting information.
-        draw_texture_rect(forest, Rect2(Vector2.ZERO, Vector2(engine.grid_size.x * CELL_SIZE, forest_height)), false,
-            Color(1.0, 1.0, 1.0, 0.28))
-        for top_y in range(mini(int(engine.backdrop.get("rows", 2)), engine.grid_size.y)):
-            for top_x in range(engine.grid_size.x):
-                var top_cell := Rect2(Vector2(top_x * CELL_SIZE, top_y * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
-                draw_rect(top_cell, Color("#d0baa0", 0.45), false, 1.5)
+func draw_ellipse_shadow(dest: Rect2) -> void:
+    draw_style_box(_shadow_style(), Rect2(dest.position + Vector2(dest.size.x * 0.14, dest.size.y * 0.83), Vector2(dest.size.x * 0.72, dest.size.y * 0.12)))
 
-    for obstacle in engine.obstacles:
-        var art_path: String = str(obstacle.get("art", "")).trim_prefix("res://")
-        var sprite: Texture2D = _texture_for(art_path)
-        var pos: Vector2i = obstacle["position"]
-        var extent: Vector2i = obstacle["size"]
-        var dest := Rect2(Vector2(pos * CELL_SIZE) + Vector2(2, 2),
-            Vector2(extent * CELL_SIZE) - Vector2(4, 4))
+
+func _shadow_style() -> StyleBoxFlat:
+    # Cached once; rounded contact shadow remains below the actual artwork.
+    if not has_meta("contact_shadow"):
+        var style := StyleBoxFlat.new()
+        style.bg_color = Color(0.025, 0.035, 0.05, 0.48)
+        style.set_corner_radius_all(12)
+        set_meta("contact_shadow", style)
+    return get_meta("contact_shadow")
+
+
+func _draw_contact_shadows() -> void:
+    for prop in engine.obstacles:
+        draw_ellipse_shadow(Art.prop_rect(prop, CELL_SIZE))
+    for actor in engine.actors.values():
+        var cell: Vector2 = _render_actor_cell(str(actor["id"]), actor["position"])
+        draw_ellipse_shadow(Rect2(cell * CELL_SIZE, Vector2(CELL_SIZE, CELL_SIZE)))
+    for hazard in engine.hazards:
+        var dest := Rect2(Vector2(hazard["position"] * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
+        var image: Texture2D = _texture_for(Art.ROOT + "campfire.png")
+        draw_texture_rect(image, Rect2(dest.position - Vector2(0, CELL_SIZE * 0.25), Vector2(CELL_SIZE, CELL_SIZE * 1.25)), false)
+
+
+func _occludes_actor(rect: Rect2, ground_y: float) -> bool:
+    for actor in engine.actors.values():
+        var cell: Vector2 = _render_actor_cell(str(actor["id"]), actor["position"])
+        if cell.y + 0.90 < ground_y and rect.intersects(Rect2(cell * CELL_SIZE + Vector2(10, 4), Vector2(48, 60))):
+            return true
+    return false
+
+
+func _draw_obstacle(prop: Dictionary) -> void:
+    var kind: String = Art.prop_kind(prop)
+    var path: String = Art.ROOT + kind + ".png" if not kind.is_empty() else str(prop.get("art", "")).trim_prefix("res://")
+    var sprite: Texture2D = _texture_for(path)
+    var dest: Rect2 = Art.prop_rect(prop, CELL_SIZE)
+    var alpha := 0.42 if _occludes_actor(dest, Art.prop_anchor(prop).y) else 1.0
+    if sprite != null:
+        draw_texture_rect(sprite, dest, false, Color(1, 1, 1, alpha))
+    else:
+        draw_rect(dest, Color("#65503a", alpha))
+
+
+func _draw_wall_foreground() -> void:
+    var walls: Texture2D = _texture_for(Art.ROOT + "walls.png")
+    for cell in engine.walls:
+        var dest := Rect2(Vector2(cell * CELL_SIZE) - Vector2(0, CELL_SIZE * 0.5), Vector2(CELL_SIZE, CELL_SIZE * 1.5))
+        var mask: int = Art.wall_mask(cell, engine.walls)
+        var alpha := 0.38 if _occludes_actor(dest, float(cell.y) + 1.0) else 1.0
+        draw_texture_rect_region(walls, dest, Rect2(mask * 32, 0, 32, 48), Color(1, 1, 1, alpha))
+
+
+func _loop_frame(cell: Vector2i) -> int:
+    return (Time.get_ticks_msec() / 140 + cell.x * 3 + cell.y * 7) % 4
+
+
+func _draw_vfx(effect_name: String, dest: Rect2, frame: int, tint: Color = Color.WHITE) -> void:
+    var row: int = Art.VFX_ROWS.find(effect_name)
+    if row < 0:
+        return
+    draw_texture_rect_region(_texture_for(Art.ROOT + "vfx.png"), dest, Rect2(posmod(frame, 4) * 32, row * 32, 32, 32), tint)
+
+
+func _draw_fire(cell: Vector2i) -> void:
+    var frame: int = _loop_frame(cell)
+    var base := Vector2(cell * CELL_SIZE)
+    var pulse: float = 0.045 + float(frame % 2) * 0.015
+    draw_circle(base + Vector2(34, 43), 30, Color(0.95, 0.52, 0.18, pulse))
+    _draw_vfx("flame", Rect2(base - Vector2(0, 12), Vector2(68, 68)), frame)
+    _draw_vfx("ember", Rect2(base - Vector2(0, 36), Vector2(68, 68)), frame)
+    _draw_vfx("smoke", Rect2(base - Vector2(0, 68), Vector2(68, 68)), frame)
+
+
+func _draw_environment() -> void:
+    for hazard in engine.hazards:
+        _draw_fire(hazard["position"])
+    for prop in engine.obstacles:
+        if not engine.burning_snapshot("prop", str(prop.get("id", ""))).is_empty():
+            _draw_fire(prop["position"])
+    for y in range(engine.grid_size.y):
+        for x in range(engine.grid_size.x):
+            var cell := Vector2i(x, y)
+            if engine.is_web_burning(cell):
+                _draw_fire(cell)
+    for actor_id in engine.actors:
+        var actor: Dictionary = engine.actors[actor_id]
+        var draw_cell: Vector2 = _render_actor_cell(str(actor_id), actor["position"])
+        var dest := Rect2(draw_cell * CELL_SIZE, Vector2(68, 68))
+        if not engine.burning_snapshot("actor", str(actor_id)).is_empty():
+            _draw_vfx("flame", dest, _loop_frame(actor["position"]))
+        if not str(actor.get("blessed_by", "")).is_empty():
+            _draw_vfx("bless", dest, _loop_frame(actor["position"]))
+        if not actor.get("concentration", {}).is_empty():
+            _draw_vfx("arcane", dest, _loop_frame(actor["position"]), Color(1, 1, 1, 0.65))
+        if bool(actor.get("mage_armor_active", false)) or int(actor.get("shield_bonus", 0)) > 0:
+            _draw_vfx("shield", dest, _loop_frame(actor["position"]), Color(1, 1, 1, 0.65))
+
+
+func _effect_art(effect: Dictionary) -> String:
+    var action: String = str(effect.get("action_id", ""))
+    if str(effect.get("kind", "")) == "heal":
+        return "healing"
+    if action == "bless":
+        return "bless"
+    if action in ["mage_armor", "shield"]:
+        return "shield"
+    match str(effect.get("damage_type", "")):
+        "fire": return "flame"
+        "cold": return "frost"
+        "force": return "magic_missile"
+        "radiant": return "radiant"
+    if str(effect.get("damage_type", "")) == "slashing" and str(effect.get("kind", "")) == "hit":
+        return "slash"
+    return "arcane" if str(effect.get("kind", "")) == "cast" else "impact"
+
+
+func _draw_monster(actor: Dictionary, dest: Rect2, active: bool) -> bool:
+    var species: String = Art.monster(actor)
+    if species.is_empty():
+        return false
+    var actor_id: String = str(actor["id"])
+    var state := "idle" if active else "defeated"
+    var elapsed: int = Time.get_ticks_msec()
+    var ranged := false
+    for attack in actor.get("attacks", []):
+        ranged = ranged or str(attack.get("kind", "")) == "ranged_weapon"
+    ranged = ranged and species in ["goblin", "kobold"]
+    if active:
+        var action: Dictionary = _actor_actions.get(actor_id, {})
+        var age: int = elapsed - int(action.get("start_ms", 0))
+        if not action.is_empty() and age >= 0 and age < 340:
+            state = str(action["state"])
+            if state == "ranged" and not ranged:
+                state = "melee"
+            elapsed = age
+        for motion in _movement_queue:
+            if str(motion["actor_id"]) == actor_id and Time.get_ticks_msec() >= int(motion["start_ms"]):
+                state = "walk"
+                elapsed = Time.get_ticks_msec()
+                break
+    var source: Rect2 = Art.monster_region(state, elapsed, int(_actor_facing.get(actor_id, -1)), ranged)
+    var art_scale := 1.75
+    var ground_contact := dest.position - Vector2(2, 2) + Vector2(34, CELL_SIZE * 0.90)
+    var sprite_rect := Rect2(ground_contact - Vector2(24, 41) * art_scale, Vector2(48, 48) * art_scale)
+    draw_texture_rect_region(_texture_for(Art.ROOT + species + ".png"), sprite_rect, source)
+    return true
+
+
+func _draw_actor(actor_id_value: String, labels_only: bool = false) -> void:
+    var actor: Dictionary = engine.actors[actor_id_value]
+    var cell: Vector2i = actor["position"]
+    var actor_id: String = str(actor["id"])
+    var draw_cell: Vector2 = _render_actor_cell(actor_id, cell)
+    var cell_origin: Vector2 = draw_cell * CELL_SIZE
+    var dest := Rect2(cell_origin + Vector2(2, 2), Vector2(64, 64))
+    var held: Dictionary = _pending_fatal_projectile(actor_id)
+    var active: bool = engine.is_combat_capable(actor_id_value) or not held.is_empty()
+    if labels_only:
+        _draw_actor_labels(actor, cell_origin, dest, held, active)
+        return
+    var drawn: bool = _draw_monster(actor, dest, active)
+    var downed: Texture2D = _texture_for(DOWNED_ATLAS)
+    if not drawn and not active and downed != null:
+        var index: int = _downed_index(actor_id)
+        var source := Rect2(Vector2(index * SOURCE_SIZE, 0), Vector2(SOURCE_SIZE, SOURCE_SIZE))
+        draw_texture_rect_region(downed, dest, source)
+        drawn = true
+    if not drawn and active:
+        var art: Dictionary = actor.get("art", {})
+        var path: String = str(art.get("combat_sprite", ""))
+        if path.ends_with("_front_32.png"):
+            path = path.replace("_front_32.png", "_front_64.png")
+        var sprite: Texture2D = _texture_for(path)
         if sprite != null:
             draw_texture_rect(sprite, dest, false)
-        else:
-            draw_rect(dest, Color("#65503a"))
-        if obstacle.get("cover", "") == "half":
-            draw_rect(dest.grow(-2), Color("#bca66b", 0.5), false, 1.5)
-
-    for hazard in engine.hazards:
-        var image_path: String = str(hazard.get("art", "")).trim_prefix("res://")
-        var image: Texture2D = _texture_for(image_path)
-        var cell: Vector2i = hazard["position"]
-        var dest := Rect2(Vector2(cell * CELL_SIZE) + Vector2(2, 2), Vector2(SOURCE_SIZE, SOURCE_SIZE))
-        if image != null:
-            draw_texture_rect(image, dest, false)
-        else:
-            draw_circle(dest.get_center(), 18.0, Color("#f49b3d"))
-        draw_rect(dest.grow(-2), Color("#e97931", 0.85), false, 2.0)
-
-    var downed: Texture2D = _texture_for(DOWNED_ATLAS)
-    for id_variant in engine.actors.keys():
-        var actor: Dictionary = engine.actors[id_variant]
-        var cell: Vector2i = actor["position"]
-        var actor_id: String = str(actor["id"])
-        var draw_cell: Vector2 = _render_actor_cell(actor_id, cell)
-        var cell_origin: Vector2 = draw_cell * CELL_SIZE
-        var dest := Rect2(cell_origin + Vector2(2, 2), Vector2(64, 64))
-        var held: Dictionary = _pending_fatal_projectile(actor_id)
-        var active: bool = engine.is_combat_capable(str(id_variant)) or not held.is_empty()
-        if actor_id == current or (engine.deployment_active and actor_id == selected_deployment_actor):
-            draw_rect(Rect2(cell_origin + Vector2(1, 1), Vector2(66, 66)), GOLD, false, 3.0)
-        elif active:
-            var team_color: Color = PARTY_BLUE if actor["team"] == "party" else ENEMY_RED
-            draw_rect(Rect2(cell_origin + Vector2(1, 1), Vector2(66, 66)), team_color, false, 1.3)
-
-        var drawn := false
-        if not active and downed != null:
-            var index: int = _downed_index(actor_id)
-            var source := Rect2(Vector2(index * SOURCE_SIZE, 0), Vector2(SOURCE_SIZE, SOURCE_SIZE))
-            draw_texture_rect_region(downed, dest, source)
             drawn = true
-        if not drawn and active:
-            var art: Dictionary = actor.get("art", {})
-            var path: String = str(art.get("combat_sprite", ""))
-            if path.ends_with("_front_32.png"):
-                path = path.replace("_front_32.png", "_front_64.png")
-            var sprite: Texture2D = _texture_for(path)
-            if sprite != null:
-                draw_texture_rect(sprite, dest, false)
-                drawn = true
-        if not drawn:
-            draw_circle(dest.get_center(), 24.0, PARTY_BLUE if actor["team"] == "party" else ENEMY_RED)
-            draw_string(get_theme_default_font(), dest.position + Vector2(23, 43),
-                str(actor["name"]).substr(0, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
+    if not drawn:
+        draw_circle(dest.get_center(), 24.0, PARTY_BLUE if actor["team"] == "party" else ENEMY_RED)
+        draw_string(get_theme_default_font(), dest.position + Vector2(23, 43),
+            str(actor["name"]).substr(0, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
 
-        if not engine.burning_snapshot("actor", actor_id).is_empty():
-            draw_rect(Rect2(cell_origin + Vector2(2, 47), Vector2(64, 17)), Color("#502512", 0.95))
-            draw_string(get_theme_default_font(), cell_origin + Vector2(3, 60),
-                "Burning", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#fff2b0"))
-        if engine.has_condition(actor_id, "restrained"):
-            draw_rect(Rect2(cell_origin + Vector2(2, 2), Vector2(64, 15)), Color("#172031", 0.9))
-            draw_string(get_theme_default_font(), cell_origin + Vector2(3, 14),
-                "Restrained", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#e5efff"))
-        if not active:
-            var glyph: String = "Z" if actor.get("combat_state", "") in ["unconscious", "stable", "knocked_out"] else "X"
-            var status_color: Color = PARTY_BLUE if glyph == "Z" else ENEMY_RED
-            draw_string(get_theme_default_font(), dest.position + Vector2(50, 16),
-                glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, status_color)
-        var hp_bar := Rect2(cell_origin + Vector2(6, 62), Vector2(56, 4))
-        draw_rect(hp_bar, Color("#652d32"))
-        var shown_hp: int = int(held.get("hp_before", actor["hp"]))
-        var fraction: float = float(shown_hp) / float(maxi(1, int(actor["max_hp"])))
-        draw_rect(Rect2(hp_bar.position, Vector2(hp_bar.size.x * fraction, 4)), Color("#65bd7c"))
 
-    _draw_effects()
-    _draw_projectiles()
+
+
+func _draw_actor_labels(actor: Dictionary, cell_origin: Vector2, dest: Rect2, held: Dictionary, active: bool) -> void:
+    var actor_id: String = str(actor["id"])
+    if actor_id == engine.current_id() or (engine.deployment_active and actor_id == selected_deployment_actor):
+        draw_rect(Rect2(cell_origin + Vector2(1, 1), Vector2(66, 66)), GOLD, false, 3.0)
+    elif active:
+        var team_color: Color = PARTY_BLUE if actor["team"] == "party" else ENEMY_RED
+        draw_rect(Rect2(cell_origin + Vector2(1, 1), Vector2(66, 66)), team_color, false, 1.3)
+
+    if not engine.burning_snapshot("actor", actor_id).is_empty():
+        draw_rect(Rect2(cell_origin + Vector2(2, 47), Vector2(64, 17)), Color("#502512", 0.95))
+        draw_string(get_theme_default_font(), cell_origin + Vector2(3, 60),
+            "Burning", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#fff2b0"))
+    if engine.has_condition(actor_id, "restrained"):
+        draw_rect(Rect2(cell_origin + Vector2(2, 2), Vector2(64, 15)), Color("#172031", 0.9))
+        draw_string(get_theme_default_font(), cell_origin + Vector2(3, 14),
+            "Restrained", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#e5efff"))
+    if not active:
+        var glyph: String = "Z" if actor.get("combat_state", "") in ["unconscious", "stable", "knocked_out"] else "X"
+        var status_color: Color = PARTY_BLUE if glyph == "Z" else ENEMY_RED
+        draw_string(get_theme_default_font(), dest.position + Vector2(50, 16),
+            glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, status_color)
+    var hp_bar := Rect2(cell_origin + Vector2(6, 62), Vector2(56, 4))
+    draw_rect(hp_bar, Color("#652d32"))
+    var shown_hp: int = int(held.get("hp_before", actor["hp"]))
+    var fraction: float = float(shown_hp) / float(maxi(1, int(actor["max_hp"])))
+    draw_rect(Rect2(hp_bar.position, Vector2(hp_bar.size.x * fraction, 4)), Color("#65bd7c"))
+
+
+func _draw_tactical() -> void:
+    var highlights: Dictionary = get_highlights()
+    for y in range(engine.grid_size.y):
+        for x in range(engine.grid_size.x):
+            var cell := Vector2i(x, y)
+            var dest := Rect2(Vector2(cell * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
+            if highlights["move"].has(cell) and cell != engine.current_actor()["position"]:
+                draw_rect(dest.grow(-2), Color("#399bd5", 0.65), false, 2)
+            if highlights["attack"].has(cell):
+                draw_rect(dest.grow(-2), Color("#f77869"), false, 2)
+            if highlights["spell"].has(cell):
+                draw_rect(dest.grow(-2), GOLD, false, 2)
+            if engine.deployment_active and not selected_deployment_actor.is_empty() and engine.can_place_character(selected_deployment_actor, cell):
+                draw_rect(dest.grow(-3), Color("#65b3df", 0.65), false, 1.5)
+            if area_shape.get("nominal_cells", []).has(cell):
+                var affected: bool = area_shape.get("affected_cells", []).has(cell)
+                var color := Color("#62edbb") if area_preview_valid and affected else Color("#ff706e")
+                draw_rect(dest.grow(-6), Color(color, 0.13))
+                draw_rect(dest.grow(-6), color, false, 3)
+                draw_string(ThemeDB.fallback_font, dest.position + Vector2(6, 38), "WEB" if affected else "BLOCK", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, color)
+                if cell == area_preview:
+                    draw_circle(dest.get_center(), 7, Color.WHITE, false, 2)
+    if inspected_cell.x >= 0 and inspected_cell.y >= 0:
+        draw_rect(Rect2(Vector2(inspected_cell * CELL_SIZE) + Vector2(3, 3), Vector2(62, 62)), Color("#faf0c1"), false, 2.5)
+    if has_focus():
+        draw_rect(Rect2(Vector2(keyboard_cell * CELL_SIZE) + Vector2(2, 2), Vector2(64, 64)), Color("#f0da86"), false, 3)
 
 
 func get_highlights() -> Dictionary:

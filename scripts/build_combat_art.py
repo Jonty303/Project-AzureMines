@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'assets/combat_v054'
 OUT.mkdir(parents=True, exist_ok=True)
 INK = '#171c26'
-STONE = ['#272a32', '#35343a', '#464047', '#585052', '#70625d', '#8b7868']
+STONE = ['#242730', '#323137', '#403b3c', '#51483f', '#6c5c4b', '#8b7861']
 WOOD = ['#32232a', '#53342c', '#7e4d32', '#a46b3d', '#ce9756']
 METAL = ['#303641', '#52606a', '#85919a', '#c5ccd0']
 BONE = ['#695a4b', '#a49375', '#d5c39b', '#f1e1b8']
@@ -58,11 +58,11 @@ for v in range(8):
     d.rectangle((0,0,31,31),fill=STONE[1])
     for y in range(1,31):
         for x in range(1,31):
-            d.point((x,y),fill=rng.choice([STONE[1]]*6+[STONE[2]]*4+[STONE[0]]))
+            d.point((x,y),fill=rng.choice([STONE[1]]*18+[STONE[2]]*3+[STONE[0]]))
     for _ in range(14):
         x=rng.randint(2,26); y=rng.randint(2,26); w=rng.randint(2,5); h=rng.randint(1,3)
         poly(d,[(x,y+1),(x+1,y),(x+w,y),(x+w,y+h),(x+1,y+h+1)],rng.choice(STONE[2:4]),None)
-        d.line((x+1,y,x+w-1,y),fill=STONE[4])
+        d.line((x+1,y,x+w-1,y),fill=STONE[3])
     if v in (3,4):
         for _ in range(40):
             x=rng.randrange(3,28); y=rng.randrange(3,28)
@@ -137,7 +137,25 @@ for x in (27,73):
         xx=x+int(6*math.cos(math.radians(a)));yy=65+int(7*math.sin(math.radians(a)))
         d.line((x,65,xx,yy),fill=WOOD[4])
     d.ellipse((x-2,63,x+2,67),fill=METAL[1],outline=INK)
-for x in range(32,86,9):d.rectangle((x,47,x+2,49),fill=METAL[2])
+# Frayed hem, canvas folds, muted stains and light on raised ribs.
+for x in range(31,85):
+    y=41+(x%5==0)
+    d.point((x,y),fill='#ead09a' if x%3 else '#8d714f')
+    if x%4==0:d.point((x,38),fill='#ad9062')
+for x,y in [(35,22),(38,31),(49,17),(53,35),(64,27),(69,19),(78,34)]:
+    d.line((x,y,x+2,y),fill='#b99a68');d.point((x+1,y+1),fill='#bfa16d')
+for x in (29,45,61,77):
+    d.line([(x+3,13),(x+6,20),(x+8,29),(x+8,38)],fill='#f1d9a3')
+    for y in range(23,39,4):d.point((x+6,y),fill='#765c41')
+for y in (46,56,61):
+    for x in range(33,84,7):
+        d.line((x,y,x+4,y),fill=WOOD[3]);d.point((x+2,y+1),fill=WOOD[0])
+for x in range(32,86,9):
+    d.rectangle((x,47,x+2,49),fill=METAL[1]);d.point((x,47),fill=METAL[3])
+d.line((32,52,85,52),fill=WOOD[4]);d.line((32,64,85,64),fill=WOOD[0])
+# Supply rail and sack in the open back.
+d.line((6,44,28,44),fill=WOOD[4]);d.line((6,52,28,52),fill=WOOD[3])
+for x in (8,17,26):d.line((x,44,x,56),fill=WOOD[0],width=2);d.point((x,46),fill=METAL[2])
 save('wagon',im,footprint=[3,2],pivot=[48,76],height_offset=16,cover='total',collision='fixture')
 im,d=canvas(32,80);d.ellipse((2,68,30,78),fill='#10141c99')
 rock(d,3,35,25,41,2);rock(d,5,16,23,35,4);rock(d,2,48,16,26,6)
@@ -233,6 +251,18 @@ for species in ['goblin','kobold','bugbear','spider','skeleton']:
                     poly(d,[(hx+facing*3,hy+5),(hx+facing*10,hy+6),(hx+facing*9,hy+10),(hx+facing*2,hy+10)],skin[1])
                     d.line([(cx-5*facing,31),(cx-12*facing,34),(cx-15*facing,30)],fill=skin[1],width=2)
                     d.line((hx-3,hy+1,hx-4,hy-3),fill=BONE[1]);d.line((hx+2,hy+1,hx+3,hy-2),fill=BONE[1])
+                if species!='skeleton':
+                    d.line((hx-4,hy+3,hx-3,hy+6),fill=skin[2])
+                    d.line((hx-2,hy+9,hx+2,hy+10),fill=skin[0])
+                    d.point((hx+facing*5,hy+9),fill=BONE[2])
+                    d.point((hx+facing*3,hy+11),fill=BONE[1])
+                    for xx,yy in [(cx-3,cy+2),(cx+1,cy+5),(cx+3,cy+8)]:d.point((xx,yy),fill=WOOD[4])
+                    d.line((cx-4,cy+2,cx-5,cy+7),fill=WOOD[2])
+                    d.line((cx+4,cy+4,cx+5,cy+9),fill=WOOD[0])
+                else:
+                    d.line((hx-4,hy+8,hx+3,hy+9),fill=BONE[0])
+                    for xx in range(hx-3,hx+4,2):d.point((xx,hy+11),fill=BONE[3])
+                    d.rectangle((hx-4,hy+5,hx-2,hy+7),fill=INK)
                 eye=hx+facing*3
                 d.rectangle((eye-1,hy+5,eye+1,hy+7),fill=INK);d.point((eye,hy+5),fill='#efc364' if species!='skeleton' else '#2c2525')
                 d.line((hx+facing*2,hy+10,hx+facing*6,hy+10),fill=INK)
