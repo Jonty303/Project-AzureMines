@@ -1,6 +1,6 @@
 # Codex handoff — Combat Lab v0.5.3.1 targeting and combustion
 
-**Ready to implement, not implemented.** [Issue #24 is the full execution brief](https://github.com/Jonty303/Project-AzureMines/issues/24). [FEAT-019 is the supporting spec](../specifications/features/FEAT-019-area-targeting-combustion.md).
+**Implemented candidate; owner/iPad acceptance pending.** [Draft PR #25](https://github.com/Jonty303/Project-AzureMines/pull/25) preserves the checkpoints below; see [implementation and validation](combat-lab-v0531-implementation.md). [Issue #24 is the full execution brief](https://github.com/Jonty303/Project-AzureMines/issues/24). [FEAT-019 is the supporting spec](../specifications/features/FEAT-019-area-targeting-combustion.md). The foundations below describe the pre-implementation baseline.
 
 ## Git contract
 

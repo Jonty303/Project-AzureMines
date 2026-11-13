@@ -2123,6 +2123,13 @@ func _expire_burning_cells() -> void:
     var wave: Dictionary = {}
     var ids := active_effects.keys()
     ids.sort()
+    var fuel_cells: Dictionary = {}
+    for id in ids:
+        var effect: Dictionary = active_effects[id]
+        if effect.get("flammable", false):
+            for cell in effect["cells"]:
+                if not _area_barrier(cell):
+                    fuel_cells[cell] = true
     for id in ids:
         var effect: Dictionary = active_effects[id]
         for cell in _sorted_cells(effect["burning_cells"].keys()):
@@ -2132,7 +2139,9 @@ func _expire_burning_cells() -> void:
             expired.append({"id": id, "cell": cell, "source": burn["source"]})
             for offset in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
                 var next: Vector2i = cell + offset
-                if effect["cells"].has(next) and not _area_barrier(next) and not is_web_burning(next) and not wave.has(next):
+                # Connected fuel may belong to another caster's Web. Region
+                # ownership must not create an invisible firebreak.
+                if fuel_cells.has(next) and not is_web_burning(next) and not wave.has(next):
                     wave[next] = burn["source"]
     for cell in _sorted_cells(wave.keys()):
         ignite_web_cell(cell, str(wave[cell]))

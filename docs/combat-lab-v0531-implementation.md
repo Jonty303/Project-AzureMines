@@ -32,6 +32,22 @@ Existing diagnostic categories remain in seven older suites: image-as-resource w
 
 GitHub CLI Codespaces inventory request returned **Forbidden**: hosted/private Codespaces port forwarding **NOT VERIFIED**. Local port 8765 smoke does not establish an actual hosted Codespace. Physical iPad Safari, desktop gameplay/readability/audio approval, gamepad and balance acceptance **NOT RUN**.
 
+## Recovery review and fresh validation — 13 November 2026
+
+Recovered prepared branch head `044f78629250a4e2295b9b7e33e562f43a7d5210` with all four implementation checkpoints already present. Verified existing PR #25 is **Draft**, targets `feature/combat-lab-v053-web`, and is unmerged. Preserved existing local UID artifacts (the conflicting older `core/dice_roller.gd.uid` was backed up outside the checkout before switching branches).
+
+Review found a missing connected-fuel case: combustion stopped at the edge of a Web region even when another caster's Web occupied the orthogonally adjacent cell. `combat/combat_engine.gd` now snapshots eligible fuel across all active flammable regions before collecting the next wave. Region ownership does not create a firebreak; absent cells and solid barriers still do. `tests/test_v0531_combustion.gd` now replays adjacent independent regions with an overlapping destination twice and compares exact event arrays. It checks one-wave timing, shared source/expiry without refresh, one 2d4 exposure, per-region burnout and no diagonal jump across missing fuel.
+
+Fresh checks after this correction:
+
+- SHA-256 verified pinned editor archive; **4.5.2.stable.official.6ce3de25a** used throughout. Headless editor import, title startup and **all 33** `tests/test_*.gd` PASS (exit 0 and PASS output, no script errors). All four v0.5.3.1 suites are clean; seven older suites retain only the previously disclosed diagnostic categories.
+- `python3 scripts/self_test.py`, `python3 scripts/validate_template.py --project`, `python3 scripts/validate_toolchain.py`, `python3 scripts/test_codespaces_web_preview.py` and `git diff --check`: PASS.
+- `python3 scripts/bootstrap_codespaces.py` and `python3 scripts/preview_godot_web.py --build-only`: PASS, official editor/templates checksums verified, actual nonempty HTML/JS/WASM/PCK exported.
+- Installed Chromium/Playwright at loopback `http://127.0.0.1:8765/`: v0.5.3.1 title/canvas rendered, no JavaScript errors. Screenshots and fresh suite logs/results are in `/tmp/azure-v0531-revalidation/`. The browser harness initially expected a hidden loading overlay; Godot removes it, so the corrected smoke waits for removal. This was a harness error, not a game failure.
+- Fresh `gh codespace list --repo Jonty303/Project-AzureMines --json name,state` returned **Forbidden**. Actual hosted/private Codespaces forwarding remains **NOT VERIFIED**. Physical iPad Safari remains **PENDING / NOT RUN**; desktop/audio/gamepad/balance acceptance remains NOT RUN. No new weather/material/destruction behaviour was added.
+
+Final pushed SHA and its runtime/governance CI evidence are recorded in draft PR #25. No merge or deployment.
+
 ## Owner iPad Safari acceptance — pending
 
 1. Pull this branch, check commit SHA; run `python3 scripts/bootstrap_codespaces.py` then `python3 scripts/preview_godot_web.py`. Keep forwarded **8765 private**. Record SHA, displayed v0.5.3.1, iPad model, iPadOS/Safari, orientation and tester/date.
