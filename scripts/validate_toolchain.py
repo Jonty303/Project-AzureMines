@@ -32,6 +32,14 @@ def validate(root=ROOT):
             errors.append("godot.linux_download_url must be HTTPS")
         if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", sha):
             errors.append("godot.linux_sha256 must be 64 hex characters")
+        web_url = settings.get("web_export_templates_url", "")
+        web_sha = settings.get("web_export_templates_sha256", "")
+        if bool(web_url) != bool(web_sha):
+            errors.append("godot web export URL and SHA256 must be supplied together")
+        if web_url and (not isinstance(web_url, str) or not web_url.startswith("https://")):
+            errors.append("godot.web_export_templates_url must be HTTPS")
+        if web_sha and (not isinstance(web_sha, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", web_sha)):
+            errors.append("godot.web_export_templates_sha256 must be 64 hex characters")
         if isinstance(project_path, str) and project_path and not (root / project_path / "project.godot").is_file():
             errors.append("Godot profile selected, but project.godot is absent")
     if engine == "none" and ((root / "project.godot").is_file() or (root / "game/project.godot").is_file()):

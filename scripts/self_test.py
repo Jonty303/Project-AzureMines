@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from validate_toolchain import validate
 
 def main():
-    for script in ("validate_template.py", "validate_toolchain.py"):
+    for script in ("validate_template.py", "validate_toolchain.py", "test_codespaces_bootstrap.py"):
         process = subprocess.run([sys.executable, str(ROOT / "scripts" / script)], cwd=ROOT, check=False)
         if process.returncode:
             return process.returncode
